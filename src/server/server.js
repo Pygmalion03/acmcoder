@@ -72,7 +72,6 @@ const contentTypes = {
   ".json": "application/json; charset=utf-8",
 };
 
-const localBrowserHosts = new Set(["127.0.0.1", "localhost", "::1", "0.0.0.0"]);
 const extensionOriginPattern = /^(?:chrome|edge)-extension:\/\/[a-z0-9_-]+$/i;
 
 function requestOrigin(request) {
@@ -91,11 +90,7 @@ function isTrustedBrowserOrigin(request) {
   try {
     const parsed = new URL(origin);
     const requestHost = String(request.headers.host || "").toLowerCase();
-    return (
-      ["http:", "https:"].includes(parsed.protocol) &&
-      localBrowserHosts.has(parsed.hostname.toLowerCase()) &&
-      parsed.host.toLowerCase() === requestHost
-    );
+    return ["http:", "https:"].includes(parsed.protocol) && parsed.host.toLowerCase() === requestHost;
   } catch {
     return false;
   }

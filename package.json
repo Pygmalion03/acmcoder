@@ -1,6 +1,6 @@
 {
   "name": "acmcoder",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "private": true,
   "description": "Local-first LeetCode-based ACM practice runner",
   "type": "module",

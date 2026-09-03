@@ -114,7 +114,7 @@ ghcr.io/pygmalion03/acmcoder-runner:latest
 
 Release 的作用是给用户一个清晰的版本页，说明这个版本对应哪个 tag、有哪些镜像、怎么启动。源码 ZIP/TAR 也会挂在 Release 下面，但普通 Docker 用户仍然建议使用仓库里的 `docker-compose.prebuilt.yml` 或最新源码目录，而不是把 Release 当成安装器。
 
-源码分支可以先于正式 Release 更新。默认 Compose 文件使用 `ghcr.io/pygmalion03/acmcoder-app:latest`；如果需要固定版本，再使用 Release 对应的 tag，例如 `ghcr.io/pygmalion03/acmcoder-app:v3.0.2`。
+源码分支可以先于正式 Release 更新。默认 Compose 文件使用 `ghcr.io/pygmalion03/acmcoder-app:latest`；如果需要固定版本，再使用 Release 对应的 tag，例如 `ghcr.io/pygmalion03/acmcoder-app:v3.0.3`。
 
 ## 环境扫描
 

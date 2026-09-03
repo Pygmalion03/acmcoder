@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 
@@ -140,6 +141,32 @@ test("rejects untrusted browser origins before they can execute code", async () 
     assert.equal(response.status, 403);
     assert.equal(response.headers.get("access-control-allow-origin"), null);
     assert.equal(calls.length, 0);
+  } finally {
+    server.close();
+  }
+});
+
+test("allows same-origin browser requests on a deployed hostname", async () => {
+  const server = createAcmcoderServer();
+  const port = await listen(server);
+
+  try {
+    const response = await new Promise((resolve, reject) => {
+      const request = http.get({
+        hostname: "127.0.0.1",
+        port,
+        path: "/app.js",
+        headers: {
+          host: "api.example.test",
+          origin: "https://api.example.test",
+        },
+      }, resolve);
+      request.on("error", reject);
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.match(response.headers["content-type"], /^text\/javascript/);
+    response.resume();
   } finally {
     server.close();
   }

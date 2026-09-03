@@ -2,7 +2,7 @@
 
 ACMCoder 是一个面向 LeetCode 侧栏练习的本地 ACM 练习器：代码、自测输入、运行结果、AC 记录和个人题库都在本机处理，加入练习的题目也可以在 Web 工作台查看完整题面。
 
-当前稳定版为 `v3.0.2`。
+当前稳定版为 `v3.0.3`。
 
 它有两个主要入口：
 
@@ -87,8 +87,8 @@ docker compose -f docker-compose.prebuilt.yml up -d
 如果你在 Compose 文件里固定了镜像 tag，把 tag 更新到当前版本：
 
 ```text
-ghcr.io/pygmalion03/acmcoder-app:v3.0.2
-ghcr.io/pygmalion03/acmcoder-runner:v3.0.2
+ghcr.io/pygmalion03/acmcoder-app:v3.0.3
+ghcr.io/pygmalion03/acmcoder-runner:v3.0.3
 ```
 
 ## 日常使用流程
@@ -191,8 +191,8 @@ ghcr.io/pygmalion03/acmcoder-app:latest
 需要锁版本时使用当前 Release tag：
 
 ```text
-ghcr.io/pygmalion03/acmcoder-app:v3.0.2
-ghcr.io/pygmalion03/acmcoder-runner:v3.0.2
+ghcr.io/pygmalion03/acmcoder-app:v3.0.3
+ghcr.io/pygmalion03/acmcoder-runner:v3.0.3
 ```
 
 更多部署边界见 [`docs/deployment.md`](docs/deployment.md)。

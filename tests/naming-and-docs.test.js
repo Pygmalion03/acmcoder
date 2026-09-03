@@ -7,8 +7,8 @@ test("package and CLI use acmcoder naming", () => {
   const manifest = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
 
   assert.equal(pkg.name, "acmcoder");
-  assert.equal(pkg.version, "3.0.2");
-  assert.equal(manifest.version, "3.0.2");
+  assert.equal(pkg.version, "3.0.3");
+  assert.equal(manifest.version, "3.0.3");
   assert.equal(pkg.bin.acmcoder, "./bin/acmcoder.js");
   assert.equal(pkg.scripts.cli, "node bin/acmcoder.js");
   assert.ok(fs.existsSync("bin/acmcoder.js"));
@@ -34,8 +34,8 @@ test("documentation points users to the acmcoder repo and packages", () => {
   assert.match(readme, /github\.com\/Pygmalion03\/acmcoder\.git/);
   assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-app:latest/);
   assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-runner:latest/);
-  assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-app:v3\.0\.2/);
-  assert.match(deployment, /ghcr\.io\/pygmalion03\/acmcoder-app:v3\.0\.2/);
+  assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-app:v3\.0\.3/);
+  assert.match(deployment, /ghcr\.io\/pygmalion03\/acmcoder-app:v3\.0\.3/);
   assert.match(readme, /源码分支[^\n]*`v3`/);
   assert.match(readme, /1\s*(?:至|–|-)\s*5\s*道题/);
   assert.match(readme, /GET\s+\/api\/session/);
