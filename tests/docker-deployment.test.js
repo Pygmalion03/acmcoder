@@ -15,14 +15,15 @@ test("repository includes a Docker app image for zero-local-toolchain users", ()
   assert.match(dockerfile, /bin\/acmcoder\.js/);
 });
 
-test("docker compose exposes the web server and shares the complete local data directory", () => {
+test("docker compose exposes the web server and persists mutable data without hiding bundled problems", () => {
   const compose = fs.readFileSync("docker-compose.yml", "utf8");
 
   assert.match(compose, /Dockerfile\.app/);
   assert.match(compose, /127\.0\.0\.1:43117:43117/);
   assert.doesNotMatch(compose, /^\s*-\s*["']?43117:43117["']?\s*$/m);
-  assert.match(compose, /\.\/data:\/app\/data/);
-  assert.doesNotMatch(compose, /\.\/data\/memory:\/app\/data\/memory/);
+  assert.match(compose, /\.\/data\/memory:\/app\/data\/memory/);
+  assert.match(compose, /\.\/data\/recommendation:\/app\/data\/recommendation/);
+  assert.doesNotMatch(compose, /\.\/data:\/app\/data/);
 });
 
 test("repository publishes prebuilt full-language app and runner images through GitHub Actions", () => {
@@ -48,7 +49,8 @@ test("prebuilt compose pulls the full-language app image without local build", (
   assert.match(compose, /ghcr\.io\/pygmalion03\/acmcoder-app:latest/);
   assert.match(compose, /127\.0\.0\.1:43117:43117/);
   assert.doesNotMatch(compose, /^\s*-\s*["']?43117:43117["']?\s*$/m);
-  assert.match(compose, /\.\/data:\/app\/data/);
-  assert.doesNotMatch(compose, /\.\/data\/memory:\/app\/data\/memory/);
+  assert.match(compose, /\.\/data\/memory:\/app\/data\/memory/);
+  assert.match(compose, /\.\/data\/recommendation:\/app\/data\/recommendation/);
+  assert.doesNotMatch(compose, /\.\/data:\/app\/data/);
   assert.doesNotMatch(compose, /\bbuild:/);
 });

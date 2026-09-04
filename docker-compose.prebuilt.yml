@@ -4,7 +4,8 @@ services:
     ports:
       - "127.0.0.1:43117:43117"
     volumes:
-      - ./data:/app/data
+      - ./data/memory:/app/data/memory
+      - ./data/recommendation:/app/data/recommendation
     environment:
       PORT: "43117"
       ACMCODER_HOST: "0.0.0.0"

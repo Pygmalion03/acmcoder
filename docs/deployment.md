@@ -44,11 +44,11 @@ docker compose -f docker-compose.prebuilt.yml up -d
 http://127.0.0.1:43117
 ```
 
-这条路不要求用户本机安装 Node.js、Java、C++ 或 Python。容器里的内置环境已经带了 `python3`、`g++`、`openjdk`，所以页面里选择 `内置环境` 就能运行代码。它不是 Docker runner，而是 app 容器本身的编译运行环境。Compose 会把启动目录中的 `./data` 挂载到 `/app/data`，因此记忆题目、推荐题库、每日计划、AC 次数和模型设置与同一份源码目录下的本机服务共用。
+这条路不要求用户本机安装 Node.js、Java、C++ 或 Python。容器里的内置环境已经带了 `python3`、`g++`、`openjdk`，所以页面里选择 `内置环境` 就能运行代码。它不是 Docker runner，而是 app 容器本身的编译运行环境。Compose 只把启动目录中的 `./data/memory` 和 `./data/recommendation` 挂载到容器，因而记忆题目、推荐题库、每日计划、AC 次数和模型设置可以持久化，同时不会让宿主机的空 `./data` 目录遮住镜像内置的 `problems.json`。
 
 这条路径会创建 Docker 镜像、容器和 Compose 网络，但不会修改用户 Docker Desktop 的全局配置，也不会往宿主机安装 Java/C++/Python。
 
-若部署配置使用 `./data:/app/data` bind mount，宿主机上的 `./data` 必须允许容器写入。生产配置同时使用 `cap_drop: [ALL]` 时，即使容器进程 UID 为 0，也不能依赖 `DAC_OVERRIDE` 绕过宿主机目录权限。部署前应由 Docker 创建该目录，或显式设置适合当前 NAS 用户/ACL 的读写权限；不要把权限错误误判为推荐题库或应用启动失败。
+宿主机上的 `./data/memory` 和 `./data/recommendation` 必须允许容器写入。生产配置同时使用 `cap_drop: [ALL]` 时，即使容器进程 UID 为 0，也不能依赖 `DAC_OVERRIDE` 绕过宿主机目录权限。部署前应由 Docker 创建这些目录，或显式设置适合当前 NAS 用户/ACL 的读写权限；不要把权限错误误判为推荐题库或应用启动失败。不要把整个空的 `./data` 目录挂载到 `/app/data`，否则会遮住镜像内置的种子题库。
 
 如果要从当前源码本地构建应用镜像，再运行：
 
