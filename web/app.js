@@ -587,8 +587,14 @@ function renderReinforcementState(session) {
   elements.viewPreviousRound.hidden = !previousRound;
   elements.restorePreviousRound.hidden = !reinforcement?.canRestore;
   elements.restorePreviousRound.onclick = reinforcement?.canRestore ? restorePreviousRound : null;
-  elements.startReinforcementFromResult.hidden = session?.lastResult?.status !== "AC";
-  elements.startReinforcementFromAi.hidden = !session?.ai?.current?.some((message) => message.role === "assistant");
+  elements.startReinforcementFromResult.hidden = !canBeginReinforcement(session, "accepted");
+  elements.startReinforcementFromAi.hidden = !canBeginReinforcement(session, "ai-assisted");
+}
+
+function canBeginReinforcement(session, trigger) {
+  if (trigger === "accepted") return session?.lastResult?.status === "AC";
+  if (trigger === "ai-assisted") return session?.ai?.current?.some((message) => message.role === "assistant");
+  return false;
 }
 
 function showPreviousRound() {
@@ -620,6 +626,13 @@ async function beginReinforcement(trigger) {
 
   const contextId = practiceContextId;
   const identity = practiceSessionIdentity();
+  const session = currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, identity)
+    ? currentPracticeSession
+    : loadCurrentPracticeSession(identity)?.session;
+  if (!canBeginReinforcement(session, trigger)) {
+    renderReinforcementState(session);
+    return;
+  }
   elements.startReinforcementFromAi.disabled = true;
   elements.startReinforcementFromResult.disabled = true;
 
@@ -628,16 +641,24 @@ async function beginReinforcement(trigger) {
     if (!isCurrentPracticeContext(contextId) || !samePracticeSessionIdentity(identity, practiceSessionIdentity())) {
       return;
     }
-    const session = currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, identity)
+    const latestSession = currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, identity)
       ? currentPracticeSession
       : loadCurrentPracticeSession(identity)?.session;
-    currentPracticeSession = startReinforcement(session, {
+    if (!canBeginReinforcement(latestSession, trigger)) {
+      renderReinforcementState(latestSession);
+      return;
+    }
+    const nextSession = startReinforcement(latestSession, {
       template,
       trigger,
       now: new Date().toISOString(),
     });
+    const saveResult = savePracticeSession(localStorage, identity, nextSession);
+    if (!saveResult.saved) {
+      throw new Error("本轮内容暂时无法保存到浏览器");
+    }
+    currentPracticeSession = nextSession;
     currentPracticeSessionIdentity = { ...identity };
-    persistCurrentPracticeSession();
 
     elements.code.value = currentPracticeSession.code;
     elements.stdin.value = "";
@@ -742,6 +763,7 @@ function beginPracticeContextChange() {
   currentPracticeSessionIdentity = null;
   syncHighlight();
   renderAssistConversation();
+  renderReinforcementState(null);
   return practiceContextId;
 }
 
@@ -830,7 +852,7 @@ async function askAssist() {
   }
 }
 
-function saveWorkspaceCache() {
+function saveWorkspaceCache({ markReinforcementDirty = true } = {}) {
   if (!state.selected) return;
 
   try {
@@ -848,7 +870,7 @@ function saveWorkspaceCache() {
     stdin: elements.stdin.value,
     expected: elements.expected.value,
     lastResult: currentPracticeSession?.lastResult || null,
-  });
+  }, { markReinforcementDirty });
   persistCurrentPracticeSession();
   renderReinforcementState(currentPracticeSession);
 }
@@ -1363,21 +1385,27 @@ async function selectProblem(slug, options = {}) {
     return;
   }
   state.selected = problem;
-  loadCurrentPracticeSession();
+  const loadedSession = loadCurrentPracticeSession();
+  const restoredWorkspace = loadedSession?.source === "session" || loadedSession?.source === "legacy";
   applyProgress(problem.slug, problem.progress);
 
   renderProblemIdentity(problem);
   elements.link.href = problem.leetcode.url;
   elements.description.textContent = problem.description;
 
-  restoreSampleIo();
+  if (restoredWorkspace) {
+    applyPracticeSession(loadedSession.session);
+  } else {
+    renderAssistConversation(loadedSession?.session);
+    renderReinforcementState(loadedSession?.session);
+    restoreSampleIo();
+  }
   if (options.loadTemplate !== false) {
-    await loadTemplate({ persist: false, contextId });
+    await loadTemplate({ apply: !restoredWorkspace, persist: false, contextId });
     if (!isCurrentPracticeContext(contextId)) {
       return;
     }
   }
-  const restoredWorkspace = restoreWorkspaceCache();
   if (
     restoredWorkspace &&
     isStaleLeetCodeSampleCache(state.selected, {
@@ -1387,7 +1415,7 @@ async function selectProblem(slug, options = {}) {
   ) {
     restoreSampleIo();
   }
-  saveWorkspaceCache();
+  saveWorkspaceCache({ markReinforcementDirty: false });
   renderProblemList();
   renderDailySession();
   if (options.openView !== false) {
@@ -1412,6 +1440,10 @@ function setResult(result, { markReinforcementDirty = true } = {}) {
 }
 
 async function runCode() {
+  const requestContextId = practiceContextId;
+  const requestIdentity = practiceSessionIdentity();
+  const requestProblem = state.selected;
+  let requestSession = null;
   if (currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, practiceSessionIdentity())) {
     currentPracticeSession = updatePracticeWorkspace(currentPracticeSession, {
       code: elements.code.value,
@@ -1420,6 +1452,7 @@ async function runCode() {
     });
     persistCurrentPracticeSession();
     renderReinforcementState(currentPracticeSession);
+    requestSession = currentPracticeSession;
   }
   setUtilityTab("result");
   setMobilePracticeTab("result");
@@ -1436,19 +1469,26 @@ async function runCode() {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        slug: state.selected.slug,
-        language: elements.language.value,
+        slug: requestProblem.slug,
+        language: requestIdentity.language,
         runner: apiRunnerForUiMode(elements.runner.value),
         code: elements.code.value,
         stdin: elements.stdin.value,
         expected: elements.expected.value,
       }),
     });
+    if (
+      !isCurrentPracticeContext(requestContextId)
+      || !samePracticeSessionIdentity(requestIdentity, practiceSessionIdentity())
+      || currentPracticeSession !== requestSession
+    ) {
+      return;
+    }
     setResult(body.result);
     if (body.result.status === "AC" && body.progress) {
-      applyProgress(state.selected.slug, body.progress);
+      applyProgress(requestProblem.slug, body.progress);
       renderProblemList();
-      renderProblemIdentity(state.selected);
+      renderProblemIdentity(requestProblem);
       renderDailyProgress();
     }
     if (body.result.status === "AC" && currentPracticeSession?.reinforcement?.status === "active") {
@@ -1458,6 +1498,13 @@ async function runCode() {
     }
     saveWorkspaceCache();
   } catch (error) {
+    if (
+      !isCurrentPracticeContext(requestContextId)
+      || !samePracticeSessionIdentity(requestIdentity, practiceSessionIdentity())
+      || currentPracticeSession !== requestSession
+    ) {
+      return;
+    }
     setResult({
       status: "ERROR",
       message: error.message,

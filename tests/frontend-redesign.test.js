@@ -21,6 +21,14 @@ import {
 } from "../web/view-state.js";
 import { iconMarkup } from "../web/icons.js";
 import { createStartupRecovery } from "../web/startup-recovery.js";
+import {
+  appendAiMessage,
+  completeReinforcement,
+  createPracticeSession,
+  restorePreviousRound,
+  startReinforcement,
+  updatePracticeWorkspace,
+} from "../web/practice-session.js";
 
 function loadAppForStartupPollingRace() {
   const source = fs.readFileSync("web/app.js", "utf8")
@@ -115,7 +123,20 @@ function loadAppForDeferredTemplateTransitions() {
   const source = `${fs.readFileSync("web/app.js", "utf8")
     .replace(/^import \{[^}]+\} from "\.\/(?:icons|api-client|startup-recovery|practice-session)\.js";\n/gm, "")
     .replace(/^import \{[\s\S]*?\} from "\.\/view-state\.js";\n/, "")}
-globalThis.__templateApp = { state, elements, selectProblem };
+globalThis.__templateApp = {
+  state,
+  elements,
+  selectProblem,
+  runCode,
+  beginReinforcement,
+  beginPracticeContextChange,
+  renderReinforcementState,
+  getSession: () => currentPracticeSession,
+  setSession: (session, identity) => {
+    currentPracticeSession = session;
+    currentPracticeSessionIdentity = { ...identity };
+  },
+};
 `;
   const nodes = new Map();
   const savedSessions = [];
@@ -150,6 +171,7 @@ globalThis.__templateApp = { state, elements, selectProblem };
       removeAttribute() {},
       replaceChildren(...children) { this.children = children; },
       setAttribute() {},
+      showModal() { this.open = true; },
     };
   };
   const document = {
@@ -164,6 +186,10 @@ globalThis.__templateApp = { state, elements, selectProblem };
     querySelectorAll() { return []; },
   };
   const localValues = new Map();
+  const sessions = new Map();
+  let storageFailure = false;
+  const runRequests = [];
+  const sessionKey = ({ problemSlug, language }) => JSON.stringify({ problemSlug, language });
   const localStorage = {
     getItem(key) { return localValues.get(key) || null; },
     setItem(key, value) { localValues.set(key, String(value)); },
@@ -185,6 +211,9 @@ globalThis.__templateApp = { state, elements, selectProblem };
     if (url.startsWith("/api/problems/")) return Promise.resolve({ problem: problem(url.split("/").at(-1)) });
     if (url.startsWith("/api/templates/")) {
       return new Promise((resolve) => templateRequests.set(url, resolve));
+    }
+    if (url === "/api/run") {
+      return new Promise((resolve, reject) => runRequests.push({ resolve, reject }));
     }
     return Promise.reject(new Error(`unexpected ${url}`));
   };
@@ -208,17 +237,24 @@ globalThis.__templateApp = { state, elements, selectProblem };
     }),
     hydrateIcons() {},
     iconMarkup: () => "",
-    appendAiMessage: (session, message) => ({ ...session, ai: { current: [...session.ai.current, message] } }),
-    loadPracticeSessionWithMetadata: () => ({
-      source: "empty",
-      session: { code: "", stdin: "", expected: "", lastResult: null, ai: { current: [] } },
-    }),
+    appendAiMessage,
+    completeReinforcement,
+    startReinforcement,
+    restorePreviousPracticeRound: restorePreviousRound,
+    loadPracticeSessionWithMetadata: (_storage, identity) => {
+      const key = sessionKey(identity);
+      return sessions.has(key)
+        ? { source: "session", session: sessions.get(key) }
+        : { source: "empty", session: createPracticeSession() };
+    },
     removePracticeSessions() {},
     savePracticeSession: (_storage, identity, session) => {
       savedSessions.push({ identity: { ...identity }, code: session.code });
+      if (storageFailure) return { saved: false, error: new Error("storage full") };
+      sessions.set(sessionKey(identity), session);
       return { saved: true };
     },
-    updatePracticeWorkspace: (session, update) => ({ ...session, ...update }),
+    updatePracticeWorkspace,
     canonicalProblemSlug: (value) => String(value?.leetcode?.slug || value?.slug || "").replace(/^memory:/, ""),
     dailyPlanProgress: () => ({ completed: 0, total: 0, percent: 0 }),
     apiRunnerForUiMode: (value) => value,
@@ -237,6 +273,10 @@ globalThis.__templateApp = { state, elements, selectProblem };
     app: context.__templateApp,
     nodes,
     resolveTemplate(url, code) { templateRequests.get(url)?.({ code }); },
+    resolveRun(body) { runRequests.shift()?.resolve(body); },
+    rejectRun(error) { runRequests.shift()?.reject(error); },
+    setStorageFailure(value) { storageFailure = value; },
+    problem,
     savedSessions,
   };
 }
@@ -620,6 +660,153 @@ test("a delayed Java template cannot persist after a newer C++ language switch",
     identity: { problemSlug: "language-problem", language: "cpp" },
     code: "cpp template",
   });
+});
+
+test("an old run response cannot complete a newly started reinforcement round", async () => {
+  const { app, nodes, problem, resolveRun, resolveTemplate } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const currentProblem = problem("race-problem");
+  app.state.selected = currentProblem;
+  app.state.problems = [currentProblem];
+  nodes.get("#language").value = "python";
+  nodes.get("#code").value = "old code";
+  app.setSession(createPracticeSession({
+    code: "old code",
+    lastResult: { status: "AC", message: "accepted", stdout: "", stderr: "" },
+  }), { problemSlug: "race-problem", language: "python" });
+
+  const run = app.runCode();
+  const reinforcement = app.beginReinforcement("accepted");
+  await flushPromises();
+  resolveTemplate("/api/templates/race-problem/python", "fresh template");
+  await reinforcement;
+  resolveRun({
+    result: { status: "AC", message: "old accepted", stdout: "", stderr: "" },
+    progress: { acCount: 7 },
+  });
+  await run;
+
+  assert.equal(app.getSession().code, "fresh template");
+  assert.equal(app.getSession().reinforcement.status, "active");
+  assert.equal(nodes.get("#status").textContent, "IDLE");
+  assert.equal(currentProblem.progress.acCount, 0);
+});
+
+test("a run response cannot update a problem selected after the run started", async () => {
+  const { app, nodes, problem, resolveRun } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const oldProblem = problem("old-run-problem");
+  const newProblem = problem("new-selection-problem");
+  app.state.selected = oldProblem;
+  app.state.problems = [oldProblem, newProblem];
+  nodes.get("#language").value = "python";
+  app.setSession(createPracticeSession({ code: "old code" }), {
+    problemSlug: "old-run-problem",
+    language: "python",
+  });
+
+  const run = app.runCode();
+  await app.selectProblem("new-selection-problem", { loadTemplate: false });
+  resolveRun({
+    result: { status: "AC", message: "old accepted", stdout: "", stderr: "" },
+    progress: { acCount: 4 },
+  });
+  await run;
+
+  assert.equal(app.state.selected.slug, "new-selection-problem");
+  assert.equal(nodes.get("#status").textContent, "IDLE");
+  assert.equal(oldProblem.progress.acCount, 0);
+  assert.equal(newProblem.progress.acCount, 0);
+});
+
+test("reloading an untouched active reinforcement round preserves restore", async () => {
+  const { app, nodes, problem } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const currentProblem = problem("reload-problem");
+  const active = startReinforcement(createPracticeSession({ code: "previous code" }), {
+    template: "fresh template",
+    trigger: "accepted",
+    now: "2026-09-11T01:00:00Z",
+  });
+  app.state.selected = currentProblem;
+  app.state.problems = [currentProblem];
+  nodes.get("#language").value = "python";
+  app.setSession(active, { problemSlug: "reload-problem", language: "python" });
+
+  await app.selectProblem("reload-problem", { loadTemplate: false });
+
+  assert.equal(app.getSession().reinforcement.canRestore, true);
+  assert.equal(nodes.get("#restore-previous-round").hidden, false);
+});
+
+test("a failed reinforcement save keeps the original round visible", async () => {
+  const { app, nodes, problem, resolveTemplate, setStorageFailure } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const currentProblem = problem("save-failure-problem");
+  const original = createPracticeSession({
+    code: "preserved code",
+    lastResult: { status: "AC", message: "accepted", stdout: "", stderr: "" },
+  });
+  app.state.selected = currentProblem;
+  app.state.problems = [currentProblem];
+  nodes.get("#language").value = "python";
+  nodes.get("#code").value = "preserved code";
+  app.setSession(original, { problemSlug: "save-failure-problem", language: "python" });
+  setStorageFailure(true);
+
+  const reinforcement = app.beginReinforcement("accepted");
+  await flushPromises();
+  resolveTemplate("/api/templates/save-failure-problem/python", "fresh template");
+  await reinforcement;
+
+  assert.equal(app.getSession(), original);
+  assert.equal(nodes.get("#code").value, "preserved code");
+  assert.match(nodes.get("#assist-status").textContent, /无法开始巩固练习/);
+});
+
+test("context invalidation clears reinforcement triggers before the next load", async () => {
+  const { app, nodes, problem } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const currentProblem = problem("clear-triggers-problem");
+  const pendingSession = appendAiMessage(createPracticeSession({
+    lastResult: { status: "AC", message: "accepted", stdout: "", stderr: "" },
+  }), { role: "user", content: "help", createdAt: "2026-09-11T01:00:00Z" });
+  const session = appendAiMessage(pendingSession, { role: "assistant", content: "hint", createdAt: "2026-09-11T01:00:01Z" });
+  app.state.selected = currentProblem;
+  nodes.get("#language").value = "python";
+  app.setSession(session, { problemSlug: "clear-triggers-problem", language: "python" });
+  app.renderReinforcementState(session);
+
+  app.beginPracticeContextChange();
+
+  assert.equal(nodes.get("#start-reinforcement-from-result").hidden, true);
+  assert.equal(nodes.get("#start-reinforcement-from-ai").hidden, true);
+  assert.equal(nodes.get("#reinforcement-state").hidden, true);
+});
+
+test("reinforcement rejects trigger controls that are stale for the current round", async () => {
+  const { app, nodes, problem, resolveTemplate } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const currentProblem = problem("trigger-validation-problem");
+  const original = createPracticeSession({ code: "original code" });
+  const identity = { problemSlug: "trigger-validation-problem", language: "python" };
+  app.state.selected = currentProblem;
+  nodes.get("#language").value = "python";
+  nodes.get("#code").value = "original code";
+  app.setSession(original, identity);
+
+  const accepted = app.beginReinforcement("accepted");
+  await flushPromises();
+  resolveTemplate("/api/templates/trigger-validation-problem/python", "unexpected template");
+  await accepted;
+  assert.equal(app.getSession(), original);
+
+  const ai = app.beginReinforcement("ai-assisted");
+  await flushPromises();
+  resolveTemplate("/api/templates/trigger-validation-problem/python", "unexpected template");
+  await ai;
+  assert.equal(app.getSession(), original);
+  assert.equal(nodes.get("#code").value, "original code");
 });
 
 test("local icon markup exposes the required Lucide icons", () => {
