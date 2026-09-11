@@ -14,6 +14,7 @@ import {
   nextCatalogSelection,
   normalizeUtilityTab,
   normalizeView,
+  problemIdentity,
   sampleIoForProblem,
   uiRunnerForApiRecommendation,
 } from "../web/view-state.js";
@@ -26,6 +27,38 @@ test("defines and normalizes application views and utility tabs", () => {
   assert.equal(normalizeView("unknown"), "today");
   assert.equal(normalizeUtilityTab("assist"), "assist");
   assert.equal(normalizeUtilityTab("unknown"), "test");
+});
+
+test("builds a localized semantic problem identity", () => {
+  assert.deepEqual(problemIdentity({
+    frontendId: "206",
+    title: "反转链表",
+    difficulty: "easy",
+    tags: ["链表", "递归"],
+    progress: { acCount: 4 },
+  }), {
+    heading: "#206 反转链表",
+    difficulty: "简单",
+    tags: ["链表", "递归"],
+    progress: "通过次数 4",
+  });
+});
+
+test("practice markup exposes visible statement and semantic identity nodes", () => {
+  const html = fs.readFileSync("web/index.html", "utf8");
+  for (const id of ["problem-difficulty", "problem-tags", "problem-progress", "practice-workspace"]) {
+    assert.equal(html.match(new RegExp(`id="${id}"`, "g"))?.length, 1, id);
+  }
+  assert.match(html, /id="problem-inspector"[\s\S]*id="problem-description"/);
+});
+
+test("solution textarea is the bounded scroll source", () => {
+  const css = fs.readFileSync("web/styles.css", "utf8");
+  const script = fs.readFileSync("web/app.js", "utf8");
+  assert.match(css, /#code\s*\{[\s\S]*overflow:\s*auto/);
+  assert.doesNotMatch(script, /function autoSizeCodeEditor\(/);
+  assert.match(script, /highlight\.parentElement\.scrollTop\s*=\s*elements\.code\.scrollTop/);
+  assert.match(script, /lineNumbers\.scrollTop\s*=\s*elements\.code\.scrollTop/);
 });
 
 test("maps the three visible runner modes to the existing runner API", () => {

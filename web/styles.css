@@ -620,6 +620,31 @@ textarea {
   white-space: nowrap;
 }
 
+.problem-identity-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 20px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.problem-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.problem-tag {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #edf4f1;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 750;
+}
+
 .practice-actions {
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -661,17 +686,35 @@ textarea {
   font-weight: 750;
 }
 
+.practice-workspace {
+  display: grid;
+  grid-template-columns: minmax(280px, .55fr) minmax(0, 1.45fr);
+  min-height: 560px;
+  height: calc(100vh - 210px);
+  max-height: 820px;
+}
+
 .problem-inspector {
-  display: none;
-  max-height: 240px;
+  display: block;
+  min-height: 0;
+  max-height: none;
   overflow: auto;
   padding: 18px;
   border: 1px solid var(--border);
+  border-radius: 0 0 0 8px;
   background: #fff;
 }
 
-.problem-inspector.is-open {
-  display: block;
+.problem-inspector:not(.is-open) {
+  display: none;
+}
+
+.practice-workspace:has(.problem-inspector:not(.is-open)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.practice-workspace:has(.problem-inspector.is-open) .editor-pane {
+  border-radius: 0;
 }
 
 #problem-description {
@@ -686,9 +729,9 @@ textarea {
 .practice-main {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(300px, .75fr);
-  min-height: 560px;
-  height: calc(100vh - 210px);
-  max-height: 820px;
+  min-height: 0;
+  height: 100%;
+  max-height: none;
 }
 
 .editor-pane {
@@ -742,7 +785,7 @@ textarea {
 .code-editor {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  min-height: 260px;
+  min-height: 0;
   height: 100%;
   overflow: hidden;
   resize: none;
@@ -814,7 +857,7 @@ textarea {
   min-width: 100%;
   padding: 15px 16px;
   resize: none;
-  overflow: hidden;
+  overflow: auto;
   background: transparent;
   color: transparent;
   caret-color: #f8fafc;
@@ -1172,6 +1215,26 @@ textarea {
   }
 }
 
+@media (max-width: 1279px) {
+  .practice-workspace {
+    display: block;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+  }
+
+  .problem-inspector.is-open {
+    max-height: 240px;
+    border-radius: 0;
+  }
+
+  .practice-main {
+    min-height: 560px;
+    height: calc(100vh - 450px);
+    max-height: 820px;
+  }
+}
+
 @media (max-width: 1179px) {
   .app-shell {
     grid-template-columns: 72px minmax(0, 1fr);
@@ -1424,8 +1487,9 @@ textarea {
 
   .problem-inspector.is-mobile-active {
     display: block;
+    height: calc(100vh - 276px);
+    min-height: 0;
     max-height: none;
-    min-height: calc(100vh - 276px);
     border: 0;
   }
 
@@ -1434,12 +1498,14 @@ textarea {
   }
 
   .editor-pane.is-mobile-active {
-    min-height: calc(100vh - 276px);
+    height: calc(100vh - 276px);
+    min-height: 0;
     border-radius: 0;
   }
 
   .utility-dock.is-mobile-active {
-    min-height: calc(100vh - 276px);
+    height: calc(100vh - 276px);
+    min-height: 0;
     border-radius: 0;
   }
 

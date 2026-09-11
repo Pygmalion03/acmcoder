@@ -9,6 +9,7 @@ import {
   nextCatalogSelection,
   normalizeUtilityTab,
   normalizeView,
+  problemIdentity,
   sampleIoForProblem,
   uiRunnerForApiRecommendation,
 } from "./view-state.js";
@@ -28,7 +29,7 @@ const state = {
   activeView: "today",
   activeUtilityTab: "test",
   mobilePracticeTab: "code",
-  problemInspectorOpen: false,
+  problemInspectorOpen: true,
   mobileMoreOpen: false,
 };
 
@@ -96,6 +97,9 @@ const elements = {
   importFile: document.querySelector("#import-file"),
   title: document.querySelector("#problem-title"),
   eyebrow: document.querySelector("#eyebrow"),
+  difficulty: document.querySelector("#problem-difficulty"),
+  tags: document.querySelector("#problem-tags"),
+  progress: document.querySelector("#problem-progress"),
   link: document.querySelector("#leetcode-link"),
   description: document.querySelector("#problem-description"),
   language: document.querySelector("#language"),
@@ -643,7 +647,6 @@ function syncHighlight() {
   elements.highlight.parentElement.scrollTop = elements.code.scrollTop;
   elements.highlight.parentElement.scrollLeft = elements.code.scrollLeft;
   syncLineNumbers();
-  autoSizeCodeEditor();
 }
 
 function syncLineNumbers() {
@@ -653,14 +656,6 @@ function syncLineNumbers() {
     elements.lineNumbers.textContent = nextValue;
   }
   elements.lineNumbers.scrollTop = elements.code.scrollTop;
-}
-
-function autoSizeCodeEditor() {
-  const minHeight = Number.parseFloat(getComputedStyle(elements.codeEditor).minHeight) || 260;
-  elements.code.style.height = "auto";
-  const nextHeight = Math.max(minHeight, elements.code.scrollHeight);
-  elements.codeEditor.style.height = `${nextHeight}px`;
-  elements.code.style.height = "100%";
 }
 
 function replaceSelection(nextText, selectionOffset = nextText.length) {
@@ -968,8 +963,7 @@ async function syncMemoryPages({ force = false } = {}) {
   const activeProblem = state.problems.find((problem) => problem.slug === state.selected?.slug);
   if (activeProblem?.memorySource) {
     state.selected = activeProblem;
-    elements.eyebrow.textContent = formatEyebrow(activeProblem);
-    elements.title.textContent = activeProblem.title;
+    renderProblemIdentity(activeProblem);
     elements.link.href = activeProblem.leetcode.url;
     elements.description.textContent = activeProblem.description;
   }
@@ -981,15 +975,18 @@ async function syncMemoryPages({ force = false } = {}) {
   return true;
 }
 
-function formatEyebrow(problem) {
-  const parts = [
-    problem.frontendId ? `#${problem.frontendId}` : "",
-    problem.difficulty,
-    ...(Array.isArray(problem.tags) ? problem.tags : []),
-    `AC ${getAcCount(problem)}`,
-  ].filter(Boolean);
-
-  return parts.join(" · ");
+function renderProblemIdentity(problem) {
+  const identity = problemIdentity(problem);
+  elements.title.textContent = identity.heading;
+  elements.difficulty.textContent = identity.difficulty;
+  elements.progress.textContent = identity.progress;
+  elements.tags.replaceChildren();
+  for (const tag of identity.tags) {
+    const tagNode = document.createElement("span");
+    tagNode.className = "problem-tag";
+    tagNode.textContent = tag;
+    elements.tags.appendChild(tagNode);
+  }
 }
 
 function formatProblemListTitle(problem) {
@@ -1002,8 +999,7 @@ async function selectProblem(slug, options = {}) {
   state.selected = problem;
   applyProgress(problem.slug, problem.progress);
 
-  elements.eyebrow.textContent = formatEyebrow(problem);
-  elements.title.textContent = problem.title;
+  renderProblemIdentity(problem);
   elements.link.href = problem.leetcode.url;
   elements.description.textContent = problem.description;
 
@@ -1026,7 +1022,8 @@ async function selectProblem(slug, options = {}) {
   renderDailySession();
   if (options.openView !== false) {
     setActiveView("practice");
-    setMobilePracticeTab("code");
+    setProblemInspectorOpen(true);
+    setMobilePracticeTab("problem");
   }
 }
 
@@ -1066,7 +1063,7 @@ async function runCode() {
     if (body.result.status === "AC" && body.progress) {
       applyProgress(state.selected.slug, body.progress);
       renderProblemList();
-      elements.eyebrow.textContent = formatEyebrow(state.selected);
+      renderProblemIdentity(state.selected);
       renderDailyProgress();
     }
     saveWorkspaceCache();
@@ -1556,7 +1553,7 @@ async function init() {
   setActiveView("today");
   setUtilityTab("test");
   setMobilePracticeTab("code");
-  setProblemInspectorOpen(false);
+  setProblemInspectorOpen(true);
 
   const body = await getJson("/api/problems");
   state.problems = body.problems;

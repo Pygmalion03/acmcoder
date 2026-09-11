@@ -73,13 +73,15 @@ test("web UI explains why LeetCode examples are not loaded as ACM input", () => 
   assert.match(script, /sampleIoNote:\s*document\.querySelector\("#sample-io-note"\)/);
 });
 
-test("web app renders the title eyebrow from id difficulty and tags", () => {
+test("web app renders semantic identity from id difficulty and tags", () => {
   const script = fs.readFileSync("web/app.js", "utf8");
 
-  assert.match(script, /formatEyebrow/);
-  assert.match(script, /problem\.frontendId/);
-  assert.match(script, /problem\.difficulty/);
-  assert.match(script, /problem\.tags/);
+  assert.match(script, /problemIdentity/);
+  assert.match(script, /function renderProblemIdentity\(/);
+  assert.match(script, /elements\.title\.textContent\s*=\s*identity\.heading/);
+  assert.match(script, /elements\.difficulty\.textContent\s*=\s*identity\.difficulty/);
+  assert.match(script, /document\.createElement\("span"\)/);
+  assert.match(script, /tagNode\.textContent\s*=\s*tag/);
   assert.doesNotMatch(script, /problem\.rank\.frequency/);
   assert.doesNotMatch(script, /frequency \$\{problem\.rank\.frequency\}/);
 });
@@ -103,7 +105,7 @@ test("web editor renders line numbers next to code", () => {
   assert.match(script, /syncLineNumbers/);
 });
 
-test("web editor keeps caret aligned by disabling soft wrapping", () => {
+test("web editor keeps caret aligned with a bounded textarea scroller", () => {
   const html = fs.readFileSync("web/index.html", "utf8");
   const css = fs.readFileSync("web/styles.css", "utf8");
   const script = fs.readFileSync("web/app.js", "utf8");
@@ -124,7 +126,8 @@ test("web editor keeps caret aligned by disabling soft wrapping", () => {
   assert.match(script, /codeEditor:\s*document\.querySelector\("#code-editor"\)/);
   assert.match(script, /findMatchingBracket/);
   assert.match(script, /getBracketMatch/);
-  assert.match(script, /autoSizeCodeEditor/);
+  assert.match(css, /#code\s*\{[\s\S]*overflow:\s*auto/);
+  assert.doesNotMatch(script, /autoSizeCodeEditor/);
   assert.match(script, /addEventListener\("select", syncHighlight\)/);
   assert.match(script, /addEventListener\("keyup", syncHighlight\)/);
 });

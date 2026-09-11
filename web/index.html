@@ -115,12 +115,17 @@
         <section id="view-practice" class="app-view practice-view" data-view="practice" tabindex="-1" hidden>
           <header class="practice-commandbar">
             <div class="practice-identity">
-              <p id="eyebrow" class="eyebrow-copy">ACM RUNNER</p>
+              <p id="eyebrow" class="eyebrow-copy">PRACTICE</p>
               <h1 id="problem-title">选择一道题开始</h1>
+              <div class="problem-identity-meta" aria-label="题目元数据">
+                <span id="problem-difficulty"></span>
+                <span id="problem-tags" class="problem-tags"></span>
+                <span id="problem-progress"></span>
+              </div>
             </div>
             <div class="practice-actions">
               <a id="leetcode-link" class="command-button" href="#" target="_blank" rel="noreferrer"><span data-icon="external-link"></span><span>原题</span></a>
-              <button id="toggle-problem-inspector" class="command-button" type="button">题目</button>
+              <button id="toggle-problem-inspector" class="command-button" type="button" aria-expanded="true">题目</button>
               <label class="command-select"><span>语言</span><select id="language"><option value="python">Python</option><option value="java">Java</option><option value="cpp">C++17</option></select></label>
               <label class="command-select"><span>环境</span><select id="runner"><option value="local">本机环境</option><option value="builtin">内置环境</option><option value="docker">Docker runner</option></select></label>
               <button id="run" class="run-button" type="button" aria-label="运行代码"><span data-icon="play"></span>运行</button>
@@ -134,13 +139,14 @@
             <button type="button" role="tab" data-mobile-practice-tab="result" aria-selected="false">结果</button>
           </div>
 
-          <section id="problem-inspector" class="problem-inspector" data-mobile-practice-panel="problem" aria-label="题目描述">
-            <div class="section-heading compact"><div><p class="section-kicker">Problem</p><h2>题目描述</h2></div></div>
-            <p id="problem-description"></p>
-          </section>
+          <div id="practice-workspace" class="practice-workspace">
+            <section id="problem-inspector" class="problem-inspector is-open" data-mobile-practice-panel="problem" aria-label="题目描述">
+              <div class="section-heading compact"><div><p class="section-kicker">Problem</p><h2>题目描述</h2></div></div>
+              <p id="problem-description"></p>
+            </section>
 
-          <div class="practice-main">
-            <section class="editor-pane" data-mobile-practice-panel="code" aria-label="代码编辑器">
+            <div class="practice-main">
+              <section class="editor-pane" data-mobile-practice-panel="code" aria-label="代码编辑器">
               <header class="editor-header">
                 <strong>solution</strong>
                 <div><span id="runner-health" aria-live="polite">检测环境...</span><button id="load-template" class="text-button" type="button">还原初始代码</button></div>
@@ -152,9 +158,9 @@
                   <textarea id="code" aria-label="代码" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"></textarea>
                 </div>
               </div>
-            </section>
+              </section>
 
-            <section class="utility-dock" data-mobile-practice-panel="result" aria-label="测试与运行结果">
+              <section class="utility-dock" data-mobile-practice-panel="result" aria-label="测试与运行结果">
               <div class="utility-tabs" role="tablist" aria-label="工具面板">
                 <button type="button" role="tab" data-utility-tab="test" aria-selected="true">测试用例</button>
                 <button type="button" role="tab" data-utility-tab="result" aria-selected="false">运行结果</button>
@@ -177,7 +183,8 @@
                 <div class="assist-actions"><button id="ask-assist" type="button">询问模型</button><button class="text-button" type="button" data-view-target="settings">模型设置</button></div>
                 <pre id="assist-answer" aria-live="polite"></pre>
               </section>
-            </section>
+              </section>
+            </div>
           </div>
         </section>
 

@@ -9,6 +9,24 @@ export function normalizeUtilityTab(value) {
   return UTILITY_TABS.includes(value) ? value : "test";
 }
 
+export function problemIdentity(problem = {}) {
+  const difficulty = {
+    easy: "简单",
+    medium: "中等",
+    hard: "困难",
+  }[String(problem.difficulty || "").toLowerCase()] || String(problem.difficulty || "");
+  const title = String(problem.title || "选择一道题开始");
+  const number = String(problem.frontendId || "").trim();
+  const acCount = Math.max(0, Math.floor(Number(problem.progress?.acCount || 0)));
+
+  return {
+    heading: number ? `#${number} ${title}` : title,
+    difficulty,
+    tags: Array.isArray(problem.tags) ? problem.tags.map(String).filter(Boolean) : [],
+    progress: `通过次数 ${acCount}`,
+  };
+}
+
 export function apiRunnerForUiMode(mode) {
   return mode === "docker" ? "docker" : "local";
 }
