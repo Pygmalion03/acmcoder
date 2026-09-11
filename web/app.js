@@ -673,6 +673,8 @@ async function beginReinforcement(trigger) {
     elements.code.focus();
   } catch (error) {
     if (isCurrentPracticeContext(contextId) && samePracticeSessionIdentity(identity, practiceSessionIdentity())) {
+      setUtilityTab("assist");
+      setMobilePracticeTab("result");
       setAssistStatus(`无法开始巩固练习：${error.message}`, "error");
     }
   } finally {

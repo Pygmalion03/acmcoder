@@ -210,7 +210,11 @@ globalThis.__templateApp = {
     if (url === "/api/memory/pages") return Promise.resolve({ pages: [] });
     if (url.startsWith("/api/problems/")) return Promise.resolve({ problem: problem(url.split("/").at(-1)) });
     if (url.startsWith("/api/templates/")) {
-      return new Promise((resolve) => templateRequests.set(url, resolve));
+      return new Promise((resolve) => {
+        const queue = templateRequests.get(url) || [];
+        queue.push(resolve);
+        templateRequests.set(url, queue);
+      });
     }
     if (url === "/api/run") {
       return new Promise((resolve, reject) => runRequests.push({ resolve, reject }));
@@ -272,7 +276,9 @@ globalThis.__templateApp = {
   return {
     app: context.__templateApp,
     nodes,
-    resolveTemplate(url, code) { templateRequests.get(url)?.({ code }); },
+    resolveTemplate(url, code, index = 0) {
+      templateRequests.get(url)?.splice(index, 1)[0]?.({ code });
+    },
     resolveRun(body) { runRequests.shift()?.resolve(body); },
     rejectRun(error) { runRequests.shift()?.reject(error); },
     setStorageFailure(value) { storageFailure = value; },
@@ -692,6 +698,33 @@ test("an old run response cannot complete a newly started reinforcement round", 
   assert.equal(currentProblem.progress.acCount, 0);
 });
 
+test("an old run error cannot change a newly started reinforcement round", async () => {
+  const { app, nodes, problem, rejectRun, resolveTemplate } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const currentProblem = problem("stale-error-problem");
+  app.state.selected = currentProblem;
+  app.state.problems = [currentProblem];
+  nodes.get("#language").value = "python";
+  nodes.get("#code").value = "old code";
+  app.setSession(createPracticeSession({
+    code: "old code",
+    lastResult: { status: "AC", message: "accepted", stdout: "", stderr: "" },
+  }), { problemSlug: "stale-error-problem", language: "python" });
+
+  const run = app.runCode();
+  const reinforcement = app.beginReinforcement("accepted");
+  await flushPromises();
+  resolveTemplate("/api/templates/stale-error-problem/python", "fresh template");
+  await reinforcement;
+  rejectRun(new Error("old runner failed"));
+  await run;
+
+  assert.equal(app.getSession().code, "fresh template");
+  assert.equal(app.getSession().reinforcement.status, "active");
+  assert.equal(nodes.get("#status").textContent, "IDLE");
+  assert.equal(currentProblem.progress.acCount, 0);
+});
+
 test("a run response cannot update a problem selected after the run started", async () => {
   const { app, nodes, problem, resolveRun } = loadAppForDeferredTemplateTransitions();
   await flushPromises();
@@ -764,6 +797,30 @@ test("a failed reinforcement save keeps the original round visible", async () =>
   assert.match(nodes.get("#assist-status").textContent, /无法开始巩固练习/);
 });
 
+test("a result-triggered reinforcement save failure opens visible feedback", async () => {
+  const { app, nodes, problem, resolveTemplate, setStorageFailure } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const currentProblem = problem("result-save-failure-problem");
+  const original = createPracticeSession({
+    code: "preserved code",
+    lastResult: { status: "AC", message: "accepted", stdout: "", stderr: "" },
+  });
+  app.state.selected = currentProblem;
+  nodes.get("#language").value = "python";
+  app.setSession(original, { problemSlug: "result-save-failure-problem", language: "python" });
+  setStorageFailure(true);
+
+  const reinforcement = app.beginReinforcement("accepted");
+  await flushPromises();
+  resolveTemplate("/api/templates/result-save-failure-problem/python", "fresh template");
+  await reinforcement;
+
+  assert.equal(app.getSession(), original);
+  assert.equal(app.state.activeUtilityTab, "assist");
+  assert.equal(app.state.mobilePracticeTab, "result");
+  assert.match(nodes.get("#assist-status").textContent, /无法开始巩固练习/);
+});
+
 test("context invalidation clears reinforcement triggers before the next load", async () => {
   const { app, nodes, problem } = loadAppForDeferredTemplateTransitions();
   await flushPromises();
@@ -807,6 +864,32 @@ test("reinforcement rejects trigger controls that are stale for the current roun
   await ai;
   assert.equal(app.getSession(), original);
   assert.equal(nodes.get("#code").value, "original code");
+});
+
+test("the latest same-template reinforcement action wins and invalidates the earlier trigger", async () => {
+  const { app, nodes, problem, resolveTemplate } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const currentProblem = problem("double-reinforcement-problem");
+  const original = createPracticeSession({
+    code: "original code",
+    lastResult: { status: "AC", message: "accepted", stdout: "", stderr: "" },
+  });
+  app.state.selected = currentProblem;
+  nodes.get("#language").value = "python";
+  app.setSession(original, { problemSlug: "double-reinforcement-problem", language: "python" });
+
+  const first = app.beginReinforcement("accepted");
+  const second = app.beginReinforcement("accepted");
+  await flushPromises();
+  const templateUrl = "/api/templates/double-reinforcement-problem/python";
+  resolveTemplate(templateUrl, "latest template", 1);
+  await second;
+  resolveTemplate(templateUrl, "stale template");
+  await first;
+
+  assert.equal(app.getSession().code, "latest template");
+  assert.equal(app.getSession().previousRound.code, "original code");
+  assert.equal(app.getSession().reinforcement.status, "active");
 });
 
 test("local icon markup exposes the required Lucide icons", () => {
