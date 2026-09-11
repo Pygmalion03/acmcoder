@@ -19,6 +19,7 @@ import {
   uiRunnerForApiRecommendation,
 } from "../web/view-state.js";
 import { iconMarkup } from "../web/icons.js";
+import { createStartupRecovery } from "../web/startup-recovery.js";
 
 test("defines and normalizes application views and utility tabs", () => {
   assert.deepEqual(APP_VIEWS, ["today", "practice", "library", "catalog", "settings"]);
@@ -328,6 +329,26 @@ test("web app delegates request recovery to the shared client and exposes compac
   }
   assert.match(html, /id="connection-status"[^>]*role="status"[^>]*aria-live="polite"[^>]*hidden/);
   assert.match(html, /id="retry-connection"[^>]*type="button"/);
+});
+
+test("retries a failed startup after recovery while wiring controls only once", async () => {
+  const events = [];
+  let attempts = 0;
+  const startup = createStartupRecovery({
+    wire: () => events.push("wire"),
+    load: async () => {
+      attempts += 1;
+      events.push(`load:${attempts}`);
+      if (attempts === 1) {
+        throw new Error("offline");
+      }
+    },
+  });
+
+  await assert.rejects(() => startup.initialize(), /offline/);
+  await startup.retry(async () => events.push("recover"));
+
+  assert.deepEqual(events, ["wire", "load:1", "recover", "load:2"]);
 });
 
 test("web app keeps catalog and settings actions connected to existing local flows", () => {

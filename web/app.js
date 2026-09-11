@@ -1,5 +1,6 @@
 import { hydrateIcons, iconMarkup } from "./icons.js";
 import { createApiClient, createRetryBackoff } from "./api-client.js";
+import { createStartupRecovery } from "./startup-recovery.js";
 import {
   canonicalProblemSlug,
   dailyPlanProgress,
@@ -278,6 +279,7 @@ const apiClient = createApiClient({
 const getJson = apiClient.getJson;
 const memorySyncBackoff = createRetryBackoff({ minMs: 2000, maxMs: 30000 });
 let memorySyncTimer;
+let applicationControlsWired = false;
 
 function clearMemorySyncTimer() {
   if (memorySyncTimer !== undefined) {
@@ -318,14 +320,40 @@ function scheduleMemorySync({ immediate = false } = {}) {
 
 async function retryConnection() {
   try {
-    await apiClient.health();
-    await loadDoctor();
-    await syncMemoryPages({ force: true });
-    memorySyncBackoff.success();
-    scheduleMemorySync();
+    await startupRecovery.retry(async () => {
+      await apiClient.health();
+      await loadDoctor();
+      await syncMemoryPages({ force: true });
+      memorySyncBackoff.success();
+      scheduleMemorySync();
+    });
   } catch {
     // The shared API client has already rendered a safe connection message.
   }
+}
+
+function wireStartupControls() {
+  hydrateIcons();
+  elements.currentDate.textContent = new Intl.DateTimeFormat("zh-CN", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  }).format(new Date());
+  setActiveView("today");
+  setUtilityTab("test");
+  setMobilePracticeTab("code");
+  setProblemInspectorOpen(true);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearMemorySyncTimer();
+      return;
+    }
+    scheduleMemorySync({ immediate: true });
+  });
+  elements.retryConnection.addEventListener("click", () => {
+    retryConnection();
+  });
+  scheduleMemorySync();
 }
 
 function currentToolchainStatus() {
@@ -1579,27 +1607,6 @@ async function exportProblems() {
 }
 
 async function init() {
-  hydrateIcons();
-  elements.currentDate.textContent = new Intl.DateTimeFormat("zh-CN", {
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-  }).format(new Date());
-  setActiveView("today");
-  setUtilityTab("test");
-  setMobilePracticeTab("code");
-  setProblemInspectorOpen(true);
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      clearMemorySyncTimer();
-      return;
-    }
-    scheduleMemorySync({ immediate: true });
-  });
-  elements.retryConnection.addEventListener("click", () => {
-    retryConnection();
-  });
-
   const body = await getJson("/api/problems");
   state.problems = body.problems;
   updateLibraryCount();
@@ -1611,6 +1618,7 @@ async function init() {
   await loadAssistSettings().catch((error) => {
     setAssistAnswer(`模型设置读取失败：${error.message}`, "error");
   });
+  if (!applicationControlsWired) {
   for (const target of elements.viewTargets) {
     target.addEventListener("click", () => setActiveView(target.dataset.viewTarget, { focus: true }));
   }
@@ -1758,6 +1766,8 @@ async function init() {
   elements.code.addEventListener("keydown", handleEditorKeydown);
   elements.stdin.addEventListener("input", saveWorkspaceCache);
   elements.expected.addEventListener("input", saveWorkspaceCache);
+  applicationControlsWired = true;
+  }
   if (!document.hidden) {
     await syncMemoryPages({ force: true }).catch(() => false);
   }
@@ -1774,11 +1784,12 @@ async function init() {
   if (fallback) {
     await selectProblem(fallback.slug, { openView: false });
   }
-  scheduleMemorySync();
   setActiveView("today");
 }
 
-init().catch((error) => {
+const startupRecovery = createStartupRecovery({ wire: wireStartupControls, load: init });
+
+startupRecovery.initialize().catch((error) => {
   elements.title.textContent = "启动失败";
   elements.message.textContent = error.message;
 });
