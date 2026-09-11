@@ -111,6 +111,136 @@ async function flushPromises() {
   }
 }
 
+function loadAppForDeferredTemplateTransitions() {
+  const source = `${fs.readFileSync("web/app.js", "utf8")
+    .replace(/^import \{[^}]+\} from "\.\/(?:icons|api-client|startup-recovery|practice-session)\.js";\n/gm, "")
+    .replace(/^import \{[\s\S]*?\} from "\.\/view-state\.js";\n/, "")}
+globalThis.__templateApp = { state, elements, selectProblem };
+`;
+  const nodes = new Map();
+  const savedSessions = [];
+  const templateRequests = new Map();
+  const makeNode = () => {
+    const listeners = new Map();
+    return {
+      classList: { add() {}, remove() {}, toggle() {} },
+      children: [],
+      dataset: {},
+      hidden: false,
+      parentElement: { scrollTop: 0, scrollLeft: 0 },
+      scrollLeft: 0,
+      scrollTop: 0,
+      selectionEnd: 0,
+      selectionStart: 0,
+      options: [],
+      selectedOptions: [],
+      style: {},
+      textContent: "",
+      value: "",
+      addEventListener(type, handler) {
+        listeners.set(type, [...(listeners.get(type) || []), handler]);
+      },
+      append(...children) { this.children.push(...children); },
+      appendChild(child) { this.children.push(child); return child; },
+      closest() { return null; },
+      dispatch(type) { for (const handler of listeners.get(type) || []) handler({ target: this }); },
+      focus() {},
+      querySelector() { return null; },
+      remove() {},
+      removeAttribute() {},
+      replaceChildren(...children) { this.children = children; },
+      setAttribute() {},
+    };
+  };
+  const document = {
+    body: { dataset: {}, appendChild() {} },
+    hidden: false,
+    addEventListener() {},
+    createElement: makeNode,
+    querySelector(selector) {
+      if (!nodes.has(selector)) nodes.set(selector, makeNode());
+      return nodes.get(selector);
+    },
+    querySelectorAll() { return []; },
+  };
+  const localValues = new Map();
+  const localStorage = {
+    getItem(key) { return localValues.get(key) || null; },
+    setItem(key, value) { localValues.set(key, String(value)); },
+    removeItem(key) { localValues.delete(key); },
+  };
+  const problem = (slug) => ({
+    slug,
+    title: slug,
+    description: `${slug} description`,
+    difficulty: "easy",
+    tags: [],
+    leetcode: { url: `https://leetcode.test/${slug}`, slug },
+    progress: { acCount: 0 },
+    cases: [],
+  });
+  const getJson = (url) => {
+    if (url === "/api/problems") return Promise.resolve({ problems: [] });
+    if (url === "/api/memory/pages") return Promise.resolve({ pages: [] });
+    if (url.startsWith("/api/problems/")) return Promise.resolve({ problem: problem(url.split("/").at(-1)) });
+    if (url.startsWith("/api/templates/")) {
+      return new Promise((resolve) => templateRequests.set(url, resolve));
+    }
+    return Promise.reject(new Error(`unexpected ${url}`));
+  };
+  const context = {
+    AbortController,
+    Date,
+    Intl,
+    URL,
+    Blob,
+    console,
+    document,
+    localStorage,
+    setTimeout() { return 1; },
+    clearTimeout() {},
+    createApiClient: () => ({ getJson, health: async () => ({}) }),
+    createRetryBackoff: () => ({ current: () => 2000, fail() {}, success() {} }),
+    createStartupRecovery: ({ wire, load, onReady }) => ({
+      initialize: async () => { wire(); await load(); onReady(); },
+      isReady: () => true,
+      retry: async () => {},
+    }),
+    hydrateIcons() {},
+    iconMarkup: () => "",
+    appendAiMessage: (session, message) => ({ ...session, ai: { current: [...session.ai.current, message] } }),
+    loadPracticeSessionWithMetadata: () => ({
+      source: "empty",
+      session: { code: "", stdin: "", expected: "", lastResult: null, ai: { current: [] } },
+    }),
+    removePracticeSessions() {},
+    savePracticeSession: (_storage, identity, session) => {
+      savedSessions.push({ identity: { ...identity }, code: session.code });
+      return { saved: true };
+    },
+    updatePracticeWorkspace: (session, update) => ({ ...session, ...update }),
+    canonicalProblemSlug: (value) => String(value?.leetcode?.slug || value?.slug || "").replace(/^memory:/, ""),
+    dailyPlanProgress: () => ({ completed: 0, total: 0, percent: 0 }),
+    apiRunnerForUiMode: (value) => value,
+    isStaleLeetCodeSampleCache: () => false,
+    memoryPagesVersion: () => "",
+    mergeMemoryProblems: (problems) => problems,
+    nextCatalogSelection: () => [],
+    normalizeUtilityTab: (value) => value,
+    normalizeView: (value) => value,
+    problemIdentity: (value) => ({ heading: value.title, difficulty: "", tags: [], progress: "" }),
+    sampleIoForProblem: () => ({ inputText: "", outputText: "", note: "" }),
+    uiRunnerForApiRecommendation: () => "local",
+  };
+  vm.runInNewContext(source, context, { filename: "web/app.js" });
+  return {
+    app: context.__templateApp,
+    nodes,
+    resolveTemplate(url, code) { templateRequests.get(url)?.({ code }); },
+    savedSessions,
+  };
+}
+
 test("defines and normalizes application views and utility tabs", () => {
   assert.deepEqual(APP_VIEWS, ["today", "practice", "library", "catalog", "settings"]);
   assert.deepEqual(UTILITY_TABS, ["test", "result", "assist"]);
@@ -404,6 +534,61 @@ test("practice changes bind persistence to a captured session identity", () => {
   assert.match(script, /const contextId = beginPracticeContextChange\(\);/);
   assert.match(script, /if \(!isCurrentPracticeContext\(contextId\)\) \{\s*return;\s*\}/);
   assert.match(script, /savePracticeSession\(localStorage, currentPracticeSessionIdentity, currentPracticeSession\)/);
+});
+
+test("an older problem template cannot overwrite the newer editor or transcript", async () => {
+  const { app, nodes, resolveTemplate, savedSessions } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  nodes.get("#language").value = "python";
+  nodes.get("#code").value = "old editor";
+  nodes.get("#assist-transcript").appendChild({ textContent: "old transcript" });
+
+  const oldSelection = app.selectProblem("old-problem");
+  await flushPromises();
+  const newSelection = app.selectProblem("new-problem");
+  await flushPromises();
+
+  assert.equal(nodes.get("#code").value, "");
+  assert.equal(nodes.get("#assist-transcript").children.length, 0);
+
+  resolveTemplate("/api/templates/new-problem/python", "new template");
+  await newSelection;
+  resolveTemplate("/api/templates/old-problem/python", "old template");
+  await oldSelection;
+
+  assert.equal(nodes.get("#code").value, "new template");
+  assert.deepEqual(savedSessions.at(-1), {
+    identity: { problemSlug: "new-problem", language: "python" },
+    code: "new template",
+  });
+});
+
+test("a delayed Java template cannot persist after a newer C++ language switch", async () => {
+  const { app, nodes, resolveTemplate, savedSessions } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  nodes.get("#language").value = "python";
+  const initialSelection = app.selectProblem("language-problem");
+  await flushPromises();
+  resolveTemplate("/api/templates/language-problem/python", "python template");
+  await initialSelection;
+
+  nodes.get("#language").value = "java";
+  nodes.get("#language").dispatch("change");
+  await flushPromises();
+  nodes.get("#language").value = "cpp";
+  nodes.get("#language").dispatch("change");
+  await flushPromises();
+
+  resolveTemplate("/api/templates/language-problem/cpp", "cpp template");
+  await flushPromises();
+  resolveTemplate("/api/templates/language-problem/java", "java template");
+  await flushPromises();
+
+  assert.equal(nodes.get("#code").value, "cpp template");
+  assert.deepEqual(savedSessions.at(-1), {
+    identity: { problemSlug: "language-problem", language: "cpp" },
+    code: "cpp template",
+  });
 });
 
 test("local icon markup exposes the required Lucide icons", () => {

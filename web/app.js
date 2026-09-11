@@ -632,10 +632,20 @@ function beginPracticeContextChange() {
   persistCurrentPracticeSession();
   practiceContextId += 1;
   invalidateAssistRequest();
+  elements.code.value = "";
+  elements.stdin.value = "";
+  elements.expected.value = "";
+  elements.status.className = "status";
+  elements.status.textContent = "IDLE";
+  elements.message.textContent = "";
+  elements.stdout.textContent = "";
+  elements.stderr.textContent = "";
   elements.assistQuestion.value = "";
   setAssistStatus("");
   currentPracticeSession = null;
   currentPracticeSessionIdentity = null;
+  syncHighlight();
+  renderAssistConversation();
   return practiceContextId;
 }
 
@@ -1110,22 +1120,33 @@ function renderProblemList() {
   updateProblemActions();
 }
 
-async function loadTemplate(options = {}) {
-  if (!state.selected) return;
-  const persist = options.persist !== false;
-
-  if (state.selected.memorySource) {
-    elements.code.value = GENERIC_TEMPLATES[elements.language.value] || "";
-    syncHighlight();
-    if (persist) saveWorkspaceCache();
-    return;
+async function fetchInitialTemplate(problem = state.selected, language = elements.language.value) {
+  if (!problem) return "";
+  if (problem.memorySource) {
+    return GENERIC_TEMPLATES[language] || "";
   }
+  const body = await getJson(`/api/templates/${problem.slug}/${language}`);
+  return body.code;
+}
 
-  const language = elements.language.value;
-  const body = await getJson(`/api/templates/${state.selected.slug}/${language}`);
-  elements.code.value = body.code;
+function applyInitialTemplate(code, { contextId = practiceContextId, identity = practiceSessionIdentity(), persist = true } = {}) {
+  if (!isCurrentPracticeContext(contextId) || !samePracticeSessionIdentity(identity, practiceSessionIdentity())) {
+    return false;
+  }
+  elements.code.value = code;
   syncHighlight();
   if (persist) saveWorkspaceCache();
+  return true;
+}
+
+async function loadTemplate(options = {}) {
+  const contextId = options.contextId ?? practiceContextId;
+  const identity = options.identity || practiceSessionIdentity();
+  const code = await fetchInitialTemplate(state.selected, identity.language);
+  if (options.apply === false) {
+    return code;
+  }
+  return applyInitialTemplate(code, { contextId, identity, persist: options.persist !== false });
 }
 
 function restoreSampleIo() {
@@ -1254,7 +1275,7 @@ async function selectProblem(slug, options = {}) {
 
   restoreSampleIo();
   if (options.loadTemplate !== false) {
-    await loadTemplate({ persist: false });
+    await loadTemplate({ persist: false, contextId });
     if (!isCurrentPracticeContext(contextId)) {
       return;
     }
@@ -1944,7 +1965,7 @@ async function init() {
     applyRecommendedRunnerIfNeeded();
     renderRunnerHealth();
     if (!restoreWorkspaceCache()) {
-      await loadTemplate();
+      await loadTemplate({ contextId });
       if (!isCurrentPracticeContext(contextId)) {
         return;
       }
