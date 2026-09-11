@@ -3,9 +3,12 @@ import { createApiClient, createRetryBackoff } from "./api-client.js";
 import { createStartupRecovery } from "./startup-recovery.js";
 import {
   appendAiMessage,
+  completeReinforcement,
   loadPracticeSessionWithMetadata,
   removePracticeSessions,
+  restorePreviousRound as restorePreviousPracticeRound,
   savePracticeSession,
+  startReinforcement,
   updatePracticeWorkspace,
 } from "./practice-session.js";
 import {
@@ -147,6 +150,15 @@ const elements = {
   assistTranscript: document.querySelector("#assist-transcript"),
   assistStatus: document.querySelector("#assist-status"),
   cancelAssist: document.querySelector("#cancel-assist"),
+  startReinforcementFromAi: document.querySelector("#start-reinforcement-from-ai"),
+  startReinforcementFromResult: document.querySelector("#start-reinforcement-from-result"),
+  reinforcementState: document.querySelector("#reinforcement-state"),
+  reinforcementMessage: document.querySelector("[data-reinforcement-message]"),
+  viewPreviousRound: document.querySelector("#view-previous-round"),
+  restorePreviousRound: document.querySelector("#restore-previous-round"),
+  previousRoundDialog: document.querySelector("#previous-round-dialog"),
+  previousRoundCode: document.querySelector("#previous-round-code"),
+  previousRoundConversation: document.querySelector("#previous-round-conversation"),
   dailyCount: document.querySelector("#daily-count"),
   dailyDifficulty: document.querySelector("#daily-difficulty"),
   dailyTags: document.querySelector("#daily-tags"),
@@ -556,12 +568,96 @@ function applyPracticeSession(session, identity = currentPracticeSessionIdentity
   elements.stdin.value = session.stdin;
   elements.expected.value = session.expected;
   if (session.lastResult) {
-    setResult(session.lastResult);
+    setResult(session.lastResult, { markReinforcementDirty: false });
   } else {
-    setResult({ status: "IDLE", message: "", stdout: "", stderr: "" });
+    setResult({ status: "IDLE", message: "", stdout: "", stderr: "" }, { markReinforcementDirty: false });
   }
   syncHighlight();
   renderAssistConversation(session);
+  renderReinforcementState(session);
+}
+
+function renderReinforcementState(session) {
+  const reinforcement = session?.reinforcement;
+  const active = reinforcement?.status === "active";
+  const completed = reinforcement?.status === "completed";
+  const previousRound = session?.previousRound;
+  elements.reinforcementState.hidden = !active && !completed;
+  elements.reinforcementMessage.textContent = active ? "巩固练习中" : (completed ? "巩固完成" : "");
+  elements.viewPreviousRound.hidden = !previousRound;
+  elements.restorePreviousRound.hidden = !reinforcement?.canRestore;
+  elements.restorePreviousRound.onclick = reinforcement?.canRestore ? restorePreviousRound : null;
+  elements.startReinforcementFromResult.hidden = session?.lastResult?.status !== "AC";
+  elements.startReinforcementFromAi.hidden = !session?.ai?.current?.some((message) => message.role === "assistant");
+}
+
+function showPreviousRound() {
+  const previousRound = currentPracticeSession?.previousRound;
+  if (!previousRound) return;
+
+  elements.previousRoundCode.textContent = previousRound.code;
+  elements.previousRoundConversation.replaceChildren();
+  for (const message of previousRound.aiConversation || []) {
+    const messageNode = document.createElement("article");
+    messageNode.className = `previous-round-message ${message.role}`;
+    messageNode.textContent = message.content;
+    elements.previousRoundConversation.appendChild(messageNode);
+  }
+  if (!elements.previousRoundDialog.open) {
+    elements.previousRoundDialog.showModal();
+  }
+}
+
+function restorePreviousRound() {
+  if (!currentPracticeSession?.reinforcement?.canRestore) return;
+  currentPracticeSession = restorePreviousPracticeRound(currentPracticeSession);
+  persistCurrentPracticeSession();
+  applyPracticeSession(currentPracticeSession, currentPracticeSessionIdentity);
+}
+
+async function beginReinforcement(trigger) {
+  if (!state.selected) return;
+
+  const contextId = practiceContextId;
+  const identity = practiceSessionIdentity();
+  elements.startReinforcementFromAi.disabled = true;
+  elements.startReinforcementFromResult.disabled = true;
+
+  try {
+    const template = await initialTemplateForProblem(state.selected, identity.language);
+    if (!isCurrentPracticeContext(contextId) || !samePracticeSessionIdentity(identity, practiceSessionIdentity())) {
+      return;
+    }
+    const session = currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, identity)
+      ? currentPracticeSession
+      : loadCurrentPracticeSession(identity)?.session;
+    currentPracticeSession = startReinforcement(session, {
+      template,
+      trigger,
+      now: new Date().toISOString(),
+    });
+    currentPracticeSessionIdentity = { ...identity };
+    persistCurrentPracticeSession();
+
+    elements.code.value = currentPracticeSession.code;
+    elements.stdin.value = "";
+    elements.expected.value = "";
+    setResult({ status: "IDLE", message: "", stdout: "", stderr: "" }, { markReinforcementDirty: false });
+    elements.assistQuestion.value = "";
+    renderAssistConversation(currentPracticeSession);
+    renderReinforcementState(currentPracticeSession);
+    syncHighlight();
+    setUtilityTab("test");
+    setMobilePracticeTab("code");
+    elements.code.focus();
+  } catch (error) {
+    if (isCurrentPracticeContext(contextId) && samePracticeSessionIdentity(identity, practiceSessionIdentity())) {
+      setAssistStatus(`无法开始巩固练习：${error.message}`, "error");
+    }
+  } finally {
+    elements.startReinforcementFromAi.disabled = false;
+    elements.startReinforcementFromResult.disabled = false;
+  }
 }
 
 async function loadAssistSettings() {
@@ -715,6 +811,7 @@ async function askAssist() {
     });
     const assistantSave = persistCurrentPracticeSession();
     renderAssistConversation(currentPracticeSession);
+    renderReinforcementState(currentPracticeSession);
     if (assistantSave.saved) {
       setAssistStatus("", "ok");
     }
@@ -753,6 +850,7 @@ function saveWorkspaceCache() {
     lastResult: currentPracticeSession?.lastResult || null,
   });
   persistCurrentPracticeSession();
+  renderReinforcementState(currentPracticeSession);
 }
 
 function restoreWorkspaceCache() {
@@ -1120,9 +1218,8 @@ function renderProblemList() {
   updateProblemActions();
 }
 
-async function fetchInitialTemplate(problem = state.selected, language = elements.language.value) {
-  if (!problem) return "";
-  if (problem.memorySource) {
+async function initialTemplateForProblem(problem = state.selected, language = elements.language.value) {
+  if (problem?.memorySource) {
     return GENERIC_TEMPLATES[language] || "";
   }
   const body = await getJson(`/api/templates/${problem.slug}/${language}`);
@@ -1142,7 +1239,7 @@ function applyInitialTemplate(code, { contextId = practiceContextId, identity = 
 async function loadTemplate(options = {}) {
   const contextId = options.contextId ?? practiceContextId;
   const identity = options.identity || practiceSessionIdentity();
-  const code = await fetchInitialTemplate(state.selected, identity.language);
+  const code = await initialTemplateForProblem(state.selected, identity.language);
   if (options.apply === false) {
     return code;
   }
@@ -1300,7 +1397,7 @@ async function selectProblem(slug, options = {}) {
   }
 }
 
-function setResult(result) {
+function setResult(result, { markReinforcementDirty = true } = {}) {
   elements.status.className = `status ${result.status}`;
   elements.status.textContent = result.status;
   elements.message.textContent = result.message || "";
@@ -1309,11 +1406,21 @@ function setResult(result) {
   if (currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, practiceSessionIdentity())) {
     currentPracticeSession = updatePracticeWorkspace(currentPracticeSession, {
       lastResult: result.status === "IDLE" ? null : { ...result },
-    });
+    }, { markReinforcementDirty });
   }
+  renderReinforcementState(currentPracticeSession);
 }
 
 async function runCode() {
+  if (currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, practiceSessionIdentity())) {
+    currentPracticeSession = updatePracticeWorkspace(currentPracticeSession, {
+      code: elements.code.value,
+      stdin: elements.stdin.value,
+      expected: elements.expected.value,
+    });
+    persistCurrentPracticeSession();
+    renderReinforcementState(currentPracticeSession);
+  }
   setUtilityTab("result");
   setMobilePracticeTab("result");
   elements.status.className = "status";
@@ -1343,6 +1450,11 @@ async function runCode() {
       renderProblemList();
       renderProblemIdentity(state.selected);
       renderDailyProgress();
+    }
+    if (body.result.status === "AC" && currentPracticeSession?.reinforcement?.status === "active") {
+      currentPracticeSession = completeReinforcement(currentPracticeSession, { now: new Date().toISOString() });
+      persistCurrentPracticeSession();
+      renderReinforcementState(currentPracticeSession);
     }
     saveWorkspaceCache();
   } catch (error) {
@@ -1981,6 +2093,9 @@ async function init() {
   });
   elements.askAssist.addEventListener("click", askAssist);
   elements.cancelAssist.addEventListener("click", cancelAssist);
+  elements.startReinforcementFromAi.addEventListener("click", () => beginReinforcement("ai-assisted"));
+  elements.startReinforcementFromResult.addEventListener("click", () => beginReinforcement("accepted"));
+  elements.viewPreviousRound.addEventListener("click", showPreviousRound);
   elements.loadTemplate.addEventListener("click", loadTemplate);
   elements.sampleIo.addEventListener("click", () => {
     restoreSampleIo();

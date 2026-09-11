@@ -138,6 +138,13 @@
           </header>
 
           <div id="daily-session" class="daily-session" aria-live="polite"></div>
+          <div id="reinforcement-state" class="reinforcement-state" aria-live="polite" hidden>
+            <span data-reinforcement-message></span>
+            <div class="reinforcement-actions">
+              <button id="view-previous-round" class="text-button" type="button" hidden>查看上轮思路</button>
+              <button id="restore-previous-round" class="text-button" type="button" hidden>恢复上一轮</button>
+            </div>
+          </div>
           <div class="mobile-practice-tabs" role="tablist" aria-label="练习区">
             <button type="button" role="tab" data-mobile-practice-tab="problem" aria-selected="false">题目</button>
             <button type="button" role="tab" data-mobile-practice-tab="code" aria-selected="true">代码</button>
@@ -182,6 +189,7 @@
                 <pre id="message" aria-live="polite"></pre>
                 <h3>stdout</h3><pre id="stdout"></pre>
                 <h3>stderr</h3><pre id="stderr"></pre>
+                <button id="start-reinforcement-from-result" class="text-button reinforcement-trigger" type="button" hidden>再练一次</button>
               </section>
               <section class="utility-panel assist assist-panel" data-utility-panel="assist" hidden>
                 <label>想问模型什么？<textarea id="assist-question" placeholder="请看一下我的代码，指出可能的问题和修改建议。" spellcheck="false"></textarea></label>
@@ -190,6 +198,7 @@
                 <div class="assist-actions">
                   <button id="ask-assist" type="button">询问模型</button>
                   <button id="cancel-assist" type="button" hidden>取消</button>
+                  <button id="start-reinforcement-from-ai" class="text-button" type="button" hidden>我懂了，马上重练</button>
                   <button class="text-button" type="button" data-view-target="settings">模型设置</button>
                 </div>
               </section>
@@ -245,6 +254,13 @@
         </section>
       </section>
     </main>
+
+    <dialog id="previous-round-dialog" class="previous-round-dialog" aria-labelledby="previous-round-heading">
+      <h2 id="previous-round-heading">上轮思路</h2>
+      <h3>代码</h3><pre id="previous-round-code"></pre>
+      <h3>对话</h3><div id="previous-round-conversation" class="previous-round-conversation"></div>
+      <form method="dialog"><button type="submit">关闭</button></form>
+    </dialog>
 
     <nav id="mobile-navigation" class="mobile-nav" aria-label="移动端主要功能">
       <button type="button" class="is-active" data-view-target="today"><span data-icon="home"></span><span>今日</span></button>

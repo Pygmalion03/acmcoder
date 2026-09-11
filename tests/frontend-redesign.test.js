@@ -526,6 +526,37 @@ test("practice UI persists a cancellable per-problem AI conversation", () => {
   assert.match(script, /function applyPracticeSession\(/);
 });
 
+test("practice UI starts and completes an immediate reinforcement round", () => {
+  const html = fs.readFileSync("web/index.html", "utf8");
+  const script = fs.readFileSync("web/app.js", "utf8");
+
+  for (const id of [
+    "reinforcement-state",
+    "start-reinforcement-from-result",
+    "start-reinforcement-from-ai",
+    "view-previous-round",
+    "restore-previous-round",
+    "previous-round-dialog",
+    "previous-round-code",
+    "previous-round-conversation",
+  ]) {
+    assert.equal(html.match(new RegExp(`id="${id}"`, "g"))?.length, 1, id);
+  }
+
+  assert.match(html, /<dialog id="previous-round-dialog"/);
+  assert.match(html, /<form method="dialog">/);
+  assert.match(script, /\bstartReinforcement\b/);
+  assert.match(script, /\brestorePreviousRound\b/);
+  assert.match(script, /\bcompleteReinforcement\b/);
+  assert.match(script, /async function beginReinforcement\(trigger\)/);
+  assert.match(script, /function renderReinforcementState\(/);
+  assert.match(script, /function showPreviousRound\(\)/);
+  assert.match(script, /beginReinforcement\("accepted"\)/);
+  assert.match(script, /beginReinforcement\("ai-assisted"\)/);
+  assert.match(script, /setMobilePracticeTab\("code"\)/);
+  assert.match(script, /body\.result\.status === "AC"[\s\S]*completeReinforcement\(/);
+});
+
 test("practice changes bind persistence to a captured session identity", () => {
   const script = fs.readFileSync("web/app.js", "utf8");
 
