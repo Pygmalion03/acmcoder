@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
+import vm from "node:vm";
 
 import {
   APP_VIEWS,
@@ -20,6 +21,95 @@ import {
 } from "../web/view-state.js";
 import { iconMarkup } from "../web/icons.js";
 import { createStartupRecovery } from "../web/startup-recovery.js";
+
+function loadAppForStartupPollingRace() {
+  const source = fs.readFileSync("web/app.js", "utf8")
+    .replace(/^import \{[^}]+\} from "\.\/(?:icons|api-client|startup-recovery)\.js";\n/gm, "")
+    .replace(/^import \{[\s\S]*?\} from "\.\/view-state\.js";\n/, "");
+  const nodes = new Map();
+  const timers = [];
+  const makeNode = () => ({
+    classList: { toggle() {} },
+    dataset: {},
+    hidden: true,
+    style: {},
+    value: "",
+    addEventListener() {},
+    append() {},
+    appendChild() {},
+    closest() { return null; },
+    focus() {},
+    querySelector() { return null; },
+    removeAttribute() {},
+    replaceChildren() {},
+    setAttribute() {},
+  });
+  const document = {
+    body: { dataset: {} },
+    hidden: false,
+    addEventListener() {},
+    createElement: makeNode,
+    querySelector(selector) {
+      if (!nodes.has(selector)) nodes.set(selector, makeNode());
+      return nodes.get(selector);
+    },
+    querySelectorAll() { return []; },
+  };
+  let onConnectionChange;
+  const context = {
+    Date,
+    Intl,
+    console,
+    document,
+    createApiClient: ({ onConnectionChange: handler }) => {
+      onConnectionChange = handler;
+      return {
+        getJson: async (url) => {
+          if (url === "/api/problems") {
+            onConnectionChange({ online: false, error: { kind: "network", userMessage: "offline" } });
+            throw new Error("offline");
+          }
+          if (url === "/api/memory/pages") {
+            onConnectionChange({ online: true });
+            return { pages: [] };
+          }
+          return {};
+        },
+        health: async () => ({}),
+      };
+    },
+    createRetryBackoff: () => ({ current: () => 2000, fail() {}, success() {} }),
+    createStartupRecovery,
+    hydrateIcons() {},
+    iconMarkup: () => "",
+    canonicalProblemSlug: () => "",
+    dailyPlanProgress: () => ({ completed: 0, total: 0, percent: 0 }),
+    apiRunnerForUiMode: (value) => value,
+    isStaleLeetCodeSampleCache: () => false,
+    memoryPagesVersion: () => "",
+    mergeMemoryProblems: (problems) => problems,
+    nextCatalogSelection: () => [],
+    normalizeUtilityTab: (value) => value,
+    normalizeView: (value) => value,
+    problemIdentity: () => ({}),
+    sampleIoForProblem: () => ({}),
+    uiRunnerForApiRecommendation: () => "",
+    setTimeout(callback) {
+      timers.push(callback);
+      return timers.length;
+    },
+    clearTimeout() {},
+  };
+
+  vm.runInNewContext(source, context, { filename: "web/app.js" });
+  return { nodes, timers };
+}
+
+async function flushPromises() {
+  for (let index = 0; index < 6; index += 1) {
+    await Promise.resolve();
+  }
+}
 
 test("defines and normalizes application views and utility tabs", () => {
   assert.deepEqual(APP_VIEWS, ["today", "practice", "library", "catalog", "settings"]);
@@ -346,9 +436,25 @@ test("retries a failed startup after recovery while wiring controls only once", 
   });
 
   await assert.rejects(() => startup.initialize(), /offline/);
+  assert.equal(startup.isReady(), false);
   await startup.retry(async () => events.push("recover"));
 
   assert.deepEqual(events, ["wire", "load:1", "recover", "load:2"]);
+  assert.equal(startup.isReady(), true);
+});
+
+test("app keeps recovery visible when polling succeeds before startup completes", async () => {
+  const { nodes, timers } = loadAppForStartupPollingRace();
+  const status = nodes.get("#connection-status");
+
+  await flushPromises();
+  assert.equal(status.hidden, false);
+  assert.equal(timers.length, 1);
+
+  timers[0]();
+  await flushPromises();
+
+  assert.equal(status.hidden, false);
 });
 
 test("web app keeps catalog and settings actions connected to existing local flows", () => {

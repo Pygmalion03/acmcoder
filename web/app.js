@@ -264,6 +264,9 @@ const CLOSING_BRACKETS = Object.fromEntries(Object.entries(BRACKET_PAIRS).map(([
 
 function renderConnectionState(online, error) {
   if (online) {
+    if (!startupRecovery.isReady()) {
+      return;
+    }
     elements.connectionStatus.hidden = true;
     elements.connectionMessage.textContent = "";
     return;
@@ -1787,7 +1790,11 @@ async function init() {
   setActiveView("today");
 }
 
-const startupRecovery = createStartupRecovery({ wire: wireStartupControls, load: init });
+const startupRecovery = createStartupRecovery({
+  wire: wireStartupControls,
+  load: init,
+  onReady: () => renderConnectionState(true),
+});
 
 startupRecovery.initialize().catch((error) => {
   elements.title.textContent = "启动失败";

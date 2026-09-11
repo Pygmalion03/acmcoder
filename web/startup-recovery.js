@@ -1,5 +1,6 @@
-export function createStartupRecovery({ wire, load }) {
+export function createStartupRecovery({ wire, load, onReady = () => {} }) {
   let wired = false;
+  let ready = false;
 
   function wireOnce() {
     if (wired) {
@@ -12,6 +13,8 @@ export function createStartupRecovery({ wire, load }) {
   async function initialize() {
     wireOnce();
     await load();
+    ready = true;
+    onReady();
   }
 
   async function retry(recover) {
@@ -19,5 +22,5 @@ export function createStartupRecovery({ wire, load }) {
     await initialize();
   }
 
-  return { initialize, retry };
+  return { initialize, isReady: () => ready, retry };
 }
