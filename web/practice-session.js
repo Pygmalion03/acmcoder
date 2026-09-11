@@ -26,6 +26,7 @@ function normalizeMessages(messages) {
   const valid = [];
   for (const message of messages) {
     if (!message || (message.role !== "user" && message.role !== "assistant") || typeof message.content !== "string") continue;
+    if (!valid.length && message.role === "assistant") continue;
     if (valid.length && valid.at(-1).role === message.role) continue;
     valid.push(copyMessage(message));
   }
@@ -34,6 +35,7 @@ function normalizeMessages(messages) {
     else if (valid.length && valid[0].role === "assistant") valid.shift();
     else break;
   }
+  if (valid.reduce((sum, item) => sum + item.content.length, 0) > MAX_AI_CHARACTERS && valid.at(-1)?.role === "user") valid.pop();
   return valid;
 }
 

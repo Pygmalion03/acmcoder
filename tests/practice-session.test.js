@@ -116,3 +116,20 @@ test("trims oldest complete pairs to the character budget", () => {
   }
   assert.deepEqual(session.ai.current.map(({ content }) => content.slice(0, 2)), ["q1", "a1", "q2", "a2"]);
 });
+
+test("drops a persisted orphaned assistant message", () => {
+  const storage = memoryStorage({
+    [practiceSessionKey("orphan", "python")]: JSON.stringify({
+      version: 2,
+      ai: { current: [{ role: "assistant", content: "orphan" }] },
+    }),
+  });
+  const session = loadPracticeSession(storage, { problemSlug: "orphan", language: "python" });
+  assert.deepEqual(session.ai.current, []);
+});
+
+test("drops an oversized trailing user message to enforce the character budget", () => {
+  let session = createPracticeSession();
+  session = appendAiMessage(session, { role: "user", content: "x".repeat(24001), createdAt: "1" });
+  assert.equal(session.ai.current.length, 0);
+});
