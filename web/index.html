@@ -52,6 +52,11 @@
             <p class="global-kicker">DAILY PRACTICE</p>
             <time id="current-date"></time>
           </div>
+          <div id="connection-status" class="connection-status" role="status" aria-live="polite" hidden>
+            <span data-icon="wifi-off"></span>
+            <span id="connection-message"></span>
+            <button id="retry-connection" type="button">重试连接</button>
+          </div>
           <div class="global-actions">
             <button id="global-search" class="icon-button" type="button" title="搜索题目" aria-label="搜索题目" data-icon="search"></button>
             <button class="icon-button" type="button" title="打开设置" aria-label="打开设置" data-view-target="settings" data-icon="settings"></button>

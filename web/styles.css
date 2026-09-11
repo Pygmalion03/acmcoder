@@ -250,11 +250,54 @@ svg {
 .global-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
   min-height: 64px;
   padding: 10px 24px;
   border-bottom: 1px solid var(--border);
   background: rgba(248, 250, 249, .94);
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid rgba(180, 113, 42, .34);
+  border-radius: 6px;
+  background: rgba(255, 247, 235, .88);
+  color: var(--warn);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.connection-status[hidden] {
+  display: none;
+}
+
+.connection-status svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+#connection-message {
+  min-width: 0;
+}
+
+#retry-connection {
+  flex: 0 0 auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.global-actions {
+  margin-left: auto;
 }
 
 .global-kicker,
@@ -1354,6 +1397,16 @@ textarea {
   .global-bar {
     min-height: 56px;
     padding: 8px 16px;
+  }
+
+  .connection-status {
+    gap: 4px;
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  #connection-message {
+    display: none;
   }
 
   .app-view {

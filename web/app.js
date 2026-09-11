@@ -1,4 +1,5 @@
 import { hydrateIcons, iconMarkup } from "./icons.js";
+import { createApiClient, createRetryBackoff } from "./api-client.js";
 import {
   canonicalProblemSlug,
   dailyPlanProgress,
@@ -85,6 +86,9 @@ const elements = {
   mobileMoreToggle: document.querySelector("#mobile-more-toggle"),
   mobileMoreMenu: document.querySelector("#mobile-more-menu"),
   globalSearch: document.querySelector("#global-search"),
+  connectionStatus: document.querySelector("#connection-status"),
+  connectionMessage: document.querySelector("#connection-message"),
+  retryConnection: document.querySelector("#retry-connection"),
   currentDate: document.querySelector("#current-date"),
   libraryCount: document.querySelector("#library-count"),
   navRunnerHealth: document.querySelector("#nav-runner-health"),
@@ -257,40 +261,71 @@ const BRACKET_PAIRS = {
 
 const CLOSING_BRACKETS = Object.fromEntries(Object.entries(BRACKET_PAIRS).map(([open, close]) => [close, open]));
 
-let sessionTokenPromise;
-
-async function getSessionToken() {
-  if (!sessionTokenPromise) {
-    sessionTokenPromise = fetch("/api/session")
-      .then(async (response) => {
-        const body = await response.json();
-        if (!response.ok || !body.token) {
-          throw new Error(body.error || "无法建立本地运行会话。");
-        }
-        return body.token;
-      })
-      .catch((error) => {
-        sessionTokenPromise = undefined;
-        throw error;
-      });
+function renderConnectionState(online, error) {
+  if (online) {
+    elements.connectionStatus.hidden = true;
+    elements.connectionMessage.textContent = "";
+    return;
   }
-  return sessionTokenPromise;
+
+  elements.connectionMessage.textContent = error?.userMessage || "本地服务暂时不可用，请重试连接。";
+  elements.connectionStatus.hidden = false;
 }
 
-async function getJson(url, options) {
-  const requestOptions = { ...(options || {}) };
-  if (new URL(url, window.location.href).pathname === "/api/run") {
-    const headers = new Headers(requestOptions.headers || {});
-    headers.set("x-acmcoder-token", await getSessionToken());
-    requestOptions.headers = headers;
+const apiClient = createApiClient({
+  onConnectionChange: ({ online, error }) => renderConnectionState(online, error),
+});
+const getJson = apiClient.getJson;
+const memorySyncBackoff = createRetryBackoff({ minMs: 2000, maxMs: 30000 });
+let memorySyncTimer;
+
+function clearMemorySyncTimer() {
+  if (memorySyncTimer !== undefined) {
+    clearTimeout(memorySyncTimer);
+    memorySyncTimer = undefined;
+  }
+}
+
+async function runScheduledMemorySync() {
+  if (document.hidden) {
+    return;
   }
 
-  const response = await fetch(url, requestOptions);
-  const body = await response.json();
-  if (!response.ok) {
-    throw new Error(body.error || `Request failed: ${response.status}`);
+  try {
+    await syncMemoryPages();
+    memorySyncBackoff.success();
+  } catch {
+    memorySyncBackoff.fail();
   }
-  return body;
+  scheduleMemorySync();
+}
+
+function scheduleMemorySync({ immediate = false } = {}) {
+  clearMemorySyncTimer();
+  if (document.hidden) {
+    return;
+  }
+  if (immediate) {
+    void runScheduledMemorySync();
+    return;
+  }
+
+  memorySyncTimer = setTimeout(() => {
+    memorySyncTimer = undefined;
+    void runScheduledMemorySync();
+  }, memorySyncBackoff.current());
+}
+
+async function retryConnection() {
+  try {
+    await apiClient.health();
+    await loadDoctor();
+    await syncMemoryPages({ force: true });
+    memorySyncBackoff.success();
+    scheduleMemorySync();
+  } catch {
+    // The shared API client has already rendered a safe connection message.
+  }
 }
 
 function currentToolchainStatus() {
@@ -1554,6 +1589,16 @@ async function init() {
   setUtilityTab("test");
   setMobilePracticeTab("code");
   setProblemInspectorOpen(true);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearMemorySyncTimer();
+      return;
+    }
+    scheduleMemorySync({ immediate: true });
+  });
+  elements.retryConnection.addEventListener("click", () => {
+    retryConnection();
+  });
 
   const body = await getJson("/api/problems");
   state.problems = body.problems;
@@ -1713,7 +1758,9 @@ async function init() {
   elements.code.addEventListener("keydown", handleEditorKeydown);
   elements.stdin.addEventListener("input", saveWorkspaceCache);
   elements.expected.addEventListener("input", saveWorkspaceCache);
-  await syncMemoryPages({ force: true }).catch(() => false);
+  if (!document.hidden) {
+    await syncMemoryPages({ force: true }).catch(() => false);
+  }
   await loadTodayPlan().catch(() => {
     renderDailyPlan(null);
   });
@@ -1727,9 +1774,7 @@ async function init() {
   if (fallback) {
     await selectProblem(fallback.slug, { openView: false });
   }
-  setInterval(() => {
-    syncMemoryPages().catch(() => {});
-  }, 2000);
+  scheduleMemorySync();
   setActiveView("today");
 }
 

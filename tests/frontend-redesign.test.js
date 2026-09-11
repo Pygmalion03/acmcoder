@@ -284,6 +284,7 @@ test("local icon markup exposes the required Lucide icons", () => {
     "upload",
     "download",
     "trash-2",
+    "wifi-off",
   ];
 
   for (const name of iconNames) {
@@ -303,6 +304,30 @@ test("web app wires the five-view workspace and utility tabs", () => {
   assert.match(script, /function setUtilityTab\(/);
   assert.match(script, /function setMobileMoreOpen\(/);
   assert.match(script, /function updateLibraryCount\(/);
+});
+
+test("web app delegates request recovery to the shared client and exposes compact connection recovery", () => {
+  const html = fs.readFileSync("web/index.html", "utf8");
+  const script = fs.readFileSync("web/app.js", "utf8");
+
+  assert.match(script, /import \{ createApiClient, createRetryBackoff \} from "\.\/api-client\.js"/);
+  assert.doesNotMatch(script, /sessionTokenPromise/);
+  assert.doesNotMatch(script, /function getSessionToken\(/);
+  assert.match(script, /const getJson = apiClient\.getJson/);
+  assert.match(script, /function renderConnectionState\(online, error\)/);
+  assert.match(script, /error\?\.userMessage/);
+  assert.match(script, /createRetryBackoff\(\{ minMs: 2000, maxMs: 30000 \}\)/);
+  assert.match(script, /document\.hidden/);
+  assert.match(script, /visibilitychange/);
+  assert.match(script, /apiClient\.health\(\)/);
+  assert.match(script, /syncMemoryPages\(\{ force: true \}\)/);
+  assert.doesNotMatch(script, /setInterval\(/);
+
+  for (const id of ["connection-status", "retry-connection"]) {
+    assert.equal(html.match(new RegExp(`id="${id}"`, "g"))?.length, 1, id);
+  }
+  assert.match(html, /id="connection-status"[^>]*role="status"[^>]*aria-live="polite"[^>]*hidden/);
+  assert.match(html, /id="retry-connection"[^>]*type="button"/);
 });
 
 test("web app keeps catalog and settings actions connected to existing local flows", () => {
@@ -345,8 +370,7 @@ test("today view reports accepted progress and opens recommendations in practice
 test("practice view exposes session context, result switching, and mobile panels", () => {
   const script = fs.readFileSync("web/app.js", "utf8");
 
-  assert.match(script, /api\/session/);
-  assert.match(script, /x-acmcoder-token/);
+  assert.match(script, /const getJson = apiClient\.getJson/);
   assert.match(script, /function renderDailySession\(/);
   assert.match(script, /function setMobilePracticeTab\(/);
   assert.match(script, /function setProblemInspectorOpen\(/);
