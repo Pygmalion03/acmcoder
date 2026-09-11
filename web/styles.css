@@ -1495,6 +1495,7 @@ textarea {
 
   .practice-main {
     display: block;
+    min-height: 0;
   }
 
   .editor-pane.is-mobile-active {

@@ -61,6 +61,13 @@ test("solution textarea is the bounded scroll source", () => {
   assert.match(script, /lineNumbers\.scrollTop\s*=\s*elements\.code\.scrollTop/);
 });
 
+test("mobile problem tab does not retain the hidden editor workspace height", () => {
+  const css = fs.readFileSync("web/styles.css", "utf8");
+  const mobileCss = css.match(/@media \(max-width: 759px\) \{([\s\S]*)$/)?.[1] || "";
+
+  assert.match(mobileCss, /\.practice-main\s*\{[^}]*min-height:\s*0/);
+});
+
 test("maps the three visible runner modes to the existing runner API", () => {
   assert.equal(apiRunnerForUiMode("local"), "local");
   assert.equal(apiRunnerForUiMode("builtin"), "local");
