@@ -186,3 +186,20 @@ test("honors an external cancellation signal", async () => {
   external.abort(new Error("用户已取消模型请求。"));
   await assert.rejects(pending, /用户已取消/);
 });
+
+test("preserves an earlier external cancellation when fetch rejects after the timeout", async () => {
+  const external = new AbortController();
+  const pending = requestCodeAdvice({
+    settings: { ...getDefaultAssistSettings(), apiKey: "sk-local-test" },
+    signal: external.signal,
+    timeoutMs: 10,
+    fetch: async (_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener("abort", () => {
+        setTimeout(() => reject(new Error("fetch observed cancellation")), 20);
+      }, { once: true });
+    }),
+    context: { question: "cancel" },
+  });
+  external.abort(new Error("用户先取消了模型请求。"));
+  await assert.rejects(pending, /用户先取消/);
+});

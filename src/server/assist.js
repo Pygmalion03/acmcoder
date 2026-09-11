@@ -204,8 +204,8 @@ export async function requestCodeAdvice(options = {}) {
       model: settings.model,
     };
   } catch (error) {
-    if (controller.signal.aborted) {
-      throw controller.signal.reason;
+    if (signal.aborted) {
+      throw signal.reason;
     }
     throw error;
   } finally {
