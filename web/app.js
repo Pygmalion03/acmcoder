@@ -3,8 +3,8 @@ import { createApiClient, createRetryBackoff } from "./api-client.js";
 import { createStartupRecovery } from "./startup-recovery.js";
 import {
   appendAiMessage,
-  loadPracticeSession,
-  practiceSessionKey,
+  loadPracticeSessionWithMetadata,
+  removePracticeSessions,
   savePracticeSession,
   updatePracticeWorkspace,
 } from "./practice-session.js";
@@ -49,6 +49,8 @@ const CACHE_KEYS = {
 };
 
 let currentPracticeSession = null;
+let currentPracticeSessionIdentity = null;
+let practiceContextId = 0;
 let assistRequestId = 0;
 let assistAbortController = null;
 
@@ -504,53 +506,52 @@ function renderAssistConversation(session = currentPracticeSession) {
   }
 }
 
-function practiceSessionIdentity() {
+function practiceSessionIdentity(problem = state.selected, language = elements.language.value) {
   return {
-    problemSlug: canonicalProblemSlug(state.selected),
-    language: elements.language.value,
+    problemSlug: canonicalProblemSlug(problem),
+    language,
   };
 }
 
-function legacyWorkspaceCacheKey(problem = state.selected) {
-  return problem ? `acmcoder.web.problem.${problem.slug}.${elements.language.value}` : "";
+function samePracticeSessionIdentity(left, right) {
+  return left?.problemSlug === right?.problemSlug && left?.language === right?.language;
 }
 
-function storageItem(key) {
-  try {
-    return key ? localStorage.getItem(key) : null;
-  } catch {
-    return null;
-  }
+function legacyWorkspaceCacheKey(problem = state.selected, language = elements.language.value) {
+  return problem ? `acmcoder.web.problem.${problem.slug}.${language}` : "";
 }
 
-function loadCurrentPracticeSession() {
-  if (!state.selected) {
+function loadCurrentPracticeSession(identity = practiceSessionIdentity()) {
+  if (!identity.problemSlug) {
     currentPracticeSession = null;
+    currentPracticeSessionIdentity = null;
     return null;
   }
 
-  const identity = practiceSessionIdentity();
-  currentPracticeSession = loadPracticeSession(localStorage, {
+  const loaded = loadPracticeSessionWithMetadata(localStorage, {
     ...identity,
     legacyKey: legacyWorkspaceCacheKey(),
   });
-  return currentPracticeSession;
+  currentPracticeSession = loaded.session;
+  currentPracticeSessionIdentity = { ...identity };
+  return loaded;
 }
 
 function persistCurrentPracticeSession() {
-  if (!state.selected || !currentPracticeSession) {
+  if (!currentPracticeSession || !currentPracticeSessionIdentity) {
     return { saved: true };
   }
 
-  const result = savePracticeSession(localStorage, practiceSessionIdentity(), currentPracticeSession);
+  const result = savePracticeSession(localStorage, currentPracticeSessionIdentity, currentPracticeSession);
   if (!result.saved) {
     setAssistStatus("本轮内容暂时无法保存到浏览器", "error");
   }
   return result;
 }
 
-function applyPracticeSession(session) {
+function applyPracticeSession(session, identity = currentPracticeSessionIdentity) {
   currentPracticeSession = session;
+  currentPracticeSessionIdentity = identity ? { ...identity } : null;
   elements.code.value = session.code;
   elements.stdin.value = session.stdin;
   elements.expected.value = session.expected;
@@ -627,6 +628,21 @@ function invalidateAssistRequest() {
   elements.cancelAssist.hidden = true;
 }
 
+function beginPracticeContextChange() {
+  persistCurrentPracticeSession();
+  practiceContextId += 1;
+  invalidateAssistRequest();
+  elements.assistQuestion.value = "";
+  setAssistStatus("");
+  currentPracticeSession = null;
+  currentPracticeSessionIdentity = null;
+  return practiceContextId;
+}
+
+function isCurrentPracticeContext(contextId) {
+  return contextId === practiceContextId;
+}
+
 async function askAssist() {
   const question = elements.assistQuestion.value.trim();
   if (!question || !state.selected) {
@@ -637,7 +653,10 @@ async function askAssist() {
   assistAbortController?.abort();
   const requestProblemSlug = state.selected.slug;
   const requestId = ++assistRequestId;
-  const session = currentPracticeSession || loadCurrentPracticeSession();
+  const currentIdentity = practiceSessionIdentity();
+  const session = currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, currentIdentity)
+    ? currentPracticeSession
+    : loadCurrentPracticeSession(currentIdentity)?.session;
   const history = completedAssistHistory(session);
   currentPracticeSession = appendAiMessage(replacePendingUserQuestion(session), {
     role: "user",
@@ -713,7 +732,11 @@ function saveWorkspaceCache() {
   } catch {
     setAssistStatus("本轮内容暂时无法保存到浏览器", "error");
   }
-  currentPracticeSession = updatePracticeWorkspace(currentPracticeSession || loadCurrentPracticeSession(), {
+  const currentIdentity = practiceSessionIdentity();
+  const session = currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, currentIdentity)
+    ? currentPracticeSession
+    : loadCurrentPracticeSession(currentIdentity)?.session;
+  currentPracticeSession = updatePracticeWorkspace(session, {
     code: elements.code.value,
     stdin: elements.stdin.value,
     expected: elements.expected.value,
@@ -726,12 +749,12 @@ function restoreWorkspaceCache() {
   if (!state.selected) return false;
 
   const identity = practiceSessionIdentity();
-  const hasSavedSession = Boolean(storageItem(practiceSessionKey(identity.problemSlug, identity.language)) || storageItem(legacyWorkspaceCacheKey()));
-  const session = loadCurrentPracticeSession();
+  const loaded = loadCurrentPracticeSession(identity);
+  const hasSavedSession = loaded?.source === "session" || loaded?.source === "legacy";
   if (hasSavedSession) {
-    applyPracticeSession(session);
+    applyPracticeSession(loaded.session, identity);
   } else {
-    renderAssistConversation(session);
+    renderAssistConversation(loaded?.session);
   }
   return hasSavedSession;
 }
@@ -1215,10 +1238,14 @@ function formatProblemListTitle(problem) {
 }
 
 async function selectProblem(slug, options = {}) {
-  invalidateAssistRequest();
+  const contextId = beginPracticeContextChange();
   const existing = state.problems.find((item) => item.slug === slug);
   const problem = existing?.memorySource ? existing : (await getJson(`/api/problems/${slug}`)).problem;
+  if (!isCurrentPracticeContext(contextId)) {
+    return;
+  }
   state.selected = problem;
+  loadCurrentPracticeSession();
   applyProgress(problem.slug, problem.progress);
 
   renderProblemIdentity(problem);
@@ -1228,6 +1255,9 @@ async function selectProblem(slug, options = {}) {
   restoreSampleIo();
   if (options.loadTemplate !== false) {
     await loadTemplate({ persist: false });
+    if (!isCurrentPracticeContext(contextId)) {
+      return;
+    }
   }
   const restoredWorkspace = restoreWorkspaceCache();
   if (
@@ -1255,7 +1285,7 @@ function setResult(result) {
   elements.message.textContent = result.message || "";
   elements.stdout.textContent = result.stdout || "";
   elements.stderr.textContent = result.stderr || "";
-  if (currentPracticeSession && state.selected) {
+  if (currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, practiceSessionIdentity())) {
     currentPracticeSession = updatePracticeWorkspace(currentPracticeSession, {
       lastResult: result.status === "IDLE" ? null : { ...result },
     });
@@ -1306,9 +1336,15 @@ async function runCode() {
 }
 
 function cleanupProblemWorkspaceCache(slug) {
+  const problemSlug = canonicalProblemSlug({ slug });
   for (const language of ["python", "java", "cpp"]) {
-    localStorage.removeItem(`acmcoder.web.problem.${slug}.${language}`);
+    try {
+      localStorage.removeItem(`acmcoder.web.problem.${slug}.${language}`);
+    } catch {
+      // Cache cleanup must not block deleting the problem itself.
+    }
   }
+  removePracticeSessions(localStorage, { problemSlug, languages: ["python", "java", "cpp"] });
 }
 
 function downloadJson(filename, body) {
@@ -1741,6 +1777,12 @@ async function deleteSelectedProblems() {
     cleanupProblemWorkspaceCache(slug);
   }
 
+  if (selectedWasDeleted) {
+    invalidateAssistRequest();
+    currentPracticeSession = null;
+    currentPracticeSessionIdentity = null;
+  }
+
   state.problems = state.problems.filter((problem) => !deletedSlugs.has(problemIdForProblem(problem)));
   renderProblemList();
   setResult({
@@ -1892,7 +1934,7 @@ async function init() {
     recordDailyAction(slug, action).catch((error) => setDailyStatus(error.message, "error"));
   });
   elements.language.addEventListener("change", async () => {
-    invalidateAssistRequest();
+    const contextId = beginPracticeContextChange();
     try {
       localStorage.setItem(CACHE_KEYS.language, elements.language.value);
     } catch {
@@ -1903,6 +1945,9 @@ async function init() {
     renderRunnerHealth();
     if (!restoreWorkspaceCache()) {
       await loadTemplate();
+      if (!isCurrentPracticeContext(contextId)) {
+        return;
+      }
     }
   });
   elements.runner.addEventListener("change", () => {

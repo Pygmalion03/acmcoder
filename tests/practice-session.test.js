@@ -6,7 +6,9 @@ import {
   completeReinforcement,
   createPracticeSession,
   loadPracticeSession,
+  loadPracticeSessionWithMetadata,
   practiceSessionKey,
+  removePracticeSessions,
   restorePreviousRound,
   savePracticeSession,
   startReinforcement,
@@ -18,6 +20,7 @@ function memoryStorage(initial = {}) {
   return {
     getItem(key) { return values.has(key) ? values.get(key) : null; },
     setItem(key, value) { values.set(key, String(value)); },
+    removeItem(key) { values.delete(key); },
   };
 }
 
@@ -47,6 +50,46 @@ test("isolates persisted sessions by problem and language", () => {
     updatePracticeWorkspace(createPracticeSession(), { code: "cpp-code" }));
   assert.equal(loadPracticeSession(storage, { problemSlug: "two-sum", language: "python" }).code, "python-code");
   assert.equal(loadPracticeSession(storage, { problemSlug: "two-sum", language: "cpp" }).code, "cpp-code");
+});
+
+test("reports corrupt persisted session data so callers keep the fresh workspace", () => {
+  const storage = memoryStorage({
+    [practiceSessionKey("two-sum", "python")]: "{not-json",
+  });
+
+  const loaded = loadPracticeSessionWithMetadata(storage, { problemSlug: "two-sum", language: "python" });
+
+  assert.equal(loaded.source, "invalid");
+  assert.equal(loaded.session.code, "");
+});
+
+test("rejects a parsed non-object session value as invalid", () => {
+  const storage = memoryStorage({
+    [practiceSessionKey("two-sum", "python")]: JSON.stringify("not a session"),
+  });
+
+  assert.equal(
+    loadPracticeSessionWithMetadata(storage, { problemSlug: "two-sum", language: "python" }).source,
+    "invalid",
+  );
+});
+
+test("removes only canonical per-language sessions for a deleted problem", () => {
+  const storage = memoryStorage({
+    [practiceSessionKey("two-sum", "python")]: "python",
+    [practiceSessionKey("two-sum", "java")]: "java",
+    [practiceSessionKey("two-sum", "cpp")]: "cpp",
+    [practiceSessionKey("two-sum-extra", "python")]: "keep",
+    [practiceSessionKey("three-sum", "python")]: "keep",
+  });
+
+  removePracticeSessions(storage, { problemSlug: "two-sum", languages: ["python", "java", "cpp"] });
+
+  assert.equal(storage.getItem(practiceSessionKey("two-sum", "python")), null);
+  assert.equal(storage.getItem(practiceSessionKey("two-sum", "java")), null);
+  assert.equal(storage.getItem(practiceSessionKey("two-sum", "cpp")), null);
+  assert.equal(storage.getItem(practiceSessionKey("two-sum-extra", "python")), "keep");
+  assert.equal(storage.getItem(practiceSessionKey("three-sum", "python")), "keep");
 });
 
 test("archives a learned round and starts clean reinforcement", () => {

@@ -64,16 +64,40 @@ function normalizeSession(value) {
   };
 }
 
-export function loadPracticeSession(storage, { problemSlug, language, legacyKey } = {}) {
+function parseStoredSession(raw) {
+  const parsed = JSON.parse(raw);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new TypeError("stored practice session must be an object");
+  }
+  return parsed;
+}
+
+export function loadPracticeSessionWithMetadata(storage, { problemSlug, language, legacyKey } = {}) {
   try {
     const saved = storage.getItem(practiceSessionKey(problemSlug, language));
-    if (saved) return normalizeSession(JSON.parse(saved));
+    if (saved !== null) return { session: normalizeSession(parseStoredSession(saved)), source: "session" };
     if (legacyKey) {
       const legacy = storage.getItem(legacyKey);
-      if (legacy) return createPracticeSession(JSON.parse(legacy));
+      if (legacy !== null) return { session: createPracticeSession(parseStoredSession(legacy)), source: "legacy" };
     }
-  } catch { return createPracticeSession(); }
-  return createPracticeSession();
+  } catch {
+    return { session: createPracticeSession(), source: "invalid" };
+  }
+  return { session: createPracticeSession(), source: "empty" };
+}
+
+export function loadPracticeSession(storage, options = {}) {
+  return loadPracticeSessionWithMetadata(storage, options).session;
+}
+
+export function removePracticeSessions(storage, { problemSlug, languages = [] } = {}) {
+  try {
+    for (const language of languages) {
+      storage.removeItem(practiceSessionKey(problemSlug, language));
+    }
+  } catch {
+    // Browser storage cleanup is best-effort and must not block deletion.
+  }
 }
 
 export function savePracticeSession(storage, { problemSlug, language }, session) {

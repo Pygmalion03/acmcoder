@@ -376,7 +376,7 @@ test("practice UI persists a cancellable per-problem AI conversation", () => {
   assert.match(html, /id="cancel-assist"[^>]*hidden/);
 
   assert.match(script, /from "\.\/practice-session\.js"/);
-  for (const name of ["appendAiMessage", "loadPracticeSession", "savePracticeSession", "updatePracticeWorkspace"]) {
+  for (const name of ["appendAiMessage", "loadPracticeSessionWithMetadata", "savePracticeSession", "updatePracticeWorkspace"]) {
     assert.match(script, new RegExp(`\\b${name}\\b`), name);
   }
   assert.match(script, /function renderAssistConversation\(/);
@@ -394,6 +394,16 @@ test("practice UI persists a cancellable per-problem AI conversation", () => {
   assert.match(script, /function loadCurrentPracticeSession\(/);
   assert.match(script, /function persistCurrentPracticeSession\(/);
   assert.match(script, /function applyPracticeSession\(/);
+});
+
+test("practice changes bind persistence to a captured session identity", () => {
+  const script = fs.readFileSync("web/app.js", "utf8");
+
+  assert.match(script, /let currentPracticeSessionIdentity = null;/);
+  assert.match(script, /function beginPracticeContextChange\(/);
+  assert.match(script, /const contextId = beginPracticeContextChange\(\);/);
+  assert.match(script, /if \(!isCurrentPracticeContext\(contextId\)\) \{\s*return;\s*\}/);
+  assert.match(script, /savePracticeSession\(localStorage, currentPracticeSessionIdentity, currentPracticeSession\)/);
 });
 
 test("local icon markup exposes the required Lucide icons", () => {
