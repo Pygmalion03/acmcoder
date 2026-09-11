@@ -5,9 +5,11 @@ import os from "node:os";
 import path from "node:path";
 
 import {
+  DEFAULT_MODEL_TIMEOUT_MS,
   getDefaultAssistSettings,
   getPublicAssistSettings,
   loadAssistSettings,
+  normalizeAssistHistory,
   requestCodeAdvice,
   saveAssistSettings,
 } from "../src/server/assist.js";
@@ -135,4 +137,52 @@ test("aborts a code-advice request after the configured timeout", async () => {
 
   assert.ok(receivedSignal);
   assert.equal(receivedSignal.aborted, true);
+});
+
+test("forwards bounded completed conversation pairs before the current snapshot", async () => {
+  const calls = [];
+  await requestCodeAdvice({
+    settings: { ...getDefaultAssistSettings(), apiKey: "sk-local-test", baseUrl: "https://llm.example.test/v1" },
+    fetch: async (_url, options) => {
+      calls.push(JSON.parse(options.body));
+      return new Response(JSON.stringify({ choices: [{ message: { content: "next" } }] }), { status: 200 });
+    },
+    context: {
+      history: [
+        { role: "user", content: "first" },
+        { role: "assistant", content: "answer" },
+      ],
+      question: "follow up",
+      language: "python",
+      code: "print(1)",
+    },
+  });
+  assert.deepEqual(calls[0].messages.slice(1, 3), [
+    { role: "user", content: "first" },
+    { role: "assistant", content: "answer" },
+  ]);
+  assert.match(calls[0].messages.at(-1).content, /follow up/);
+});
+
+test("rejects malformed conversation history", () => {
+  assert.throws(() => normalizeAssistHistory([{ role: "system", content: "unsafe" }]), /history/i);
+  assert.throws(() => normalizeAssistHistory([{ role: "assistant", content: "orphan" }]), /history/i);
+});
+
+test("uses sixty seconds as the default model timeout", () => {
+  assert.equal(DEFAULT_MODEL_TIMEOUT_MS, 60000);
+});
+
+test("honors an external cancellation signal", async () => {
+  const external = new AbortController();
+  const pending = requestCodeAdvice({
+    settings: { ...getDefaultAssistSettings(), apiKey: "sk-local-test" },
+    signal: external.signal,
+    fetch: async (_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener("abort", () => reject(options.signal.reason), { once: true });
+    }),
+    context: { question: "cancel" },
+  });
+  external.abort(new Error("用户已取消模型请求。"));
+  await assert.rejects(pending, /用户已取消/);
 });

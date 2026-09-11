@@ -15,6 +15,18 @@ function listen(server) {
   });
 }
 
+test("serves a cheap health response", async () => {
+  const server = createAcmcoderServer();
+  const port = await listen(server);
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/health`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: "ok" });
+  } finally {
+    server.close();
+  }
+});
+
 function memoryPage(slug, overrides = {}) {
   return {
     source: "leetcode",

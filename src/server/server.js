@@ -116,6 +116,9 @@ function hasValidSessionToken(request, expectedToken) {
 }
 
 function sendJson(response, status, payload) {
+  if (response.writableEnded || response.destroyed) {
+    return;
+  }
   response.writeHead(status, { "content-type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(payload, null, 2));
 }
@@ -313,6 +316,11 @@ export function createAcmcoderServer(options = {}) {
         return;
       }
 
+      if (request.method === "GET" && requestUrl.pathname === "/api/health") {
+        sendJson(response, 200, { status: "ok" });
+        return;
+      }
+
       if (request.method === "GET" && requestUrl.pathname === "/api/session") {
         sendJson(response, 200, { token: sessionToken });
         return;
@@ -438,13 +446,28 @@ export function createAcmcoderServer(options = {}) {
 
       if (request.method === "POST" && requestUrl.pathname === "/api/assist") {
         const body = await readJsonBody(request);
-        const settings = await loadAssistSettings(assistSettingsFile);
-        const advice = await requestCodeAdvice({
-          settings,
-          fetch: assistFetch,
-          context: body,
-        });
-        sendJson(response, 200, advice);
+        const controller = new AbortController();
+        const abortRequest = () => controller.abort(new Error("Client cancelled model request."));
+        const abortClosedResponse = () => {
+          if (!response.writableEnded) {
+            abortRequest();
+          }
+        };
+        request.once("aborted", abortRequest);
+        response.once("close", abortClosedResponse);
+        try {
+          const settings = await loadAssistSettings(assistSettingsFile);
+          const advice = await requestCodeAdvice({
+            settings,
+            fetch: assistFetch,
+            signal: controller.signal,
+            context: body,
+          });
+          sendJson(response, 200, advice);
+        } finally {
+          request.removeListener("aborted", abortRequest);
+          response.removeListener("close", abortClosedResponse);
+        }
         return;
       }
 

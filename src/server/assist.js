@@ -5,7 +5,9 @@ import { projectRoot } from "../core/problems.js";
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_MODEL = "gpt-4.1-mini";
-const DEFAULT_MODEL_TIMEOUT_MS = 8000;
+export const DEFAULT_MODEL_TIMEOUT_MS = 60000;
+const MAX_HISTORY_MESSAGES = 12;
+const MAX_HISTORY_CHARACTERS = 24000;
 
 export function getDefaultAssistSettings(env = process.env) {
   return {
@@ -35,6 +37,42 @@ function normalizeSettings(settings, env = process.env) {
 function normalizeTimeoutMs(timeoutMs) {
   const value = Math.floor(Number(timeoutMs || DEFAULT_MODEL_TIMEOUT_MS));
   return Number.isFinite(value) && value > 0 ? value : DEFAULT_MODEL_TIMEOUT_MS;
+}
+
+export function normalizeAssistHistory(history = []) {
+  if (!Array.isArray(history) || history.length % 2 !== 0) {
+    throw new Error("Assist history must contain completed user/assistant pairs.");
+  }
+
+  const pairs = [];
+  for (let index = 0; index < history.length; index += 2) {
+    const user = history[index];
+    const assistant = history[index + 1];
+    if (
+      user?.role !== "user" ||
+      assistant?.role !== "assistant" ||
+      typeof user.content !== "string" ||
+      typeof assistant.content !== "string"
+    ) {
+      throw new Error("Assist history contains an invalid message pair.");
+    }
+    pairs.push([
+      { role: "user", content: user.content.trim() },
+      { role: "assistant", content: assistant.content.trim() },
+    ]);
+  }
+
+  const kept = [];
+  let characters = 0;
+  for (const pair of pairs.reverse()) {
+    const pairCharacters = pair[0].content.length + pair[1].content.length;
+    if (kept.length + 2 > MAX_HISTORY_MESSAGES || characters + pairCharacters > MAX_HISTORY_CHARACTERS) {
+      break;
+    }
+    kept.unshift(...pair);
+    characters += pairCharacters;
+  }
+  return kept;
 }
 
 export async function loadAssistSettings(settingsFile = getDefaultAssistSettingsFile(), env = process.env) {
@@ -123,6 +161,7 @@ export async function requestCodeAdvice(options = {}) {
   const timeout = normalizeTimeoutMs(options.timeoutMs);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(new Error(`Model request timed out after ${timeout} ms.`)), timeout);
+  const signal = options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal;
 
   try {
     const response = await fetchFn(`${settings.baseUrl}/chat/completions`, {
@@ -131,7 +170,7 @@ export async function requestCodeAdvice(options = {}) {
         "content-type": "application/json",
         authorization: `Bearer ${settings.apiKey}`,
       },
-      signal: controller.signal,
+      signal,
       body: JSON.stringify({
         model: settings.model,
         temperature: 0.2,
@@ -141,6 +180,7 @@ export async function requestCodeAdvice(options = {}) {
             content:
               "你是 ACMCoder 的编程练习助手。用户可能会闲聊、询问题目、请求代码建议或分析运行错误。不要声称已经修改源代码。",
           },
+          ...normalizeAssistHistory(options.context?.history),
           {
             role: "user",
             content: buildUserPrompt(options.context),
