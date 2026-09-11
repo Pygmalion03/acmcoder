@@ -2,6 +2,13 @@ import { hydrateIcons, iconMarkup } from "./icons.js";
 import { createApiClient, createRetryBackoff } from "./api-client.js";
 import { createStartupRecovery } from "./startup-recovery.js";
 import {
+  appendAiMessage,
+  loadPracticeSession,
+  practiceSessionKey,
+  savePracticeSession,
+  updatePracticeWorkspace,
+} from "./practice-session.js";
+import {
   canonicalProblemSlug,
   dailyPlanProgress,
   apiRunnerForUiMode,
@@ -40,6 +47,10 @@ const CACHE_KEYS = {
   language: "acmcoder.web.language",
   runner: "acmcoder.web.runner",
 };
+
+let currentPracticeSession = null;
+let assistRequestId = 0;
+let assistAbortController = null;
 
 const GENERIC_TEMPLATES = {
   python: `import sys
@@ -131,7 +142,9 @@ const elements = {
   saveAssistSettings: document.querySelector("#save-assist-settings"),
   assistQuestion: document.querySelector("#assist-question"),
   askAssist: document.querySelector("#ask-assist"),
-  assistAnswer: document.querySelector("#assist-answer"),
+  assistTranscript: document.querySelector("#assist-transcript"),
+  assistStatus: document.querySelector("#assist-status"),
+  cancelAssist: document.querySelector("#cancel-assist"),
   dailyCount: document.querySelector("#daily-count"),
   dailyDifficulty: document.querySelector("#daily-difficulty"),
   dailyTags: document.querySelector("#daily-tags"),
@@ -476,9 +489,78 @@ async function loadDoctor(options = {}) {
   }
 }
 
-function setAssistAnswer(message, kind = "") {
-  elements.assistAnswer.textContent = message;
-  elements.assistAnswer.className = `assist-answer ${kind}`.trim();
+function setAssistStatus(message, kind = "") {
+  elements.assistStatus.textContent = message;
+  elements.assistStatus.className = `assist-status ${kind}`.trim();
+}
+
+function renderAssistConversation(session = currentPracticeSession) {
+  elements.assistTranscript.replaceChildren();
+  for (const message of session?.ai?.current || []) {
+    const messageNode = document.createElement("article");
+    messageNode.className = `assist-message ${message.role}`;
+    messageNode.textContent = message.content;
+    elements.assistTranscript.appendChild(messageNode);
+  }
+}
+
+function practiceSessionIdentity() {
+  return {
+    problemSlug: canonicalProblemSlug(state.selected),
+    language: elements.language.value,
+  };
+}
+
+function legacyWorkspaceCacheKey(problem = state.selected) {
+  return problem ? `acmcoder.web.problem.${problem.slug}.${elements.language.value}` : "";
+}
+
+function storageItem(key) {
+  try {
+    return key ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+function loadCurrentPracticeSession() {
+  if (!state.selected) {
+    currentPracticeSession = null;
+    return null;
+  }
+
+  const identity = practiceSessionIdentity();
+  currentPracticeSession = loadPracticeSession(localStorage, {
+    ...identity,
+    legacyKey: legacyWorkspaceCacheKey(),
+  });
+  return currentPracticeSession;
+}
+
+function persistCurrentPracticeSession() {
+  if (!state.selected || !currentPracticeSession) {
+    return { saved: true };
+  }
+
+  const result = savePracticeSession(localStorage, practiceSessionIdentity(), currentPracticeSession);
+  if (!result.saved) {
+    setAssistStatus("本轮内容暂时无法保存到浏览器", "error");
+  }
+  return result;
+}
+
+function applyPracticeSession(session) {
+  currentPracticeSession = session;
+  elements.code.value = session.code;
+  elements.stdin.value = session.stdin;
+  elements.expected.value = session.expected;
+  if (session.lastResult) {
+    setResult(session.lastResult);
+  } else {
+    setResult({ status: "IDLE", message: "", stdout: "", stderr: "" });
+  }
+  syncHighlight();
+  renderAssistConversation(session);
 }
 
 async function loadAssistSettings() {
@@ -510,16 +592,73 @@ async function saveAssistSettings() {
 
   elements.assistKey.value = "";
   elements.assistKey.placeholder = body.settings?.configured ? "已保存；留空则保留当前 Key" : "只保存在本机 data/memory/settings.json";
-  setAssistAnswer("模型设置已保存。", "ok");
+  setAssistStatus("模型设置已保存。", "ok");
+}
+
+function completedAssistHistory(session) {
+  const messages = session?.ai?.current || [];
+  const completeLength = messages.at(-1)?.role === "user" ? messages.length - 1 : messages.length;
+  return messages.slice(0, completeLength).map(({ role, content }) => ({ role, content }));
+}
+
+function replacePendingUserQuestion(session) {
+  if (session?.ai?.current?.at(-1)?.role !== "user") {
+    return session;
+  }
+  return {
+    ...session,
+    ai: { ...session.ai, current: session.ai.current.slice(0, -1) },
+  };
+}
+
+function isCurrentAssistRequest(requestId, requestProblemSlug) {
+  return requestId === assistRequestId && requestProblemSlug === state.selected?.slug;
+}
+
+function cancelAssist() {
+  assistAbortController?.abort();
+}
+
+function invalidateAssistRequest() {
+  assistRequestId += 1;
+  assistAbortController?.abort();
+  assistAbortController = null;
+  elements.askAssist.disabled = false;
+  elements.cancelAssist.hidden = true;
 }
 
 async function askAssist() {
+  const question = elements.assistQuestion.value.trim();
+  if (!question || !state.selected) {
+    setAssistStatus("请输入想问模型的问题。", "error");
+    return;
+  }
+
+  assistAbortController?.abort();
+  const requestProblemSlug = state.selected.slug;
+  const requestId = ++assistRequestId;
+  const session = currentPracticeSession || loadCurrentPracticeSession();
+  const history = completedAssistHistory(session);
+  currentPracticeSession = appendAiMessage(replacePendingUserQuestion(session), {
+    role: "user",
+    content: question,
+    createdAt: new Date().toISOString(),
+  });
+  const userSave = persistCurrentPracticeSession();
+  elements.assistQuestion.value = "";
+  renderAssistConversation(currentPracticeSession);
+
+  assistAbortController = new AbortController();
   elements.askAssist.disabled = true;
-  setAssistAnswer("正在请求模型...");
+  elements.cancelAssist.hidden = false;
+  if (userSave.saved) {
+    setAssistStatus("正在请求模型...");
+  }
 
   try {
     const body = await getJson("/api/assist", {
       method: "POST",
+      signal: assistAbortController.signal,
       headers: {
         "content-type": "application/json",
       },
@@ -533,52 +672,68 @@ async function askAssist() {
         status: elements.status.textContent,
         stdout: elements.stdout.textContent,
         stderr: elements.stderr.textContent,
-        question: elements.assistQuestion.value,
+        history,
+        question,
       }),
     });
-    setAssistAnswer(body.message || "模型没有返回建议。", "ok");
+    if (requestId !== assistRequestId || requestProblemSlug !== state.selected?.slug) {
+      return;
+    }
+    currentPracticeSession = appendAiMessage(currentPracticeSession, {
+      role: "assistant",
+      content: body.message || "模型没有返回建议。",
+      createdAt: new Date().toISOString(),
+    });
+    const assistantSave = persistCurrentPracticeSession();
+    renderAssistConversation(currentPracticeSession);
+    if (assistantSave.saved) {
+      setAssistStatus("", "ok");
+    }
   } catch (error) {
-    setAssistAnswer(error.message, "error");
+    if (!isCurrentAssistRequest(requestId, requestProblemSlug)) {
+      return;
+    }
+    elements.assistQuestion.value = question;
+    setAssistStatus(error?.kind === "cancelled" || assistAbortController?.signal.aborted ? "已取消本次 AI 请求。" : error.message, "error");
   } finally {
-    elements.askAssist.disabled = false;
+    if (isCurrentAssistRequest(requestId, requestProblemSlug)) {
+      elements.askAssist.disabled = false;
+      elements.cancelAssist.hidden = true;
+      assistAbortController = null;
+    }
   }
-}
-
-function problemCacheKey(problem = state.selected) {
-  return problem ? `acmcoder.web.problem.${problem.slug}.${elements.language.value}` : "";
 }
 
 function saveWorkspaceCache() {
   if (!state.selected) return;
 
-  localStorage.setItem(CACHE_KEYS.selected, state.selected.slug);
-  localStorage.setItem(CACHE_KEYS.language, elements.language.value);
-  localStorage.setItem(
-    problemCacheKey(),
-    JSON.stringify({
-      code: elements.code.value,
-      stdin: elements.stdin.value,
-      expected: elements.expected.value,
-    }),
-  );
+  try {
+    localStorage.setItem(CACHE_KEYS.selected, state.selected.slug);
+    localStorage.setItem(CACHE_KEYS.language, elements.language.value);
+  } catch {
+    setAssistStatus("本轮内容暂时无法保存到浏览器", "error");
+  }
+  currentPracticeSession = updatePracticeWorkspace(currentPracticeSession || loadCurrentPracticeSession(), {
+    code: elements.code.value,
+    stdin: elements.stdin.value,
+    expected: elements.expected.value,
+    lastResult: currentPracticeSession?.lastResult || null,
+  });
+  persistCurrentPracticeSession();
 }
 
 function restoreWorkspaceCache() {
   if (!state.selected) return false;
 
-  const raw = localStorage.getItem(problemCacheKey());
-  if (!raw) return false;
-
-  try {
-    const cached = JSON.parse(raw);
-    if (typeof cached.code === "string") elements.code.value = cached.code;
-    if (typeof cached.stdin === "string") elements.stdin.value = cached.stdin;
-    if (typeof cached.expected === "string") elements.expected.value = cached.expected;
-    syncHighlight();
-    return true;
-  } catch {
-    return false;
+  const identity = practiceSessionIdentity();
+  const hasSavedSession = Boolean(storageItem(practiceSessionKey(identity.problemSlug, identity.language)) || storageItem(legacyWorkspaceCacheKey()));
+  const session = loadCurrentPracticeSession();
+  if (hasSavedSession) {
+    applyPracticeSession(session);
+  } else {
+    renderAssistConversation(session);
   }
+  return hasSavedSession;
 }
 
 function escapeHtml(value) {
@@ -1060,6 +1215,7 @@ function formatProblemListTitle(problem) {
 }
 
 async function selectProblem(slug, options = {}) {
+  invalidateAssistRequest();
   const existing = state.problems.find((item) => item.slug === slug);
   const problem = existing?.memorySource ? existing : (await getJson(`/api/problems/${slug}`)).problem;
   state.selected = problem;
@@ -1099,6 +1255,11 @@ function setResult(result) {
   elements.message.textContent = result.message || "";
   elements.stdout.textContent = result.stdout || "";
   elements.stderr.textContent = result.stderr || "";
+  if (currentPracticeSession && state.selected) {
+    currentPracticeSession = updatePracticeWorkspace(currentPracticeSession, {
+      lastResult: result.status === "IDLE" ? null : { ...result },
+    });
+  }
 }
 
 async function runCode() {
@@ -1140,6 +1301,7 @@ async function runCode() {
       stdout: "",
       stderr: "",
     });
+    saveWorkspaceCache();
   }
 }
 
@@ -1619,7 +1781,7 @@ async function init() {
   elements.runner.value = savedRunner || elements.runner.value;
   await loadDoctor({ applyDefault: true });
   await loadAssistSettings().catch((error) => {
-    setAssistAnswer(`模型设置读取失败：${error.message}`, "error");
+    setAssistStatus(`模型设置读取失败：${error.message}`, "error");
   });
   if (!applicationControlsWired) {
   for (const target of elements.viewTargets) {
@@ -1730,7 +1892,12 @@ async function init() {
     recordDailyAction(slug, action).catch((error) => setDailyStatus(error.message, "error"));
   });
   elements.language.addEventListener("change", async () => {
-    localStorage.setItem(CACHE_KEYS.language, elements.language.value);
+    invalidateAssistRequest();
+    try {
+      localStorage.setItem(CACHE_KEYS.language, elements.language.value);
+    } catch {
+      setAssistStatus("本轮内容暂时无法保存到浏览器", "error");
+    }
     updateRunnerModeOptions();
     applyRecommendedRunnerIfNeeded();
     renderRunnerHealth();
@@ -1744,9 +1911,10 @@ async function init() {
     renderRunnerHealth();
   });
   elements.saveAssistSettings.addEventListener("click", () => {
-    saveAssistSettings().catch((error) => setAssistAnswer(error.message, "error"));
+    saveAssistSettings().catch((error) => setAssistStatus(error.message, "error"));
   });
   elements.askAssist.addEventListener("click", askAssist);
+  elements.cancelAssist.addEventListener("click", cancelAssist);
   elements.loadTemplate.addEventListener("click", loadTemplate);
   elements.sampleIo.addEventListener("click", () => {
     restoreSampleIo();

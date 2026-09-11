@@ -185,14 +185,16 @@ test("web UI exposes lightweight optional model advice", () => {
   assert.match(html, /id="assist-question"[^>]*placeholder="请看一下我的代码，指出可能的问题和修改建议。"[^>]*><\/textarea>/);
   assert.doesNotMatch(html, /<textarea id="assist-question"[^>]*>请看一下我的代码/);
   assert.match(html, /id="ask-assist"/);
-  assert.match(html, /id="assist-answer"/);
+  assert.match(html, /id="assist-transcript"/);
+  assert.match(html, /id="assist-status"/);
+  assert.match(html, /id="cancel-assist"/);
   assert.match(script, /api\/assist\/settings/);
   assert.match(script, /api\/assist/);
   assert.match(script, /askAssist/);
   assert.match(script, /saveAssistSettings/);
   assert.match(script, /problemTitle:\s*state\.selected\?\.title/);
   assert.match(css, /\.assist-panel/);
-  assert.match(css, /\.assist-answer/);
+  assert.match(css, /\.assist-transcript/);
 });
 
 test("web UI exposes daily planner controls", () => {

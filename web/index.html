@@ -185,8 +185,13 @@
               </section>
               <section class="utility-panel assist assist-panel" data-utility-panel="assist" hidden>
                 <label>想问模型什么？<textarea id="assist-question" placeholder="请看一下我的代码，指出可能的问题和修改建议。" spellcheck="false"></textarea></label>
-                <div class="assist-actions"><button id="ask-assist" type="button">询问模型</button><button class="text-button" type="button" data-view-target="settings">模型设置</button></div>
-                <pre id="assist-answer" aria-live="polite"></pre>
+                <div id="assist-transcript" class="assist-transcript" aria-live="polite"></div>
+                <p id="assist-status" class="assist-status" aria-live="polite"></p>
+                <div class="assist-actions">
+                  <button id="ask-assist" type="button">询问模型</button>
+                  <button id="cancel-assist" type="button" hidden>取消</button>
+                  <button class="text-button" type="button" data-view-target="settings">模型设置</button>
+                </div>
               </section>
               </section>
             </div>

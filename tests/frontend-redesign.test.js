@@ -24,7 +24,7 @@ import { createStartupRecovery } from "../web/startup-recovery.js";
 
 function loadAppForStartupPollingRace() {
   const source = fs.readFileSync("web/app.js", "utf8")
-    .replace(/^import \{[^}]+\} from "\.\/(?:icons|api-client|startup-recovery)\.js";\n/gm, "")
+    .replace(/^import \{[^}]+\} from "\.\/(?:icons|api-client|startup-recovery|practice-session)\.js";\n/gm, "")
     .replace(/^import \{[\s\S]*?\} from "\.\/view-state\.js";\n/, "");
   const nodes = new Map();
   const timers = [];
@@ -339,7 +339,9 @@ test("web UI preserves each behavior-bearing element ID exactly once", () => {
     "save-assist-settings",
     "assist-question",
     "ask-assist",
-    "assist-answer",
+    "assist-transcript",
+    "assist-status",
+    "cancel-assist",
     "daily-count",
     "daily-difficulty",
     "daily-tags",
@@ -360,6 +362,38 @@ test("web UI preserves each behavior-bearing element ID exactly once", () => {
   for (const id of ids) {
     assert.equal(html.match(new RegExp(`id="${id}"`, "g"))?.length, 1, id);
   }
+});
+
+test("practice UI persists a cancellable per-problem AI conversation", () => {
+  const html = fs.readFileSync("web/index.html", "utf8");
+  const script = fs.readFileSync("web/app.js", "utf8");
+
+  for (const id of ["assist-transcript", "assist-status", "cancel-assist"]) {
+    assert.equal(html.match(new RegExp(`id="${id}"`, "g"))?.length, 1, id);
+  }
+  assert.match(html, /id="assist-transcript"[^>]*aria-live="polite"/);
+  assert.match(html, /id="assist-status"[^>]*aria-live="polite"/);
+  assert.match(html, /id="cancel-assist"[^>]*hidden/);
+
+  assert.match(script, /from "\.\/practice-session\.js"/);
+  for (const name of ["appendAiMessage", "loadPracticeSession", "savePracticeSession", "updatePracticeWorkspace"]) {
+    assert.match(script, new RegExp(`\\b${name}\\b`), name);
+  }
+  assert.match(script, /function renderAssistConversation\(/);
+  const renderConversation = script.match(/function renderAssistConversation\([\s\S]*?\n}\n\nfunction/);
+  assert.ok(renderConversation);
+  assert.match(renderConversation[0], /document\.createElement\(/);
+  assert.match(renderConversation[0], /\.textContent\s*=/);
+  assert.doesNotMatch(renderConversation[0], /\.innerHTML\s*=/);
+  assert.match(script, /history,/);
+  assert.match(script, /new AbortController\(\)/);
+  assert.match(script, /requestId !== assistRequestId \|\| requestProblemSlug !== state\.selected\?\.slug/);
+  assert.match(script, /appendAiMessage\([\s\S]*role:\s*"assistant"/);
+  assert.match(script, /已取消本次 AI 请求。/);
+  assert.match(script, /function cancelAssist\(/);
+  assert.match(script, /function loadCurrentPracticeSession\(/);
+  assert.match(script, /function persistCurrentPracticeSession\(/);
+  assert.match(script, /function applyPracticeSession\(/);
 });
 
 test("local icon markup exposes the required Lucide icons", () => {
