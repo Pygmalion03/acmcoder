@@ -1,0 +1,22 @@
+[
+  {
+    "title": "区间内偶数求和",
+    "statement": "输入两个整数 a 和 b（a 不大于 b），输出闭区间 [a, b] 内所有偶数的和。",
+    "sourceKind": "json",
+    "tags": ["循环", "基础"],
+    "cases": [
+      { "stdin": "1 6\n", "expected": "12\n" },
+      { "stdin": "3 3\n", "expected": "0\n" }
+    ]
+  },
+  {
+    "title": "统计元音字母",
+    "statement": "输入一行英文文本，输出其中 a、e、i、o、u 的个数，大小写均计入。",
+    "sourceKind": "json",
+    "tags": ["字符串", "基础"],
+    "cases": [
+      { "stdin": "Hello World\n", "expected": "3\n" },
+      { "stdin": "XYZ\n", "expected": "0\n" }
+    ]
+  }
+]

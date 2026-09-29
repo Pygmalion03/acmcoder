@@ -32,9 +32,13 @@ export function normalizeProblem(input) {
   const tags = input.tags ?? [];
   if (!Array.isArray(tags) || tags.length > 12 || tags.some(tag => typeof tag !== 'string' || tag.length > 32)) throw new InputError('标签格式无效。');
   const rawSamples = input.rawSamples ?? [];
-  if (!Array.isArray(rawSamples) || rawSamples.length > 8 || rawSamples.some(s => typeof s !== 'string' || s.length > MAX_CASE)) throw new InputError('原始样例格式无效。');
+  if (!Array.isArray(rawSamples) || rawSamples.length > 8) throw new InputError('原始样例最多 8 组。');
+  const invalidRaw = rawSamples.findIndex(s => typeof s !== 'string' || s.length > MAX_CASE);
+  if (invalidRaw >= 0) throw new InputError(`第 ${invalidRaw + 1} 组原始样例格式无效或超长。`);
   const cases = input.cases ?? [];
-  if (!Array.isArray(cases) || cases.length > 8 || cases.some(c => !c || typeof c !== 'object' || typeof c.stdin !== 'string' || typeof c.expected !== 'string' || c.stdin.length > MAX_CASE || c.expected.length > MAX_CASE)) throw new InputError('ACM 样例格式无效。');
+  if (!Array.isArray(cases) || cases.length > 8) throw new InputError('ACM 样例最多 8 组。');
+  const invalidCase = cases.findIndex(c => !c || typeof c !== 'object' || typeof c.stdin !== 'string' || typeof c.expected !== 'string' || c.stdin.length > MAX_CASE || c.expected.length > MAX_CASE);
+  if (invalidCase >= 0) throw new InputError(`第 ${invalidCase + 1} 组 ACM 样例格式无效或超长。`);
   return { title, statement, sourceUrl, sourceKind, tags: [...new Set(tags.map(x => x.trim()).filter(Boolean))], rawSamples, cases: cases.map(c => ({ stdin: c.stdin, expected: c.expected })), favorite: input.favorite === true };
 }
 

@@ -4,6 +4,11 @@ import { backupManifest, backupPage, restoreOne, restorePreview } from '../../li
 const SESSION_SECONDS = 14 * 24 * 3600;
 const MAX_BODY = 80000;
 const MAX_PROBLEMS = 200;
+const beijingDay = (date = new Date()) => {
+  const parts = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+  const value = type => parts.find(part => part.type === type).value;
+  return `${value('year')}-${value('month')}-${value('day')}`;
+};
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
 
 function json(value, status = 200, headers = {}) { return new Response(JSON.stringify(value), { status, headers: { ...JSON_HEADERS, ...headers } }); }
@@ -218,13 +223,17 @@ async function getPlan(db, userId, day) {
   const rows = await db.prepare('SELECT problem_id, completed FROM daily_plans WHERE user_id = ? AND day = ?').bind(userId, day).all();
   return json({ day, plan: rows.results.map(row => ({ problemId: row.problem_id, completed: !!row.completed })) });
 }
+async function planRecommendations(db, userId, today) {
+  const rows = await db.prepare('SELECT problem_id FROM daily_plans WHERE user_id = ? AND day < ? AND completed = 0 ORDER BY day DESC LIMIT 50').bind(userId, today).all();
+  return json({ problemIds: [...new Set(rows.results.map(row => row.problem_id))] });
+}
 async function putPlan(request, db, userId, day) {
   const data = await body(request);
   if (!Array.isArray(data.plan) || data.plan.length > 5 || data.plan.some(x => !x || typeof x.problemId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(x.problemId) || typeof x.completed !== 'boolean')) throw new InputError('今日计划格式无效。');
   const ids = data.plan.map(x => x.problemId);
   if (new Set(ids).size !== ids.length) throw new InputError('今日计划存在重复题目。');
   for (const id of ids) await requirePracticeProblem(db, userId, id);
-  const cutoff = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const cutoff = beijingDay(new Date(Date.now() - 30 * 86400000));
   const statements = [db.prepare('DELETE FROM daily_plans WHERE user_id = ? AND day < ?').bind(userId, cutoff), db.prepare('DELETE FROM daily_plans WHERE user_id = ? AND day = ?').bind(userId, day), ...data.plan.map(item => db.prepare('INSERT INTO daily_plans (user_id, day, problem_id, completed) VALUES (?, ?, ?, ?)').bind(userId, day, item.problemId, item.completed ? 1 : 0))];
   await db.batch(statements);
   return json({ day, plan: data.plan });
@@ -318,12 +327,17 @@ async function route({ request, env }) {
     }
     if (path.join('/') === 'progress' && method === 'GET') return getProgress(db, user.id);
     if (path.join('/') === 'plans/today') {
-      const day = new Date().toISOString().slice(0, 10);
+      const day = beijingDay();
       if (method === 'GET') return getPlan(db, user.id, day);
       if (method === 'PUT') return putPlan(request, db, user.id, day);
     }
+    if (path.join('/') === 'plans/recommendations' && method === 'GET') return planRecommendations(db, user.id, beijingDay());
     if (path.join('/') === 'export' && method === 'GET') return exportData(db, user.id);
     if (path.join('/') === 'account' && method === 'DELETE') return deleteAccount(request, db, user.id);
+    if (path.join('/') === 'import/validate' && method === 'POST') {
+      const item = normalizeProblem(await body(request));
+      return json({ valid: true, title: item.title, cases: item.cases.length });
+    }
     if (path.join('/') === 'import/fetch' && method === 'POST') return fetchText(request);
     return json({ error: '接口不存在。' }, 404);
 }

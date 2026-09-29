@@ -23,7 +23,8 @@ test('edits made while cloud draft GET is pending never overwrite the remote dra
     if (url === '/api/auth/session') return Promise.resolve(response({ user: { id: 'user-a', login: 'a' } }));
     if (url === '/api/problems') return Promise.resolve(response({ problems: [] }));
     if (url === '/api/progress') return Promise.resolve(response({ progress: [] }));
-    if (url === '/api/plans/today') return Promise.resolve(response({ plan: [] }));
+    if (url === '/api/plans/today') return Promise.resolve(response({ day: '2026-09-29', plan: [] }));
+    if (url === '/api/plans/recommendations') return Promise.resolve(response({ problemIds: [] }));
     if (url === '/api/drafts/sum') return new Promise(resolve => { resolveDraft = value => resolve(response(value)); });
     throw new Error(`Unexpected request: ${url}`);
   };
@@ -63,7 +64,8 @@ test('a stale tab binds draft writes to its original account and keeps its local
     if (url === '/api/auth/session') return response({ user: { id: 'user-a', login: 'a' } });
     if (url === '/api/problems') return response({ problems: [] });
     if (url === '/api/progress') return response({ progress: [] });
-    if (url === '/api/plans/today') return response({ plan: [] });
+    if (url === '/api/plans/today') return response({ day: '2026-09-29', plan: [] });
+    if (url === '/api/plans/recommendations') return response({ problemIds: [] });
     if (url === '/api/drafts/sum' && !options.method) return response({ draft: null });
     if (url === '/api/drafts/sum' && options.method === 'PUT') return response({ error: 'Account changed', code: 'account_changed' }, 409);
     throw new Error(`Unexpected request: ${url}`);

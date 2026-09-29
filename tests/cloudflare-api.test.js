@@ -78,3 +78,17 @@ test('exported problem JSON can preserve multiple cases', async () => {
   assert.deepEqual(exported.data.problems[0].cases, cases);
   assert.equal((await call('a', 'problems', 'POST', exported.data.problems[0])).status, 409);
 });
+
+test('batch import validation identifies the bad sample before writing', async () => {
+  const { call } = fixture();
+  const valid = await call('a', 'import/validate', 'POST', { title: 'Two samples', cases: [{ stdin: '1', expected: '1' }, { stdin: '2', expected: '2' }] });
+  assert.equal(valid.status, 200);
+  assert.equal(valid.data.cases, 2);
+  const invalid = await call('a', 'import/validate', 'POST', { title: 'Bad', cases: [{ stdin: '1', expected: '1' }, { stdin: 2, expected: '2' }] });
+  assert.equal(invalid.status, 400);
+  assert.match(invalid.data.error, /第 2 组/);
+  assert.equal((await call('a', 'problems')).data.problems.length, 0);
+  const plan = await call('a', 'plans/today');
+  assert.match(plan.data.day, /^\d{4}-\d{2}-\d{2}$/);
+  assert.deepEqual((await call('a', 'plans/recommendations')).data.problemIds, []);
+});
