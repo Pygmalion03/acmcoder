@@ -7,14 +7,31 @@ let cloudDraftVersion = new Map();
 let cloudDraftReady = new Set();
 let cloudSaving = new Set();
 let cloudConflict = null;
-let cloudSaveTimer = null;
+let cloudSaveTimers = new Map();
+let cloudDirty = new Set();
 let cloudSelection = 0;
 let editingProblem = null;
+let cloudSessionInvalid = false;
+
+function cloudInvalidateSession() {
+  if (cloudSessionInvalid) return;
+  saveDraft();
+  cloudSessionInvalid = true;
+  cloudSelection++;
+  for (const timer of cloudSaveTimers.values()) clearTimeout(timer);
+  cloudSaveTimers.clear();
+  cloudDraftReady.clear();
+  cloudNote('账号已在其他标签页切换或退出。本机草稿已保留；刷新页面后可进入当前账号。');
+  $('account-state').textContent = '账号已切换 · 请刷新';
+}
 
 async function cloudApi(path, options = {}) {
-  const headers = options.body ? { 'content-type': 'application/json' } : {};
+  if (cloudSessionInvalid && path !== 'auth/session') throw new Error('账号已切换，请刷新页面。');
+  const boundUser = cloudUser?.id;
+  const headers = { ...(options.body ? { 'content-type': 'application/json' } : {}), ...(boundUser && path !== 'auth/session' ? { 'x-acm-expected-user': boundUser } : {}) };
   const response = await fetch(`/api/${path}`, { credentials: 'same-origin', ...options, headers: { ...headers, ...options.headers } });
   const data = await response.json().catch(() => ({ error: '服务响应无效。' }));
+  if (data.code === 'account_changed' || (boundUser && response.status === 401)) cloudInvalidateSession();
   if (!response.ok) { const error = new Error(data.error || '请求失败。'); error.status = response.status; error.data = data; throw error; }
   return data;
 }
@@ -43,7 +60,7 @@ function cloudGuestDraft(id) {
 }
 
 async function cloudSelectedProblem(id) {
-  if (!cloudUser) return;
+  if (!cloudUser || cloudSessionInvalid) return;
   const selection = ++cloudSelection;
   cloudDraftReady.delete(id);
   cloudConflict = null;
@@ -51,7 +68,7 @@ async function cloudSelectedProblem(id) {
   const beforeRequest = cloudCurrent();
   try {
     const { draft } = await cloudApi(`drafts/${encodeURIComponent(id)}`);
-    if (selection !== cloudSelection || problem !== id) return;
+    if (selection !== cloudSelection || problem !== id || cloudSessionInvalid) return;
     cloudDraftReady.add(id);
     const local = cloudLocal(id);
     const editedDuringRequest = !cloudSame(beforeRequest, cloudCurrent());
@@ -78,33 +95,38 @@ async function cloudSelectedProblem(id) {
   } catch (error) { if (selection === cloudSelection) cloudNote(`云端草稿暂不可用：${error.message}。本机草稿仍保留。`); }
 }
 function cloudDraftChanged(id) {
-  if (!cloudUser || cloudConflict?.id === id) return;
-  if (!$('migrate-draft').hidden) return;
+  if (!cloudUser || cloudSessionInvalid || cloudConflict?.id === id) return;
+  cloudDirty.add(id);
+  if (id === problem && !$('migrate-draft').hidden) return;
   if (!cloudDraftReady.has(id)) return;
-  if (cloudSaveTimer) clearTimeout(cloudSaveTimer);
-  cloudSaveTimer = setTimeout(() => cloudSaveDraft(id), 1200);
+  if (cloudSaveTimers.has(id)) clearTimeout(cloudSaveTimers.get(id));
+  cloudSaveTimers.set(id, setTimeout(() => { cloudSaveTimers.delete(id); cloudSaveDraft(id); }, 1200));
 }
 async function cloudSaveDraft(id, forceVersion) {
-  if (!cloudUser || cloudConflict?.id === id) return;
+  if (!cloudUser || cloudSessionInvalid || cloudConflict?.id === id) return;
   if (!cloudDraftReady.has(id) || cloudSaving.has(id)) return;
   const local = cloudLocal(id);
   if (!local) return;
   const baseVersion = forceVersion === undefined ? cloudDraftVersion.get(id) : forceVersion;
   if (baseVersion === undefined) return;
+  if (cloudSaveTimers.has(id)) { clearTimeout(cloudSaveTimers.get(id)); cloudSaveTimers.delete(id); }
   cloudSaving.add(id);
   try {
     const result = await cloudApi(`drafts/${encodeURIComponent(id)}`, { method: 'PUT', body: cloudBody({ ...local, baseVersion }) });
+    if (cloudSessionInvalid) return;
     cloudDraftVersion.set(id, result.version);
     localStorage.setItem(cloudSnapshotKey(id), JSON.stringify(local));
+    if (cloudSame(local, cloudLocal(id))) cloudDirty.delete(id);
     if (problem === id) cloudClearNote();
   } catch (error) {
+    if (cloudSessionInvalid) return;
     if (error.status === 409) {
       cloudConflict = { id, remote: error.data.current };
       if (problem === id) { cloudNote('另一设备已更新草稿；本机版本仍保留。请选择要使用的版本。'); $('show-remote').hidden = false; $('use-remote').hidden = false; $('keep-local').hidden = false; }
     } else if (problem === id) cloudNote(`云端保存失败：${error.message}。本机草稿仍保留。`);
   } finally {
     cloudSaving.delete(id);
-    if (!cloudConflict && !cloudSame(local, cloudLocal(id))) cloudDraftChanged(id);
+    if (!cloudSessionInvalid && !cloudConflict && !cloudSame(local, cloudLocal(id))) cloudDraftChanged(id);
   }
 }
 
@@ -185,6 +207,7 @@ async function cloudInitialize() {
     $('login').hidden = !!cloudUser;
     $('logout').hidden = !cloudUser;
     $('export').hidden = !cloudUser;
+    $('open-restore').hidden = !cloudUser;
     $('make-plan').hidden = !cloudUser;
     $('delete-account').hidden = !cloudUser;
     if (cloudUser) {
@@ -202,7 +225,16 @@ async function cloudInitialize() {
   }
 }
 
-window.ACMCloud = { selectedProblem: cloudSelectedProblem, draftChanged: cloudDraftChanged, recordResult: cloudRecordResult };
+window.ACMCloud = { selectedProblem: cloudSelectedProblem, draftChanged: cloudDraftChanged, recordResult: cloudRecordResult,
+  leavingProblem: id => { if (cloudDirty.has(id)) cloudSaveDraft(id); } };
+window.addEventListener('online', () => {
+  if (cloudUser && !cloudSessionInvalid && !cloudDraftReady.has(problem)) cloudSelectedProblem(problem);
+  for (const id of cloudDirty) cloudDraftChanged(id);
+});
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden || !cloudUser || cloudSessionInvalid) return;
+  try { const session = await cloudApi('auth/session'); if (session.user?.id !== cloudUser.id) cloudInvalidateSession(); } catch { /* offline drafts stay local */ }
+});
 
 $('search').addEventListener('input', cloudRenderLibrary);
 $('favorites-only').addEventListener('change', cloudRenderLibrary);
@@ -261,14 +293,6 @@ $('make-plan').addEventListener('click', async () => {
   const ranked = cloudProblems.slice().sort((a, b) => (cloudProgress.find(x => x.problemId === a.id)?.successes || 0) - (cloudProgress.find(x => x.problemId === b.id)?.successes || 0));
   const ids = [...ranked.map(x => x.id), 'sum', 'free'].slice(0, 3);
   try { await cloudApi('plans/today', { method: 'PUT', body: cloudBody({ plan: ids.map(problemId => ({ problemId, completed: false })) }) }); await cloudLoadProgress(); } catch (error) { alert(error.message); }
-});
-$('export').addEventListener('click', async () => {
-  try {
-    const data = await cloudApi('export');
-    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-    const link = document.createElement('a'); link.href = url; link.download = `acmcoder-export-${new Date().toISOString().slice(0, 10)}.json`; link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch (error) { alert(error.message); }
 });
 $('delete-account').addEventListener('click', async () => {
   if (!confirm('永久删除此免费版账号中的个人题库、草稿、进度和提交记录？建议先导出。')) return;

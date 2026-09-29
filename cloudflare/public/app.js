@@ -27,6 +27,7 @@ function saveDraft() {
   try { localStorage.setItem(draftKey(problem), JSON.stringify(values)); } catch { $('runner-state').textContent = '本机存储不可用'; }
 }
 function loadProblem(key, remember = true) {
+  if (key !== problem) { saveDraft(); window.ACMCloud?.leavingProblem(problem); }
   invalidate();
   problem = key;
   if (remember) { try { localStorage.setItem(lastProblemKey(), key); } catch { /* storage unavailable */ } }

@@ -1,4 +1,5 @@
 import { InputError, normalizeProblem, problemFromRow, validateSourceUrl } from '../../lib/problem.js';
+import { backupManifest, backupPage, restoreOne, restorePreview } from '../../lib/backup.js';
 
 const SESSION_SECONDS = 14 * 24 * 3600;
 const MAX_BODY = 80000;
@@ -21,8 +22,8 @@ function requireDb(env) { if (!env.DB) throw new InputError('数据库尚未配�
 function assertOrigin(request) {
   if (request.headers.get('origin') !== new URL(request.url).origin) throw new InputError('请求来源不匹配。', 403);
 }
-async function body(request) {
-  if (Number(request.headers.get('content-length') || 0) > MAX_BODY) throw new InputError('请求过大。', 413);
+async function body(request, maxBody = MAX_BODY) {
+  if (Number(request.headers.get('content-length') || 0) > maxBody) throw new InputError('请求过大。', 413);
   if (!request.headers.get('content-type')?.startsWith('application/json')) throw new InputError('请求必须使用 JSON。', 415);
   const reader = request.body?.getReader();
   if (!reader) throw new InputError('请求内容为空。');
@@ -32,7 +33,7 @@ async function body(request) {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.length;
-    if (size > MAX_BODY) { await reader.cancel(); throw new InputError('请求过大。', 413); }
+    if (size > maxBody) { await reader.cancel(); throw new InputError('请求过大。', 413); }
     chunks.push(value);
   }
   const bytes = new Uint8Array(size);
@@ -234,7 +235,7 @@ async function exportData(db, userId) {
     db.prepare('SELECT * FROM drafts WHERE user_id = ? LIMIT 202').bind(userId).all(),
     db.prepare('SELECT * FROM submissions WHERE user_id = ? LIMIT 101').bind(userId).all(),
     db.prepare('SELECT * FROM practice_progress WHERE user_id = ? LIMIT 201').bind(userId).all(),
-    db.prepare('SELECT * FROM daily_plans WHERE user_id = ? ORDER BY day DESC LIMIT 100').bind(userId).all(),
+    db.prepare('SELECT * FROM daily_plans WHERE user_id = ? ORDER BY day DESC LIMIT 155').bind(userId).all(),
     db.prepare('SELECT settings_json FROM user_settings WHERE user_id = ?').bind(userId).first()
   ]);
   return json({ schemaVersion: 1, exportedAt: new Date().toISOString(), problems: problems.results.map(problemFromRow), drafts: drafts.results, submissions: submissions.results, progress: progress.results, plans: plans.results, settings: settings ? JSON.parse(settings.settings_json) : {} }, 200, { 'content-disposition': 'attachment; filename="acmcoder-export.json"' });
@@ -242,7 +243,10 @@ async function exportData(db, userId) {
 async function deleteAccount(request, db, userId) {
   const data = await body(request);
   if (data.confirm !== 'DELETE_MY_ACCOUNT') throw new InputError('请明确确认删除账户数据。');
-  await db.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+  await db.batch([
+    db.prepare('DELETE FROM users WHERE id = ?').bind(userId),
+    db.prepare('DELETE FROM user_data_revisions WHERE user_id = ?').bind(userId)
+  ]);
   return json({ ok: true }, 200, { 'set-cookie': sessionCookie('', 0) });
 }
 async function fetchText(request) {
@@ -283,7 +287,18 @@ async function route({ request, env }) {
     }
     if (method === 'POST' && path.join('/') === 'auth/logout') return logout(request, db);
     const user = await requireUser(request, db);
+    const expectedUser = request.headers.get('x-acm-expected-user');
+    if (expectedUser && expectedUser !== user.id) return json({ error: '账号已在其他标签页切换；当前草稿仍保留在本机。', code: 'account_changed' }, 409);
     if (!['GET', 'HEAD'].includes(method)) assertOrigin(request);
+    if (path.join('/') === 'backup/manifest' && method === 'GET') return json(await backupManifest(db, user.id));
+    if (path[0] === 'backup' && path.length === 2 && method === 'GET') {
+      const offset = Number(url.searchParams.get('offset') || 0);
+      const limit = Number(url.searchParams.get('limit') || (path[1] === 'problems' ? 2 : 5));
+      const revision = Number(url.searchParams.get('revision'));
+      return json(await backupPage(db, user.id, path[1], offset, limit, revision));
+    }
+    if (path.join('/') === 'restore/preview' && method === 'POST') return json(await restorePreview(db, user.id, await body(request, 2500 * 1024)));
+    if (path.join('/') === 'restore' && method === 'POST') return json(await restoreOne(db, user.id, await body(request, 2500 * 1024)));
     if (path[0] === 'problems' && path.length === 1) {
       if (method === 'GET') return listProblems(db, user.id, url);
       if (method === 'POST') return addProblem(request, db, user.id);
