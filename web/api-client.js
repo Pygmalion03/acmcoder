@@ -28,6 +28,26 @@ function isNetworkError(error) {
   return error instanceof TypeError || error?.name === "NetworkError";
 }
 
+async function readJsonResponse(response, method, url) {
+  if (!response.ok) {
+    return response.json().catch(() => ({}));
+  }
+  try {
+    return await response.json();
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new ApiError("服务返回了无效数据，请重试。", {
+        kind: "protocol",
+        method,
+        url,
+        userMessage: "服务返回了无效数据，请重试。",
+        cause: error,
+      });
+    }
+    throw error;
+  }
+}
+
 export function createApiClient({
   fetchFn = globalThis.fetch,
   wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
@@ -45,7 +65,7 @@ export function createApiClient({
       ...options,
       headers: new Headers(options.headers),
     });
-    const body = await response.json().catch(() => ({}));
+    const body = await readJsonResponse(response, "GET", "/api/session");
     if (!response.ok) {
       throw new ApiError(body.error || `请求失败（${response.status}）`, {
         kind: "http",
@@ -53,6 +73,11 @@ export function createApiClient({
         method: "GET",
         url: "/api/session",
         userMessage: body.error || `请求失败（${response.status}）`,
+      });
+    }
+    if (typeof body?.token !== "string" || !body.token.trim()) {
+      throw new ApiError("运行会话响应无效，请重试。", {
+        kind: "protocol", method: "GET", url: "/api/session", userMessage: "运行会话响应无效，请重试。",
       });
     }
     return body.token;
@@ -84,7 +109,7 @@ export function createApiClient({
         }
         requestOptions.headers = headers;
         const response = await fetchFn(url, requestOptions);
-        const body = await response.json().catch(() => ({}));
+        const body = await readJsonResponse(response, method, url);
 
         if (response.status === 401 && pathname === "/api/run" && !refreshed) {
           refreshed = true;

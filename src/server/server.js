@@ -73,6 +73,26 @@ const contentTypes = {
 };
 
 const extensionOriginPattern = /^(?:chrome|edge)-extension:\/\/[a-z0-9_-]+$/i;
+const localHostnames = ["localhost", "127.0.0.1", "[::1]"];
+
+function parseRequestHost(host) {
+  const value = String(host || "").trim();
+  if (!value || /[\s\\\/@?#]/.test(value)) return null;
+  try {
+    const parsed = new URL(`http://${value}`);
+    return parsed.hostname ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeTrustedHostname(value) {
+  const raw = String(value || "").trim();
+  if (!raw || /[\s\\\/@?#*]/.test(raw)) return null;
+  if (raw.includes(":") && !/^\[[0-9a-f:]+\]$/i.test(raw)) return null;
+  const parsed = parseRequestHost(raw);
+  return parsed && !parsed.port ? parsed.hostname.toLowerCase() : null;
+}
 
 function requestOrigin(request) {
   return String(request.headers.origin || "").trim();
@@ -90,7 +110,9 @@ function isTrustedBrowserOrigin(request) {
   try {
     const parsed = new URL(origin);
     const requestHost = String(request.headers.host || "").toLowerCase();
-    return ["http:", "https:"].includes(parsed.protocol) && parsed.host.toLowerCase() === requestHost;
+    return ["http:", "https:"].includes(parsed.protocol)
+      && !parsed.username && !parsed.password && parsed.pathname === "/" && !parsed.search && !parsed.hash
+      && parsed.host.toLowerCase() === requestHost;
   } catch {
     return false;
   }
@@ -282,6 +304,9 @@ async function serveStatic(requestUrl, response) {
 }
 
 export function createAcmcoderServer(options = {}) {
+  const configuredHosts = options.trustedHosts ?? String(process.env.ACMCODER_TRUSTED_HOSTS || "").split(",");
+  const trustedHostnames = new Set([...localHostnames, ...configuredHosts]
+    .map(normalizeTrustedHostname).filter(Boolean));
   const memoryFile = options.memoryFile || getDefaultMemoryFile();
   const currentMemoryFile = options.currentMemoryFile || getDefaultCurrentMemoryFile();
   const deletedProblemsFile = options.deletedProblemsFile || getDefaultDeletedProblemsFile();
@@ -304,6 +329,11 @@ export function createAcmcoderServer(options = {}) {
     const requestUrl = new URL(request.url, "http://127.0.0.1");
 
     try {
+      const host = parseRequestHost(request.headers.host);
+      if (!host || !trustedHostnames.has(host.hostname.toLowerCase())) {
+        sendJson(response, 403, { error: "Host is not allowed." });
+        return;
+      }
       if (!isTrustedBrowserOrigin(request)) {
         sendJson(response, 403, { error: "Browser origin is not allowed." });
         return;

@@ -39,7 +39,12 @@ test("repository publishes prebuilt full-language app and runner images through 
   assert.match(workflow, /verify:/);
   assert.match(workflow, /npm test/);
   assert.match(workflow, /smoke-app-image\.mjs/);
-  assert.match(workflow, /chmod 0777 \.ci-data/);
+  assert.match(workflow, /\.ci-data\/memory:\/app\/data\/memory/);
+  assert.match(workflow, /\.ci-data\/recommendation:\/app\/data\/recommendation/);
+  assert.doesNotMatch(workflow, /\.ci-data:\/app\/data(?:\s|["'])/);
+  const smoke = fs.readFileSync("scripts/smoke-app-image.mjs", "utf8");
+  assert.match(smoke, /\/api\/problems/);
+  assert.match(smoke, /reverse-linked-list/);
   assert.match(workflow, /needs:\s*verify/);
 });
 

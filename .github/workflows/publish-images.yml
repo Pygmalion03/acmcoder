@@ -38,8 +38,8 @@ jobs:
 
       - name: Start hardened app container
         run: |
-          mkdir -p .ci-data
-          chmod 0777 .ci-data
+          mkdir -p .ci-data/memory .ci-data/recommendation
+          chmod 0777 .ci-data/memory .ci-data/recommendation
           docker run --detach \
             --name acmcoder-app-verify \
             --read-only \
@@ -49,7 +49,8 @@ jobs:
             --memory 2g \
             --cpus 2 \
             --tmpfs /tmp:rw,exec,nosuid,nodev,size=512m \
-            --volume "$PWD/.ci-data:/app/data" \
+            --volume "$PWD/.ci-data/memory:/app/data/memory" \
+            --volume "$PWD/.ci-data/recommendation:/app/data/recommendation" \
             --publish 127.0.0.1:43117:43117 \
             acmcoder-app:verify
 

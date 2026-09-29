@@ -15,6 +15,58 @@ function listen(server) {
   });
 }
 
+async function requestWithHost(port, pathname, headers = {}, method = "GET", body = "") {
+  return new Promise((resolve, reject) => {
+    const request = http.request({ hostname: "127.0.0.1", port, path: pathname, method, headers }, (response) => {
+      response.resume();
+      response.on("end", () => resolve({ status: response.statusCode, headers: response.headers }));
+    });
+    request.on("error", reject);
+    request.end(body);
+  });
+}
+
+test("unknown Host is rejected before session issuance or runner execution", async () => {
+  let runs = 0;
+  const server = createAcmcoderServer({ trustedHosts: [], runSubmission: async () => {
+    runs += 1;
+    return { status: "AC", message: "", stdout: "", stderr: "" };
+  } });
+  const port = await listen(server);
+  try {
+    for (const headers of [
+      { host: "unknown.example.test" },
+      { host: "localhost\\unknown.example.test" },
+      { host: "unknown.example.test", origin: "http://unknown.example.test" },
+      { host: "unknown.example.test", "x-forwarded-host": `127.0.0.1:${port}` },
+      { host: "unknown.example.test", origin: "chrome-extension://acmcoder" },
+    ]) {
+      assert.equal((await requestWithHost(port, "/api/session", headers)).status, 403);
+      assert.equal((await requestWithHost(port, "/api/run", {
+        ...headers, "content-type": "application/json", "x-acmcoder-token": "invalid",
+      }, "POST", JSON.stringify({ language: "python", code: "print(1)", runner: "local" }))).status, 403);
+    }
+    assert.equal(runs, 0);
+  } finally { server.close(); }
+});
+
+test("local and explicitly trusted hostnames preserve same-origin and CLI requests", async () => {
+  const server = createAcmcoderServer({ trustedHosts: [" Practice.Example.Test ", "*"] });
+  const port = await listen(server);
+  try {
+    for (const host of [`localhost:${port}`, `127.0.0.1:${port}`, `[::1]:${port}`, `practice.example.test:${port}`]) {
+      assert.equal((await requestWithHost(port, "/api/session", { host })).status, 200);
+      assert.equal((await requestWithHost(port, "/api/session", { host, origin: `http://${host}` })).status, 200);
+    }
+    assert.equal((await requestWithHost(port, "/api/session", { host: `127.0.0.1:${port}`, origin: "chrome-extension://acmcoder" })).status, 200);
+    for (const host of [`sibling.example.test:${port}`, `evil.test:${port}`]) {
+      assert.equal((await requestWithHost(port, "/api/session", { host })).status, 403);
+    }
+    assert.equal((await requestWithHost(port, "/api/session", { host: `localhost:${port}`, origin: "https://localhost:9999" })).status, 403);
+    assert.equal((await requestWithHost(port, "/api/session", { host: `localhost:${port}`, origin: "file://localhost" })).status, 403);
+  } finally { server.close(); }
+});
+
 test("serves a cheap health response", async () => {
   const server = createAcmcoderServer();
   const port = await listen(server);
@@ -159,7 +211,7 @@ test("rejects untrusted browser origins before they can execute code", async () 
 });
 
 test("allows same-origin browser requests on a deployed hostname", async () => {
-  const server = createAcmcoderServer();
+  const server = createAcmcoderServer({ trustedHosts: ["api.example.test"] });
   const port = await listen(server);
 
   try {

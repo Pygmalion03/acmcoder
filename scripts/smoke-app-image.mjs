@@ -35,6 +35,9 @@ for (const language of ["java", "cpp", "python"]) {
 const recommendation = await fetchJson("/api/recommendation/catalog");
 assert.ok(recommendation.catalog.entries.length > 0, "bundled recommendation catalog is empty");
 
+const problems = await fetchJson("/api/problems");
+assert.ok(problems.problems.some((problem) => problem.slug === "reverse-linked-list"), "bundled seed problems are missing");
+
 const { token } = await fetchJson("/api/session");
 const cases = [
   {

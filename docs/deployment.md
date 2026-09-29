@@ -28,6 +28,8 @@ npm start
 http://127.0.0.1:43117
 ```
 
+默认只接受本机 Host（`localhost`、`127.0.0.1`、`[::1]`）。通过已知域名部署时，设置 `ACMCODER_TRUSTED_HOSTS=practice.example.test` 后启动服务；多个精确 hostname 可用逗号分隔，不支持通配符或 URL。两份 Compose 文件都会传入该变量，未设置时为空。反向代理需保留被配置认可的 Host，请求中的 `X-Forwarded-Host` 不参与信任判断。
+
 这个模式下，Local runner 会扫描宿主机的 `python`、`javac/java`、`g++`。如果用户没有对应语言环境，但安装了 Docker Desktop，可以在页面里切到 Docker runner。
 
 ## 只有 Docker 的用户
@@ -114,7 +116,7 @@ ghcr.io/pygmalion03/acmcoder-runner:latest
 
 Release 的作用是给用户一个清晰的版本页，说明这个版本对应哪个 tag、有哪些镜像、怎么启动。源码 ZIP/TAR 也会挂在 Release 下面，但普通 Docker 用户仍然建议使用仓库里的 `docker-compose.prebuilt.yml` 或最新源码目录，而不是把 Release 当成安装器。
 
-源码分支可以先于正式 Release 更新。默认 Compose 文件使用 `ghcr.io/pygmalion03/acmcoder-app:latest`；如果需要固定版本，再使用 Release 对应的 tag，例如 `ghcr.io/pygmalion03/acmcoder-app:v3.0.3`。
+源码分支可以先于正式 Release 更新。默认 Compose 文件使用 `ghcr.io/pygmalion03/acmcoder-app:latest`；如果需要固定版本，再使用 Release 对应的 tag，例如 `ghcr.io/pygmalion03/acmcoder-app:v3.0.4`。
 
 ## 环境扫描
 

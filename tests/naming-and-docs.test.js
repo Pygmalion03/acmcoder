@@ -7,8 +7,8 @@ test("package and CLI use acmcoder naming", () => {
   const manifest = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
 
   assert.equal(pkg.name, "acmcoder");
-  assert.equal(pkg.version, "3.0.3");
-  assert.equal(manifest.version, "3.0.3");
+  assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
+  assert.equal(manifest.version, pkg.version);
   assert.equal(pkg.bin.acmcoder, "./bin/acmcoder.js");
   assert.equal(pkg.scripts.cli, "node bin/acmcoder.js");
   assert.ok(fs.existsSync("bin/acmcoder.js"));
@@ -26,6 +26,7 @@ test("repository declares platform-independent line ending rules", () => {
 });
 
 test("documentation points users to the acmcoder repo and packages", () => {
+  const { version } = JSON.parse(fs.readFileSync("package.json", "utf8"));
   const readme = fs.readFileSync("README.md", "utf8");
   const deployment = fs.readFileSync("docs/deployment.md", "utf8");
   const compose = fs.readFileSync("docker-compose.prebuilt.yml", "utf8");
@@ -34,8 +35,12 @@ test("documentation points users to the acmcoder repo and packages", () => {
   assert.match(readme, /github\.com\/Pygmalion03\/acmcoder\.git/);
   assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-app:latest/);
   assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-runner:latest/);
-  assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-app:v3\.0\.3/);
-  assert.match(deployment, /ghcr\.io\/pygmalion03\/acmcoder-app:v3\.0\.3/);
+  assert.ok(readme.includes(`当前稳定版为 \`v${version}\``));
+  assert.ok(readme.includes(`ghcr.io/pygmalion03/acmcoder-app:v${version}`));
+  assert.ok(readme.includes(`ghcr.io/pygmalion03/acmcoder-runner:v${version}`));
+  assert.ok(deployment.includes(`ghcr.io/pygmalion03/acmcoder-app:v${version}`));
+  const releaseNotes = fs.readFileSync(`docs/releases/v${version}.md`, "utf8");
+  assert.ok(releaseNotes.includes(`ACMCoder v${version}`));
   assert.match(readme, /源码分支[^\n]*`v3`/);
   assert.match(readme, /1\s*(?:至|–|-)\s*5\s*道题/);
   assert.match(readme, /GET\s+\/api\/session/);

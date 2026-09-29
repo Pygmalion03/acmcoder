@@ -9,3 +9,4 @@ services:
     environment:
       PORT: "43117"
       ACMCODER_HOST: "0.0.0.0"
+      ACMCODER_TRUSTED_HOSTS: "${ACMCODER_TRUSTED_HOSTS:-}"

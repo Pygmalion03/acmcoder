@@ -114,7 +114,7 @@ function loadAppForStartupPollingRace() {
 }
 
 async function flushPromises() {
-  for (let index = 0; index < 6; index += 1) {
+  for (let index = 0; index < 30; index += 1) {
     await Promise.resolve();
   }
 }
@@ -128,10 +128,13 @@ globalThis.__templateApp = {
   elements,
   selectProblem,
   runCode,
+  askAssist,
+  restorePreviousRound,
   beginReinforcement,
   beginPracticeContextChange,
   renderReinforcementState,
   getSession: () => currentPracticeSession,
+  controlsWired: () => applicationControlsWired,
   setSession: (session, identity) => {
     currentPracticeSession = session;
     currentPracticeSessionIdentity = { ...identity };
@@ -141,6 +144,7 @@ globalThis.__templateApp = {
   const nodes = new Map();
   const savedSessions = [];
   const templateRequests = new Map();
+  const problemRequests = new Map();
   const makeNode = () => {
     const listeners = new Map();
     return {
@@ -189,6 +193,7 @@ globalThis.__templateApp = {
   const sessions = new Map();
   let storageFailure = false;
   const runRequests = [];
+  const assistRequests = [];
   const sessionKey = ({ problemSlug, language }) => JSON.stringify({ problemSlug, language });
   const localStorage = {
     getItem(key) { return localValues.get(key) || null; },
@@ -205,10 +210,18 @@ globalThis.__templateApp = {
     progress: { acCount: 0 },
     cases: [],
   });
-  const getJson = (url) => {
+  const getJson = (url, options = {}) => {
     if (url === "/api/problems") return Promise.resolve({ problems: [] });
     if (url === "/api/memory/pages") return Promise.resolve({ pages: [] });
-    if (url.startsWith("/api/problems/")) return Promise.resolve({ problem: problem(url.split("/").at(-1)) });
+    if (url.startsWith("/api/problems/")) {
+      const slug = url.split("/").at(-1);
+      if (!slug.startsWith("deferred-")) return Promise.resolve({ problem: problem(slug) });
+      return new Promise((resolve, reject) => {
+        const queue = problemRequests.get(url) || [];
+        queue.push({ resolve, reject });
+        problemRequests.set(url, queue);
+      });
+    }
     if (url.startsWith("/api/templates/")) {
       return new Promise((resolve) => {
         const queue = templateRequests.get(url) || [];
@@ -218,6 +231,9 @@ globalThis.__templateApp = {
     }
     if (url === "/api/run") {
       return new Promise((resolve, reject) => runRequests.push({ resolve, reject }));
+    }
+    if (url === "/api/assist") {
+      return new Promise((resolve, reject) => assistRequests.push({ resolve, reject, signal: options.signal }));
     }
     return Promise.reject(new Error(`unexpected ${url}`));
   };
@@ -279,8 +295,15 @@ globalThis.__templateApp = {
     resolveTemplate(url, code, index = 0) {
       templateRequests.get(url)?.splice(index, 1)[0]?.({ code });
     },
+    rejectTemplate(url, error) { templateRequests.get(url)?.shift()?.(Promise.reject(error)); },
+    resolveProblem(slug) { problemRequests.get(`/api/problems/${slug}`)?.shift()?.resolve({ problem: problem(slug) }); },
+    rejectProblem(slug, error) { problemRequests.get(`/api/problems/${slug}`)?.shift()?.reject(error); },
+    savedSession(identity) { return sessions.get(sessionKey(identity)); },
     resolveRun(body) { runRequests.shift()?.resolve(body); },
+    resolveRunAt(index, body) { runRequests.splice(index, 1)[0]?.resolve(body); },
     rejectRun(error) { runRequests.shift()?.reject(error); },
+    resolveAssist(body) { assistRequests.shift()?.resolve(body); },
+    nextAssistSignal() { return assistRequests[0]?.signal; },
     setStorageFailure(value) { storageFailure = value; },
     problem,
     savedSessions,
@@ -603,16 +626,6 @@ test("practice UI starts and completes an immediate reinforcement round", () => 
   assert.match(script, /body\.result\.status === "AC"[\s\S]*completeReinforcement\(/);
 });
 
-test("practice changes bind persistence to a captured session identity", () => {
-  const script = fs.readFileSync("web/app.js", "utf8");
-
-  assert.match(script, /let currentPracticeSessionIdentity = null;/);
-  assert.match(script, /function beginPracticeContextChange\(/);
-  assert.match(script, /const contextId = beginPracticeContextChange\(\);/);
-  assert.match(script, /if \(!isCurrentPracticeContext\(contextId\)\) \{\s*return;\s*\}/);
-  assert.match(script, /savePracticeSession\(localStorage, currentPracticeSessionIdentity, currentPracticeSession\)/);
-});
-
 test("an older problem template cannot overwrite the newer editor or transcript", async () => {
   const { app, nodes, resolveTemplate, savedSessions } = loadAppForDeferredTemplateTransitions();
   await flushPromises();
@@ -625,8 +638,8 @@ test("an older problem template cannot overwrite the newer editor or transcript"
   const newSelection = app.selectProblem("new-problem");
   await flushPromises();
 
-  assert.equal(nodes.get("#code").value, "");
-  assert.equal(nodes.get("#assist-transcript").children.length, 0);
+  assert.equal(nodes.get("#code").value, "old editor");
+  assert.equal(nodes.get("#assist-transcript").children.length, 1);
 
   resolveTemplate("/api/templates/new-problem/python", "new template");
   await newSelection;
@@ -638,6 +651,59 @@ test("an older problem template cannot overwrite the newer editor or transcript"
     identity: { problemSlug: "new-problem", language: "python" },
     code: "new template",
   });
+});
+
+test("failed selection and editing while loading preserve the complete old workspace", async () => {
+  const { app, nodes, problem, rejectProblem, resolveProblem, resolveTemplate, savedSession } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  nodes.get("#language").value = "python";
+  const oldProblem = problem("old-workspace");
+  app.state.selected = oldProblem;
+  app.state.problems = [oldProblem];
+  app.setSession(createPracticeSession({ code: "first", stdin: "1", expected: "2" }), { problemSlug: "old-workspace", language: "python" });
+  nodes.get("#code").value = "first";
+  nodes.get("#stdin").value = "1";
+  nodes.get("#expected").value = "2";
+
+  const failed = app.selectProblem("deferred-fail");
+  await flushPromises();
+  nodes.get("#code").value = "edited while waiting";
+  nodes.get("#code").dispatch("input");
+  rejectProblem("deferred-fail", new Error("HTTP 503"));
+  await failed;
+  assert.equal(app.state.selected.slug, "old-workspace");
+  assert.equal(nodes.get("#code").value, "edited while waiting");
+  assert.equal(nodes.get("#stdin").value, "1");
+  assert.equal(nodes.get("#expected").value, "2");
+  assert.match(nodes.get("#assist-status").textContent, /加载.*失败/);
+
+  const next = app.selectProblem("deferred-next");
+  await flushPromises();
+  resolveProblem("deferred-next");
+  await flushPromises();
+  resolveTemplate("/api/templates/deferred-next/python", "next template");
+  await next;
+  assert.equal(savedSession({ problemSlug: "old-workspace", language: "python" }).code, "edited while waiting");
+  assert.equal(savedSession({ problemSlug: "old-workspace", language: "python" }).stdin, "1");
+  assert.equal(savedSession({ problemSlug: "old-workspace", language: "python" }).expected, "2");
+});
+
+test("a failed target template leaves the old selected problem and draft visible", async () => {
+  const { app, nodes, problem, rejectTemplate } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  nodes.get("#language").value = "python";
+  const oldProblem = problem("old-template");
+  app.state.selected = oldProblem;
+  app.state.problems = [oldProblem];
+  app.setSession(createPracticeSession({ code: "draft" }), { problemSlug: "old-template", language: "python" });
+  nodes.get("#code").value = "draft";
+  const selection = app.selectProblem("template-fail");
+  await flushPromises();
+  rejectTemplate("/api/templates/template-fail/python", new Error("HTTP 503"));
+  await selection;
+  assert.equal(app.state.selected.slug, "old-template");
+  assert.equal(nodes.get("#code").value, "draft");
+  assert.match(nodes.get("#assist-status").textContent, /加载.*失败/);
 });
 
 test("a delayed Java template cannot persist after a newer C++ language switch", async () => {
@@ -668,6 +734,41 @@ test("a delayed Java template cannot persist after a newer C++ language switch",
   });
 });
 
+test("language change keeps edits under the old language until the target template succeeds", async () => {
+  const { app, nodes, problem, resolveTemplate, rejectTemplate, savedSession } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  assert.equal(app.controlsWired(), true);
+  const current = problem("language-draft");
+  app.state.selected = current;
+  nodes.get("#language").value = "python";
+  app.setSession(createPracticeSession({ code: "python draft" }), { problemSlug: "language-draft", language: "python" });
+  nodes.get("#code").value = "python draft";
+
+  nodes.get("#language").value = "java";
+  nodes.get("#language").dispatch("change");
+  await flushPromises();
+  assert.equal(nodes.get("#code").value, "python draft");
+  assert.equal(nodes.get("#language").value, "python");
+  nodes.get("#code").value = "python edited";
+  nodes.get("#code").dispatch("input");
+  rejectTemplate("/api/templates/language-draft/java", new Error("HTTP 503"));
+  await flushPromises();
+  assert.equal(nodes.get("#code").value, "python edited");
+  assert.equal(app.state.activeUtilityTab, "assist");
+  assert.equal(app.state.mobilePracticeTab, "result");
+  assert.match(nodes.get("#assist-status").textContent, /加载语言失败/);
+  assert.equal(savedSession({ problemSlug: "language-draft", language: "python" }).code, "python edited");
+  assert.equal(savedSession({ problemSlug: "language-draft", language: "java" }), undefined);
+
+  nodes.get("#language").value = "cpp";
+  nodes.get("#language").dispatch("change");
+  await flushPromises();
+  resolveTemplate("/api/templates/language-draft/cpp", "cpp starter");
+  await flushPromises();
+  assert.equal(nodes.get("#code").value, "cpp starter");
+  assert.equal(savedSession({ problemSlug: "language-draft", language: "python" }).code, "python edited");
+});
+
 test("an old run response cannot complete a newly started reinforcement round", async () => {
   const { app, nodes, problem, resolveRun, resolveTemplate } = loadAppForDeferredTemplateTransitions();
   await flushPromises();
@@ -696,6 +797,115 @@ test("an old run response cannot complete a newly started reinforcement round", 
   assert.equal(app.getSession().reinforcement.status, "active");
   assert.equal(nodes.get("#status").textContent, "IDLE");
   assert.equal(currentProblem.progress.acCount, 0);
+});
+
+test("editing during a run still shows its result without replacing newer code", async () => {
+  const { app, nodes, problem, resolveRun, savedSession } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const current = problem("edit-during-run");
+  app.state.selected = current;
+  nodes.get("#language").value = "python";
+  nodes.get("#code").value = "print(1)";
+  app.setSession(createPracticeSession({ code: "print(1)" }), { problemSlug: current.slug, language: "python" });
+  const run = app.runCode();
+  nodes.get("#code").value = "print(2)";
+  nodes.get("#code").dispatch("input");
+  resolveRun({ result: { status: "AC", message: "accepted", stdout: "1", stderr: "" } });
+  await run;
+  assert.equal(nodes.get("#status").textContent, "AC");
+  assert.equal(nodes.get("#code").value, "print(2)");
+  assert.equal(savedSession({ problemSlug: current.slug, language: "python" }).code, "print(2)");
+});
+
+test("only the latest run response can replace the displayed result", async () => {
+  const { app, nodes, problem, resolveRun } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const current = problem("two-runs");
+  app.state.selected = current;
+  nodes.get("#language").value = "python";
+  app.setSession(createPracticeSession({ code: "print(1)" }), { problemSlug: current.slug, language: "python" });
+  const first = app.runCode();
+  const second = app.runCode();
+  resolveRun({ result: { status: "WA", message: "old", stdout: "", stderr: "" } });
+  await first;
+  assert.equal(nodes.get("#status").textContent, "RUNNING");
+  resolveRun({ result: { status: "AC", message: "new", stdout: "", stderr: "" } });
+  await second;
+  assert.equal(nodes.get("#status").textContent, "AC");
+  assert.equal(nodes.get("#message").textContent, "new");
+});
+
+test("reverse run response order still keeps the latest result", async () => {
+  const { app, nodes, problem, resolveRunAt } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const current = problem("reverse-runs");
+  app.state.selected = current;
+  nodes.get("#language").value = "python";
+  app.setSession(createPracticeSession({ code: "print(1)" }), { problemSlug: current.slug, language: "python" });
+  const first = app.runCode();
+  const second = app.runCode();
+  resolveRunAt(1, { result: { status: "AC", message: "latest", stdout: "", stderr: "" } });
+  await second;
+  resolveRunAt(0, { result: { status: "WA", message: "stale", stdout: "", stderr: "" } });
+  await first;
+  assert.equal(nodes.get("#status").textContent, "AC");
+  assert.equal(nodes.get("#message").textContent, "latest");
+});
+
+test("successful reinforcement cancels pending AI and ignores its late answer", async () => {
+  const { app, nodes, problem, resolveTemplate, resolveAssist, nextAssistSignal } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const current = problem("ai-reinforcement");
+  app.state.selected = current;
+  nodes.get("#language").value = "python";
+  const pending = appendAiMessage(createPracticeSession({ code: "old" }), { role: "user", content: "first question" });
+  const learned = appendAiMessage(pending, { role: "assistant", content: "first answer" });
+  app.setSession(learned, { problemSlug: current.slug, language: "python" });
+  nodes.get("#assist-question").value = "follow up";
+  const ask = app.askAssist();
+  await flushPromises();
+  const signal = nextAssistSignal();
+  const reinforcement = app.beginReinforcement("ai-assisted");
+  await flushPromises();
+  resolveTemplate("/api/templates/ai-reinforcement/python", "fresh");
+  await reinforcement;
+  assert.equal(signal.aborted, true);
+  assert.equal(nodes.get("#ask-assist").disabled, false);
+  assert.doesNotMatch(nodes.get("#assist-status").textContent, /正在请求模型/);
+  resolveAssist({ message: "late answer" });
+  await ask;
+  assert.equal(app.getSession().ai.current.length, 0);
+  assert.equal(nodes.get("#ask-assist").disabled, false);
+});
+
+test("old AI finally cannot release controls owned by the new round request", async () => {
+  const { app, nodes, problem, resolveTemplate, resolveAssist, nextAssistSignal } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const current = problem("ai-finally");
+  app.state.selected = current;
+  nodes.get("#language").value = "python";
+  const pending = appendAiMessage(createPracticeSession({ code: "old" }), { role: "user", content: "first" });
+  app.setSession(appendAiMessage(pending, { role: "assistant", content: "answer" }), { problemSlug: current.slug, language: "python" });
+  nodes.get("#assist-question").value = "old request";
+  const first = app.askAssist();
+  await flushPromises();
+  const oldSignal = nextAssistSignal();
+  const reinforcement = app.beginReinforcement("ai-assisted");
+  await flushPromises();
+  resolveTemplate("/api/templates/ai-finally/python", "fresh");
+  await reinforcement;
+  assert.equal(oldSignal.aborted, true);
+  nodes.get("#assist-question").value = "new request";
+  const second = app.askAssist();
+  await flushPromises();
+  resolveAssist({ message: "late old" });
+  await first;
+  assert.equal(nodes.get("#ask-assist").disabled, true);
+  assert.equal(nodes.get("#cancel-assist").hidden, false);
+  resolveAssist({ message: "new answer" });
+  await second;
+  assert.equal(nodes.get("#ask-assist").disabled, false);
+  assert.equal(app.getSession().ai.current.at(-1).content, "new answer");
 });
 
 test("an old run error cannot change a newly started reinforcement round", async () => {
@@ -795,6 +1005,29 @@ test("a failed reinforcement save keeps the original round visible", async () =>
   assert.equal(app.getSession(), original);
   assert.equal(nodes.get("#code").value, "preserved code");
   assert.match(nodes.get("#assist-status").textContent, /无法开始巩固练习/);
+});
+
+test("failed reinforcement leaves the pending AI request attached to the old round", async () => {
+  const { app, nodes, problem, rejectTemplate, resolveAssist, nextAssistSignal } = loadAppForDeferredTemplateTransitions();
+  await flushPromises();
+  const current = problem("ai-failed-reinforcement");
+  app.state.selected = current;
+  nodes.get("#language").value = "python";
+  const pending = appendAiMessage(createPracticeSession({ code: "old" }), { role: "user", content: "first question" });
+  const learned = appendAiMessage(pending, { role: "assistant", content: "first answer" });
+  app.setSession(learned, { problemSlug: current.slug, language: "python" });
+  nodes.get("#assist-question").value = "follow up";
+  const ask = app.askAssist();
+  await flushPromises();
+  const signal = nextAssistSignal();
+  const reinforcement = app.beginReinforcement("ai-assisted");
+  await flushPromises();
+  rejectTemplate("/api/templates/ai-failed-reinforcement/python", new Error("HTTP 503"));
+  await reinforcement;
+  assert.equal(signal.aborted, false);
+  resolveAssist({ message: "still relevant" });
+  await ask;
+  assert.equal(app.getSession().ai.current.at(-1).content, "still relevant");
 });
 
 test("a result-triggered reinforcement save failure opens visible feedback", async () => {

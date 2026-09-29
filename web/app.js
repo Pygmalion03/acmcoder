@@ -53,6 +53,8 @@ const CACHE_KEYS = {
 
 let currentPracticeSession = null;
 let currentPracticeSessionIdentity = null;
+let selectionLoadId = 0;
+let runRequestId = 0;
 let practiceContextId = 0;
 let assistRequestId = 0;
 let assistAbortController = null;
@@ -525,6 +527,10 @@ function practiceSessionIdentity(problem = state.selected, language = elements.l
   };
 }
 
+function activePracticeSessionIdentity() {
+  return currentPracticeSessionIdentity || practiceSessionIdentity();
+}
+
 function samePracticeSessionIdentity(left, right) {
   return left?.problemSlug === right?.problemSlug && left?.language === right?.language;
 }
@@ -616,6 +622,8 @@ function showPreviousRound() {
 
 function restorePreviousRound() {
   if (!currentPracticeSession?.reinforcement?.canRestore) return;
+  practiceContextId += 1;
+  invalidateAssistRequest();
   currentPracticeSession = restorePreviousPracticeRound(currentPracticeSession);
   persistCurrentPracticeSession();
   applyPracticeSession(currentPracticeSession, currentPracticeSessionIdentity);
@@ -657,6 +665,9 @@ async function beginReinforcement(trigger) {
     if (!saveResult.saved) {
       throw new Error("本轮内容暂时无法保存到浏览器");
     }
+    practiceContextId += 1;
+    invalidateAssistRequest();
+    setAssistStatus("");
     currentPracticeSession = nextSession;
     currentPracticeSessionIdentity = { ...identity };
 
@@ -857,13 +868,14 @@ async function askAssist() {
 function saveWorkspaceCache({ markReinforcementDirty = true } = {}) {
   if (!state.selected) return;
 
+  const currentIdentity = activePracticeSessionIdentity();
+
   try {
     localStorage.setItem(CACHE_KEYS.selected, state.selected.slug);
-    localStorage.setItem(CACHE_KEYS.language, elements.language.value);
+    localStorage.setItem(CACHE_KEYS.language, currentIdentity.language);
   } catch {
     setAssistStatus("本轮内容暂时无法保存到浏览器", "error");
   }
-  const currentIdentity = practiceSessionIdentity();
   const session = currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, currentIdentity)
     ? currentPracticeSession
     : loadCurrentPracticeSession(currentIdentity)?.session;
@@ -1380,50 +1392,69 @@ function formatProblemListTitle(problem) {
 }
 
 async function selectProblem(slug, options = {}) {
-  const contextId = beginPracticeContextChange();
-  const existing = state.problems.find((item) => item.slug === slug);
-  const problem = existing?.memorySource ? existing : (await getJson(`/api/problems/${slug}`)).problem;
-  if (!isCurrentPracticeContext(contextId)) {
-    return;
-  }
-  state.selected = problem;
-  const loadedSession = loadCurrentPracticeSession();
-  const restoredWorkspace = loadedSession?.source === "session" || loadedSession?.source === "legacy";
-  applyProgress(problem.slug, problem.progress);
+  const loadId = ++selectionLoadId;
+  const initialContextId = practiceContextId;
+  const language = activePracticeSessionIdentity().language;
+  try {
+    const existing = state.problems.find((item) => item.slug === slug);
+    const problem = existing?.memorySource ? existing : (await getJson(`/api/problems/${slug}`)).problem;
+    if (loadId !== selectionLoadId || initialContextId !== practiceContextId) return;
+    const identity = practiceSessionIdentity(problem, language);
+    const loadedSession = currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, identity)
+      ? { source: "session", session: currentPracticeSession }
+      : loadPracticeSessionWithMetadata(localStorage, {
+        ...identity,
+        legacyKey: legacyWorkspaceCacheKey(problem, language),
+      });
+    const restoredWorkspace = loadedSession?.source === "session" || loadedSession?.source === "legacy";
+    const template = !restoredWorkspace && options.loadTemplate !== false
+      ? await initialTemplateForProblem(problem, language)
+      : null;
+    if (loadId !== selectionLoadId || initialContextId !== practiceContextId) return;
+    beginPracticeContextChange();
+    state.selected = problem;
+    currentPracticeSession = loadedSession.session;
+    currentPracticeSessionIdentity = { ...identity };
+    elements.language.value = language;
+    applyProgress(problem.slug, problem.progress);
 
-  renderProblemIdentity(problem);
-  elements.link.href = problem.leetcode.url;
-  elements.description.textContent = problem.description;
+    renderProblemIdentity(problem);
+    elements.link.href = problem.leetcode.url;
+    elements.description.textContent = problem.description;
 
-  if (restoredWorkspace) {
-    applyPracticeSession(loadedSession.session);
-  } else {
-    renderAssistConversation(loadedSession?.session);
-    renderReinforcementState(loadedSession?.session);
-    restoreSampleIo();
-  }
-  if (options.loadTemplate !== false) {
-    await loadTemplate({ apply: !restoredWorkspace, persist: false, contextId });
-    if (!isCurrentPracticeContext(contextId)) {
-      return;
+    if (restoredWorkspace) {
+      applyPracticeSession(loadedSession.session);
+    } else {
+      renderAssistConversation(loadedSession?.session);
+      renderReinforcementState(loadedSession?.session);
+      restoreSampleIo();
     }
-  }
-  if (
-    restoredWorkspace &&
-    isStaleLeetCodeSampleCache(state.selected, {
-      stdin: elements.stdin.value,
-      expected: elements.expected.value,
-    })
-  ) {
-    restoreSampleIo();
-  }
-  saveWorkspaceCache({ markReinforcementDirty: false });
-  renderProblemList();
-  renderDailySession();
-  if (options.openView !== false) {
-    setActiveView("practice");
-    setProblemInspectorOpen(true);
-    setMobilePracticeTab("problem");
+    if (template !== null) applyInitialTemplate(template);
+    if (
+      restoredWorkspace &&
+      isStaleLeetCodeSampleCache(state.selected, {
+        stdin: elements.stdin.value,
+        expected: elements.expected.value,
+      })
+    ) {
+      restoreSampleIo();
+    }
+    saveWorkspaceCache({ markReinforcementDirty: false });
+    renderProblemList();
+    renderDailySession();
+    if (options.openView !== false) {
+      setActiveView("practice");
+      setProblemInspectorOpen(true);
+      setMobilePracticeTab("problem");
+    }
+  } catch (error) {
+    if (loadId === selectionLoadId && initialContextId === practiceContextId) {
+      if (!state.selected) throw error;
+      setActiveView("practice");
+      setUtilityTab("assist");
+      setMobilePracticeTab("result");
+      setAssistStatus(`加载题目失败：${error.message}`, "error");
+    }
   }
 }
 
@@ -1443,10 +1474,10 @@ function setResult(result, { markReinforcementDirty = true } = {}) {
 
 async function runCode() {
   const requestContextId = practiceContextId;
-  const requestIdentity = practiceSessionIdentity();
+  const requestId = ++runRequestId;
+  const requestIdentity = activePracticeSessionIdentity();
   const requestProblem = state.selected;
-  let requestSession = null;
-  if (currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, practiceSessionIdentity())) {
+  if (currentPracticeSession && samePracticeSessionIdentity(currentPracticeSessionIdentity, requestIdentity)) {
     currentPracticeSession = updatePracticeWorkspace(currentPracticeSession, {
       code: elements.code.value,
       stdin: elements.stdin.value,
@@ -1454,7 +1485,6 @@ async function runCode() {
     });
     persistCurrentPracticeSession();
     renderReinforcementState(currentPracticeSession);
-    requestSession = currentPracticeSession;
   }
   setUtilityTab("result");
   setMobilePracticeTab("result");
@@ -1481,8 +1511,8 @@ async function runCode() {
     });
     if (
       !isCurrentPracticeContext(requestContextId)
-      || !samePracticeSessionIdentity(requestIdentity, practiceSessionIdentity())
-      || currentPracticeSession !== requestSession
+      || requestId !== runRequestId
+      || !samePracticeSessionIdentity(requestIdentity, activePracticeSessionIdentity())
     ) {
       return;
     }
@@ -1502,8 +1532,8 @@ async function runCode() {
   } catch (error) {
     if (
       !isCurrentPracticeContext(requestContextId)
-      || !samePracticeSessionIdentity(requestIdentity, practiceSessionIdentity())
-      || currentPracticeSession !== requestSession
+      || requestId !== runRequestId
+      || !samePracticeSessionIdentity(requestIdentity, activePracticeSessionIdentity())
     ) {
       return;
     }
@@ -2116,19 +2146,40 @@ async function init() {
     recordDailyAction(slug, action).catch((error) => setDailyStatus(error.message, "error"));
   });
   elements.language.addEventListener("change", async () => {
-    const contextId = beginPracticeContextChange();
+    const loadId = ++selectionLoadId;
+    const initialContextId = practiceContextId;
+    const targetLanguage = elements.language.value;
+    const oldLanguage = activePracticeSessionIdentity().language;
+    if (!state.selected || targetLanguage === oldLanguage) return;
+    elements.language.value = oldLanguage;
+    const identity = practiceSessionIdentity(state.selected, targetLanguage);
     try {
-      localStorage.setItem(CACHE_KEYS.language, elements.language.value);
-    } catch {
-      setAssistStatus("本轮内容暂时无法保存到浏览器", "error");
-    }
-    updateRunnerModeOptions();
-    applyRecommendedRunnerIfNeeded();
-    renderRunnerHealth();
-    if (!restoreWorkspaceCache()) {
-      await loadTemplate({ contextId });
-      if (!isCurrentPracticeContext(contextId)) {
-        return;
+      const loaded = loadPracticeSessionWithMetadata(localStorage, {
+        ...identity,
+        legacyKey: legacyWorkspaceCacheKey(state.selected, targetLanguage),
+      });
+      const restored = loaded.source === "session" || loaded.source === "legacy";
+      const template = restored ? null : await initialTemplateForProblem(state.selected, targetLanguage);
+      if (loadId !== selectionLoadId || initialContextId !== practiceContextId) return;
+      beginPracticeContextChange();
+      elements.language.value = targetLanguage;
+      currentPracticeSession = loaded.session;
+      currentPracticeSessionIdentity = { ...identity };
+      if (restored) applyPracticeSession(loaded.session, identity);
+      else {
+        restoreSampleIo();
+        applyInitialTemplate(template);
+      }
+      saveWorkspaceCache({ markReinforcementDirty: false });
+      updateRunnerModeOptions();
+      applyRecommendedRunnerIfNeeded();
+      renderRunnerHealth();
+    } catch (error) {
+      if (loadId === selectionLoadId && initialContextId === practiceContextId) {
+        elements.language.value = oldLanguage;
+        setUtilityTab("assist");
+        setMobilePracticeTab("result");
+        setAssistStatus(`加载语言失败：${error.message}`, "error");
       }
     }
   });

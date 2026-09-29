@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ACMCoder",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Capture LeetCode problem text into the local ACMCoder memory store.",
   "permissions": ["activeTab", "scripting", "sidePanel", "storage", "tabs"],
   "host_permissions": [
