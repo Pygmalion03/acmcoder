@@ -195,8 +195,10 @@ async function cloudInitialize() {
       await cloudLoadProgress();
     }
   } catch (error) {
-    $('account-state').textContent = '访客 · 云端暂不可用';
-    $('login').hidden = false;
+    $('account-state').textContent = cloudUser ? `@${cloudUser.login} · 数据暂不可用` : '访客 · 云端暂不可用';
+    $('login').hidden = !!cloudUser;
+    $('logout').hidden = !cloudUser;
+    cloudNote(`云端数据加载失败：${error.message}。本机草稿仍保留；请稍后刷新重试。`);
   }
 }
 
