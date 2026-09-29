@@ -62,7 +62,7 @@ Python 使用固定版本 Pyodide（以官方稳定发行和实际加载为准�
 ## M2：免费账户与 D1 私人数据
 
 - [x] 选用成熟、免费可用的认证方案，默认优先 GitHub OAuth，减少邮件服务和自建密码存储；若提供商配置需要用户操作，先完成可审查的回调和配置清单，由父 agent 协调，不能用伪登录代替。正式方案调整需说明理由。
-- [ ] OAuth state、会话过期、退出、CSRF/Origin、重定向白名单及 Cookie 属性正确；D1 全部私人操作根据服务端身份授权，不能信任请求中的 userId。
+- [x] OAuth state、会话过期、退出、CSRF/Origin、重定向白名单及 Cookie 属性正确；D1 全部私人操作根据服务端身份授权，不能信任请求中的 userId。
 - [x] 建立 users、sessions、personal_problems、drafts、submissions、practice_progress、daily_plans 等最小 schema；公共题目与个人收藏分开，以 user_id 建索引。
 - [x] 草稿延迟合并保存，避免每键写 D1；使用版本号做乐观并发，冲突保留两端内容，不静默覆盖。关闭页面前本地缓存尚未同步内容。
 - [ ] 匿名转登录迁移需明确确认范围，不上传旧个人版数据；提供跨设备恢复。
@@ -105,4 +105,4 @@ Python 使用固定版本 Pyodide（以官方稳定发行和实际加载为准�
 - 2026-09-29：父 agent 基于用户确认需求制定本计划，准备交 GPT-6 Sol / high 执行。当前没有变更线上域名或启用收费服务。
 - 2026-09-29：执行 agent 在 `codex/cloudflare-free-edition` 实现 M1 静态入口和不透明 iframe + Web Worker + Pyodide 0.29.3。WSL 临时服务与浏览器验证正常、异常、手动停止、草稿刷新及模拟 Pages CSP 下阻断带凭据 API 请求。真实 Pages 部署与线上响应头尚未验证。详细证据见 `cloudflare/README.md`。
 - 2026-09-29：父 agent 在全新免费 Pages 项目预发布 `https://acmcoder-web.pages.dev` 验证公网 Python 输出 `8`、自测通过、带凭据同站 API 请求遭阻断且网络记录为空、无限循环 5 秒自动停止，并核对部署 CSP。移动端布局及最终新域名仍待验收。
-- 2026-09-29：M2/M3 部署后受邀 GitHub OAuth 与单账号真实闭环通过：原创题 2 样例、Python 自测、D1 草稿刷新、同账号双窗口 409 冲突及 UI 选择、今日计划、导出删除再导入、390px 视口。两个真实独立用户线上隔离仍未验收；本地 SQLite API 跨账号测试通过。JSON 导入只恢复题库，Java/C++ NAS runner 仍关闭。详见 `cloudflare/README.md`。
+- 2026-09-29：M2/M3 部署后受邀 GitHub OAuth 与单账号真实闭环通过：原创题 2 样例、Python 自测、D1 草稿刷新、同账号双窗口 409 冲突及 UI 选择、今日计划、导出删除再导入、退出后 session 未认证和私有 API 401、再次登录成功、390px 视口。两个真实独立用户线上隔离仍未验收；本地 SQLite API 跨账号测试通过。JSON 导入只恢复题库，Java/C++ NAS runner 仍关闭。详见 `cloudflare/README.md`。

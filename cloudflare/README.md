@@ -31,4 +31,4 @@ Cloudflare Pages Free 当前限制每月 500 次构建、每站最多 20,000 个
 
 M2/M3 源码提交 `e20a1f3`，Pages 变量修复 `a10e7ad`，静态资源版本修复 `3e55ec7`。WSL 中 SQLite 内存库成功执行 `0001_initial.sql`，8 张应用表、`foreign_keys=1`、`quick_check=ok`；父 agent 在生产 D1 建立并回读同样 8 张应用表。WSL `npm test` 245/245 通过；另有前端草稿加载竞态测试 1/1 通过。
 
-父 agent 在真实线上以受邀 GitHub 账号 `Pygmalion03` 完成 OAuth，`/api/auth/session` 返回该账号，题库、进度、计划等数据 API 返回 200；添加原创题并以 JSON 保存 2 组样例，Python 输出 `8`、自测通过，D1 草稿生成 version 1 且刷新恢复。两个浏览器窗口使用**同一账号**依次保存不同草稿，后写请求得到 409；界面同时保留本机与云端版本，选择云端版本成功。今日计划可生成、勾选；UI 导出 JSON，删除该测试题后从导出文件重新导入题库并保留 2 组样例。390px 手机视口无横向溢出。该测试没有证明两个真实独立账号的线上隔离；目前只有 WSL SQLite API 测试覆盖跨用户读写、导出和计划权限。真实双账号验收仍待完成，退出会话与最终主域验收由父 agent 继续。
+父 agent 在真实线上以受邀 GitHub 账号 `Pygmalion03` 完成 OAuth，`/api/auth/session` 返回该账号，题库、进度、计划等数据 API 返回 200；添加原创题并以 JSON 保存 2 组样例，Python 输出 `8`、自测通过，D1 草稿生成 version 1 且刷新恢复。两个浏览器窗口使用**同一账号**依次保存不同草稿，后写请求得到 409；界面同时保留本机与云端版本，选择云端版本成功。今日计划可生成、勾选；UI 导出 JSON，删除该测试题后从导出文件重新导入题库并保留 2 组样例。退出后 `/api/auth/session` 返回 `authenticated: false`，`/api/problems` 返回 401；再次 GitHub 登录成功。390px 手机视口无横向溢出。该测试没有证明两个真实独立账号的线上隔离；目前只有 WSL SQLite API 测试覆盖跨用户读写、导出和计划权限。真实双账号与最终主域验收仍待完成。
