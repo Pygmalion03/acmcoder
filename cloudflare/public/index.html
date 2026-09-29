@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>ACMCoder · 免费练习版</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">&lt;/&gt;</span><span>ACMCoder <small>免费练习版</small></span></div>
+    <nav aria-label="主导航"><a href="#practice">练习</a><a href="#plan">今日计划</a><a href="#progress">进度</a></nav>
+    <span class="account">访客 · 草稿存于本机</span>
+  </header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">在浏览器里练习</p><h1>写代码，马上自测。</h1><p>Python 在本机浏览器执行。练习不依赖 NAS；“自测通过”只表示通过当前样例。</p></div><span class="badge">无需登录即可开始</span></section>
+    <section id="practice" class="practice-grid" aria-label="编程练习">
+      <aside class="problem-panel">
+        <div class="panel-head"><span>题目</span><select id="problem-select" aria-label="选择题目"><option value="sum">两数之和（原创示例）</option><option value="free">自由练习</option></select></div>
+        <h2 id="problem-title">两数之和</h2>
+        <p id="problem-description">读取一行中的两个整数，输出它们的和。</p>
+        <div class="example"><strong>样例输入</strong><pre id="sample-input">3 5</pre><strong>样例输出</strong><pre id="sample-output">8</pre></div>
+        <p class="hint">可修改下面的 stdin 和期望输出；运行结果仅与当前期望输出比较。</p>
+      </aside>
+      <div class="workspace">
+        <div class="panel-head"><span>Python 3 · 浏览器运行</span><span id="runner-state" class="muted">准备就绪</span></div>
+        <label for="code">代码</label><textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Python 代码"></textarea>
+        <div class="input-grid"><label>stdin<textarea id="stdin" spellcheck="false"></textarea></label><label>期望 stdout<textarea id="expected" spellcheck="false"></textarea></label></div>
+        <div class="actions"><button id="run" class="primary">运行自测</button><button id="stop" disabled>停止</button><button id="retry" hidden>重新加载 Python</button><span class="muted">首次加载约需数秒，执行上限 5 秒</span></div>
+        <div id="result" class="result" role="status" aria-live="polite">编辑代码后点击“运行自测”。</div>
+        <div class="output-grid"><div><h3>stdout</h3><pre id="stdout"></pre></div><div><h3>stderr / 错误</h3><pre id="stderr"></pre></div></div>
+      </div>
+    </section>
+    <section class="more"><article id="plan"><h2>今日计划</h2><p>免费账户同步将在下一阶段开放。目前可先练习并在本机保存草稿。</p></article><article id="progress"><h2>进度</h2><p>完成记录与跨设备同步将在下一阶段开放。</p></article><article><h2>其他语言</h2><p>Java / C++ 远程执行暂不可用；此站点不会调用个人版运行器。</p></article></section>
+  </main>
+  <iframe id="python-sandbox" title="隔离的 Python 执行环境" sandbox="allow-scripts" hidden></iframe>
+</body>
+</html>
