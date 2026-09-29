@@ -1,4 +1,4 @@
-const backupKinds = ['problems', 'drafts', 'submissions', 'progress', 'plans', 'settings'];
+const backupKinds = ['settings', 'problems', 'drafts', 'submissions', 'progress', 'plans'];
 const backupLabels = { problems: '题目', drafts: '草稿', submissions: '自测历史', progress: '练习进度', plans: '计划', settings: '设置' };
 let restoreFileData = null;
 let restoreFileHash = '';
@@ -59,6 +59,7 @@ async function inspectRestore() {
   const batchId = await fileHash(source);
   const counts = { created: 0, merged: 0, pending: 0, existing: 0, conflict: 0, unmapped: 0, quota: 0, invalid: 0 };
   const problemsReady = [];
+  const sourceRecommendationSlugs = (data.settings[0]?.settings?.recommendationCatalog?.entries || []).map(entry => entry.leetcodeSlug).filter(slug => typeof slug === 'string');
   const lines = [];
   let number = 0;
   const total = backupKinds.reduce((n, kind) => n + data[kind].length, 0);
@@ -67,7 +68,7 @@ async function inspectRestore() {
       number++;
       report(`正在检查 ${number}/${total} 条…`);
       try {
-        const result = await cloudApi('restore/preview', { method: 'POST', body: cloudBody({ schemaVersion: data.schemaVersion, batchId, kind, item, sourceProblemIds: problemsReady }) });
+        const result = await cloudApi('restore/preview', { method: 'POST', body: cloudBody({ schemaVersion: data.schemaVersion, batchId, kind, item, sourceProblemIds: problemsReady, sourceRecommendationSlugs }) });
         counts[result.outcome] = (counts[result.outcome] || 0) + 1;
         if (kind === 'problems' && ['created', 'merged'].includes(result.outcome)) problemsReady.push(result.sourceKey);
         if (!['created', 'merged', 'pending'].includes(result.outcome)) lines.push(`${backupLabels[kind]} ${result.sourceKey}：${result.outcome}`);

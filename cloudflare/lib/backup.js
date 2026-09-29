@@ -1,4 +1,5 @@
 import { InputError, normalizeProblem, problemFromRow } from './problem.js';
+import { validRecommendationId } from './recommendations.js';
 
 export const BACKUP_KINDS = ['problems', 'drafts', 'submissions', 'progress', 'plans', 'settings'];
 const MAX = { problems: 200, drafts: 202, submissions: 100, progress: 202, plans: 155, settings: 1 };
@@ -45,7 +46,7 @@ export function normalizeBackupItem(kind, row) {
     completed: row.completed === true || row.completed === 1
   };
   const settings = own(row, 'settings') ? row.settings : row;
-  if (!object(settings) || JSON.stringify(settings).length > 8000) throw new InputError('设置无效或超长。');
+  if (!object(settings) || JSON.stringify(settings).length > 250000) throw new InputError('设置无效或超长。');
   return { settings };
 }
 export function sourceKey(kind, item) {
@@ -134,7 +135,7 @@ async function planRestore(db, userId, data) {
     }
   } else if (kind !== 'settings') {
     const sourceProblem = item.problemId;
-    if (sourceProblem === 'sum' || sourceProblem === 'free') targetId = sourceProblem;
+    if (sourceProblem === 'sum' || sourceProblem === 'free' || (kind === 'plans' && await validRecommendationId(db, userId, sourceProblem))) targetId = sourceProblem;
     else {
       const mapping = await db.prepare('SELECT target_id, outcome FROM restore_entries WHERE user_id = ? AND batch_id = ? AND kind = ? AND source_key = ?').bind(userId, batchId, 'problems', sourceProblem).first();
       if (!mapping) outcome = 'unmapped';
@@ -166,7 +167,8 @@ export async function restorePreview(db, userId, raw) {
   const data = validateRestoreRequest(raw);
   const plan = await planRestore(db, userId, data);
   const futureProblem = Array.isArray(raw.sourceProblemIds) && raw.sourceProblemIds.length <= 200 && raw.sourceProblemIds.includes(data.item.problemId);
-  const outcome = plan.outcome === 'unmapped' && futureProblem ? 'pending' : plan.outcome;
+  const futureRecommendation = data.kind === 'plans' && Array.isArray(raw.sourceRecommendationSlugs) && raw.sourceRecommendationSlugs.length <= 200 && raw.sourceRecommendationSlugs.some(slug => typeof slug === 'string' && /^[-a-z0-9]{1,76}$/.test(slug) && data.item.problemId === `rec_${slug}`);
+  const outcome = plan.outcome === 'unmapped' && (futureProblem || futureRecommendation) ? 'pending' : plan.outcome;
   return { kind: data.kind, sourceKey: plan.key, outcome, targetId: plan.targetId, replayed: plan.replayed };
 }
 export async function restoreOne(db, userId, raw) {

@@ -1,5 +1,6 @@
 import { InputError, normalizeProblem, problemFromRow, validateSourceUrl } from '../../lib/problem.js';
 import { backupManifest, backupPage, restoreOne, restorePreview } from '../../lib/backup.js';
+import { catalogFor, normalizeCatalog, normalizePreferences, preferencesFor, readSettings, patchSetting, rankedRecommendations, recommendationId, validRecommendationId } from '../../lib/recommendations.js';
 
 const SESSION_SECONDS = 14 * 24 * 3600;
 const MAX_BODY = 80000;
@@ -119,8 +120,8 @@ async function listProblems(db, userId, url) {
   const rows = await db.prepare(statement).bind(userId, favorite ? 1 : 0, pattern, pattern).all();
   return json({ problems: rows.results.slice(0, MAX_PROBLEMS).map(problemFromRow), capped: rows.results.length > MAX_PROBLEMS });
 }
-async function addProblem(request, db, userId) {
-  const data = normalizeProblem(await body(request));
+async function addProblem(request, db, userId, supplied) {
+  const data = normalizeProblem(supplied ?? await body(request));
   const count = await db.prepare('SELECT COUNT(*) AS n FROM personal_problems WHERE user_id = ?').bind(userId).first();
   if (count.n >= MAX_PROBLEMS) throw new InputError('个人题库已达 200 题上限，请先导出并删除旧题。', 429);
   if (data.sourceUrl) {
@@ -232,7 +233,11 @@ async function putPlan(request, db, userId, day) {
   if (!Array.isArray(data.plan) || data.plan.length > 5 || data.plan.some(x => !x || typeof x.problemId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(x.problemId) || typeof x.completed !== 'boolean')) throw new InputError('今日计划格式无效。');
   const ids = data.plan.map(x => x.problemId);
   if (new Set(ids).size !== ids.length) throw new InputError('今日计划存在重复题目。');
-  for (const id of ids) await requirePracticeProblem(db, userId, id);
+  for (const id of ids) {
+    if (id.startsWith('rec_')) {
+      if (!await validRecommendationId(db, userId, id)) throw new InputError('计划中的推荐题不存在。');
+    } else await requirePracticeProblem(db, userId, id);
+  }
   const cutoff = beijingDay(new Date(Date.now() - 30 * 86400000));
   const statements = [db.prepare('DELETE FROM daily_plans WHERE user_id = ? AND day < ?').bind(userId, cutoff), db.prepare('DELETE FROM daily_plans WHERE user_id = ? AND day = ?').bind(userId, day), ...data.plan.map(item => db.prepare('INSERT INTO daily_plans (user_id, day, problem_id, completed) VALUES (?, ?, ?, ?)').bind(userId, day, item.problemId, item.completed ? 1 : 0))];
   await db.batch(statements);
@@ -262,7 +267,13 @@ async function fetchText(request) {
   const data = await body(request);
   const sourceUrl = validateSourceUrl(data.url);
   const url = new URL(sourceUrl);
-  if (url.hostname !== 'raw.githubusercontent.com' || !/^\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/.+\.(md|txt)$/i.test(url.pathname)) throw new InputError('只支持 GitHub 公共仓库的原始 Markdown/TXT 链接；其他链接可收藏后手动粘贴题面。');
+  const leetCodeMatch = /^\/problems\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/.exec(url.pathname);
+  if (['leetcode.cn', 'leetcode.com'].includes(url.hostname) && leetCodeMatch && !url.search) {
+    const question = await fetchLeetCodePublic(leetCodeMatch[1]);
+    if (!question?.statement) throw new InputError('力扣公开题面暂不可用；可收藏原题链接并手动粘贴题面。', 502);
+    return json({ sourceUrl, statement: question.statement, title: question.title, sourceKind: 'fetched' });
+  }
+  if (url.hostname !== 'raw.githubusercontent.com' || !/^\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/.+\.(md|txt)$/i.test(url.pathname)) throw new InputError('只支持力扣题目链接或 GitHub 公共仓库原始 Markdown/TXT；其他链接可收藏后手动粘贴题面。');
   const response = await fetch(url.href, { redirect: 'error', signal: AbortSignal.timeout(5000), headers: { accept: 'text/plain, text/markdown' } });
   if (!response.ok) throw new InputError('来源读取失败，请改用手动题面。', 502);
   if (Number(response.headers.get('content-length') || 0) > 30000) throw new InputError('来源文本过长。', 413);
@@ -281,6 +292,99 @@ async function fetchText(request) {
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
   const statement = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   return json({ sourceUrl, statement, title: url.pathname.split('/').pop().replace(/\.(md|txt)$/i, '').replace(/[-_]/g, ' '), sourceKind: 'fetched' });
+}
+
+async function recommendationCatalog(db, userId) {
+  const settings = await readSettings(db, userId);
+  return json({ entries: catalogFor(settings), builtIn: !settings.recommendationCatalog });
+}
+async function replaceRecommendationCatalog(request, db, userId) {
+  const entries = normalizeCatalog(await body(request, 300000));
+  const settings = await readSettings(db, userId);
+  await patchSetting(db, userId, '$.recommendationCatalog', { entries }, now());
+  return json({ entries, builtIn: false });
+}
+async function plannerPreferences(request, db, userId) {
+  const settings = await readSettings(db, userId);
+  if (request.method === 'GET') return json({ preferences: preferencesFor(settings) });
+  const planner = normalizePreferences(await body(request));
+  await patchSetting(db, userId, '$.planner', planner, now());
+  return json({ preferences: planner });
+}
+async function plannerAction(request, db, userId, slug) {
+  const settings = await readSettings(db, userId);
+  if (!catalogFor(settings).some(entry => entry.leetcodeSlug === slug)) throw new InputError('推荐题不存在。', 404);
+  const { action } = await body(request);
+  if (!['skip', 'mastered', 'want_practice_again'].includes(action)) throw new InputError('推荐题操作无效。');
+  const item = { ...(settings.recommendationItems?.[slug] || {}) };
+  if (action === 'skip') item.skippedAt = new Date().toISOString();
+  if (action === 'mastered') { item.masteredAt = new Date().toISOString(); item.wantPracticeAgain = false; }
+  if (action === 'want_practice_again') { item.masteredAt = ''; item.wantPracticeAgain = true; }
+  await patchSetting(db, userId, `$.recommendationItems."${slug}"`, item, now());
+  return json({ item });
+}
+async function generateRecommendationPlan(db, userId, day) {
+  const settings = await readSettings(db, userId);
+  const ranked = await rankedRecommendations(db, userId, settings, day);
+  const count = preferencesFor(settings).dailyCount;
+  if (!ranked.length) throw new InputError('推荐题库没有可用题目，请调整偏好或重新导入。');
+  const plan = ranked.slice(0, count).map(entry => ({ problemId: recommendationId(entry.leetcodeSlug), completed: false }));
+  const cutoff = beijingDay(new Date(Date.now() - 30 * 86400000));
+  await db.batch([
+    db.prepare('DELETE FROM daily_plans WHERE user_id = ? AND day < ?').bind(userId, cutoff),
+    db.prepare('DELETE FROM daily_plans WHERE user_id = ? AND day = ?').bind(userId, day),
+    ...plan.map(item => db.prepare('INSERT INTO daily_plans (user_id, day, problem_id, completed) VALUES (?, ?, ?, 0)').bind(userId, day, item.problemId))
+  ]);
+  return json({ day, plan });
+}
+
+function leetCodeText(html) {
+  const plain = String(html || '').replace(/<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/<\s*br\s*\/?\s*>/gi, '\n').replace(/<\s*\/\s*(p|div|pre|li|ul|ol|h[1-6])\s*>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/&amp;/gi, '&').replace(/\n{3,}/g, '\n\n').trim();
+  return plain.slice(0, 30000);
+}
+async function fetchLeetCodePublic(slug) {
+  try {
+    const query = 'query questionData($titleSlug: String!) { question(titleSlug: $titleSlug) { title translatedTitle content translatedContent } }';
+    const response = await fetch('https://leetcode.cn/graphql/', {
+      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(5000),
+      headers: { 'content-type': 'application/json', referer: `https://leetcode.cn/problems/${slug}/` },
+      body: JSON.stringify({ operationName: 'questionData', variables: { titleSlug: slug }, query })
+    });
+    if (!response.ok || Number(response.headers.get('content-length') || 0) > 120000) return null;
+    const reader = response.body.getReader();
+    let size = 0; const chunks = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > 120000) { await reader.cancel(); return null; }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size); let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+    const result = JSON.parse(new TextDecoder().decode(bytes));
+    const question = result?.data?.question;
+    const statement = leetCodeText(question?.translatedContent || question?.content);
+    return statement ? { title: String(question.translatedTitle || question.title || slug).slice(0, 160), statement } : null;
+  } catch { return null; }
+}
+async function addRecommendation(request, db, userId, slug) {
+  const settings = await readSettings(db, userId);
+  const entry = catalogFor(settings).find(item => item.leetcodeSlug === slug);
+  if (!entry) throw new InputError('推荐题不存在。', 404);
+  const duplicate = await db.prepare('SELECT id, title FROM personal_problems WHERE user_id = ? AND source_url = ?').bind(userId, entry.leetcodeUrl).first();
+  if (duplicate) return json({ problem: duplicate, existing: true });
+  const question = await fetchLeetCodePublic(slug);
+  const statement = question?.statement || '';
+  const result = await addProblem(request, db, userId, {
+    title: entry.title, statement, sourceUrl: entry.leetcodeUrl,
+    sourceKind: statement ? 'fetched' : 'link', tags: entry.tags,
+    rawSamples: [], cases: []
+  });
+  return result;
 }
 
 async function route({ request, env }) {
@@ -326,6 +430,15 @@ async function route({ request, env }) {
       if (method === 'POST') return addSubmission(request, db, user.id);
     }
     if (path.join('/') === 'progress' && method === 'GET') return getProgress(db, user.id);
+    if (path.join('/') === 'recommendations/catalog') {
+      if (method === 'GET') return recommendationCatalog(db, user.id);
+      if (method === 'PUT') return replaceRecommendationCatalog(request, db, user.id);
+    }
+    if (path.join('/') === 'recommendations/preferences' && ['GET', 'PUT'].includes(method)) return plannerPreferences(request, db, user.id);
+    if (path.join('/') === 'recommendations/ranked' && method === 'GET') return json({ entries: await rankedRecommendations(db, user.id, await readSettings(db, user.id), beijingDay()) });
+    if (path[0] === 'recommendations' && path.length === 3 && path[2] === 'action' && method === 'POST') return plannerAction(request, db, user.id, path[1]);
+    if (path[0] === 'recommendations' && path.length === 3 && path[2] === 'add' && method === 'POST') return addRecommendation(request, db, user.id, path[1]);
+    if (path.join('/') === 'recommendations/generate' && method === 'POST') return generateRecommendationPlan(db, user.id, beijingDay());
     if (path.join('/') === 'plans/today') {
       const day = beijingDay();
       if (method === 'GET') return getPlan(db, user.id, day);

@@ -14,6 +14,28 @@ let cloudSelection = 0;
 let editingProblem = null;
 let cloudSessionInvalid = false;
 let importFailedItems = [];
+let cloudCatalog = [];
+let cloudPreferences = { dailyCount: 3, difficultyPressure: 'standard', cooldownDays: 3, targetTags: [] };
+let cloudRanked = [];
+
+const cloudViews = new Set(['today', 'recommendations', 'practice', 'library', 'settings']);
+function cloudNavigate(view, updateHash = true) {
+  const target = cloudViews.has(view) ? view : 'practice';
+  for (const section of document.querySelectorAll('[data-view]')) section.hidden = section.dataset.view !== target;
+  for (const link of document.querySelectorAll('[data-view-target]')) {
+    if (link.dataset.viewTarget === target) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+  if (updateHash) history.replaceState(null, '', `#${target}`);
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+if (document.querySelectorAll) {
+  document.querySelectorAll('[data-view-target]').forEach(link => link.addEventListener('click', event => {
+    event.preventDefault(); cloudNavigate(link.dataset.viewTarget);
+  }));
+  window.addEventListener('hashchange', () => cloudNavigate(location.hash.slice(1), false));
+  cloudNavigate(location.hash.slice(1), false);
+}
 
 function cloudInvalidateSession() {
   if (cloudSessionInvalid) return;
@@ -39,6 +61,110 @@ async function cloudApi(path, options = {}) {
   return data;
 }
 const cloudBody = value => JSON.stringify(value);
+const cloudRecId = slug => `rec_${slug}`;
+const cloudDifficulty = { easy: '简单', medium: '中等', hard: '困难' };
+function cloudDownloadJson(filename, data) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function cloudRecommendationButton(label, handler, primary = false) {
+  const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
+  if (primary) button.className = 'primary';
+  button.addEventListener('click', handler);
+  return button;
+}
+async function cloudRecommendationAction(slug, action) {
+  try {
+    await cloudApi(`recommendations/${slug}/action`, { method: 'POST', body: cloudBody({ action }) });
+    await cloudLoadRecommendations();
+  } catch (error) { $('recommendation-status').textContent = error.message; }
+}
+async function cloudAddRecommendation(entry) {
+  try {
+    $('recommendation-status').textContent = `正在加入“${entry.title}”…`;
+    const result = await cloudApi(`recommendations/${entry.leetcodeSlug}/add`, { method: 'POST' });
+    await cloudLoadProblems();
+    const added = cloudProblems.find(item => item.id === result.problem.id);
+    if (!added) throw new Error('题目已保存，但题库刷新失败，请刷新页面。');
+    $('problem-select').value = added.id;
+    loadProblem(added.id);
+    cloudNavigate('practice');
+    cloudNote(added.statement ? '已加入个人练习。力扣题面已获取；请自行把平台样例转换为 ACM stdin 与期望输出。' : '已收藏原题链接。公开题面暂不可用；可在编辑题目中手动粘贴。');
+    await cloudLoadRecommendations();
+  } catch (error) { $('recommendation-status').textContent = error.status === 409 ? '这道题已在个人题库中。' : `加入失败：${error.message}`; }
+}
+function cloudRenderRecommendationList() {
+  const list = $('recommendation-list'); list.replaceChildren();
+  const query = $('recommendation-search').value.trim().toLowerCase();
+  const difficulty = $('recommendation-difficulty').value;
+  const ranked = new Map(cloudRanked.map(entry => [entry.leetcodeSlug, entry]));
+  const entries = cloudCatalog.filter(entry => (!difficulty || entry.difficulty === difficulty) && (!query || `${entry.title} ${entry.leetcodeSlug} ${entry.tags.join(' ')}`.toLowerCase().includes(query)));
+  $('recommendation-status').textContent = `${entries.length} / ${cloudCatalog.length} 道推荐题 · 仅含元数据，题面以原站或个人题库为准。`;
+  if (!entries.length) { list.textContent = '没有匹配的题目。'; return; }
+  for (const entry of entries) {
+    const card = document.createElement('article'); card.className = 'recommendation-card';
+    const head = document.createElement('div'); head.className = 'recommendation-head';
+    const title = document.createElement('strong'); title.textContent = entry.title;
+    const badge = document.createElement('span'); badge.textContent = cloudDifficulty[entry.difficulty] || entry.difficulty;
+    head.append(title, badge);
+    const meta = document.createElement('p'); meta.textContent = `${entry.tags.join(' · ')} · 高频度 ${Math.round(entry.frequencyScore * 100)}%`;
+    const actions = document.createElement('div'); actions.className = 'recommendation-actions';
+    const open = document.createElement('a'); open.href = entry.leetcodeUrl; open.target = '_blank'; open.rel = 'noopener noreferrer'; open.textContent = '打开原题';
+    actions.append(open, cloudRecommendationButton(ranked.get(entry.leetcodeSlug)?.added ? '打开练习' : '加入练习', () => {
+      const owned = cloudProblems.find(item => item.sourceUrl === entry.leetcodeUrl);
+      if (owned) { $('problem-select').value = owned.id; loadProblem(owned.id); cloudNavigate('practice'); }
+      else cloudAddRecommendation(entry);
+    }, true));
+    const item = ranked.get(entry.leetcodeSlug)?.actions || {};
+    actions.append(cloudRecommendationButton('跳过', () => cloudRecommendationAction(entry.leetcodeSlug, 'skip')));
+    actions.append(cloudRecommendationButton(item.masteredAt ? '再练' : '掌握', () => cloudRecommendationAction(entry.leetcodeSlug, item.masteredAt ? 'want_practice_again' : 'mastered')));
+    card.append(head, meta, actions); list.append(card);
+  }
+}
+async function cloudLoadRecommendations() {
+  if (!cloudUser) return;
+  const [catalog, preferences, ranked] = await Promise.all([
+    cloudApi('recommendations/catalog'), cloudApi('recommendations/preferences'), cloudApi('recommendations/ranked')
+  ]);
+  cloudCatalog = catalog.entries; cloudPreferences = preferences.preferences; cloudRanked = ranked.entries;
+  $('planner-count').value = String(cloudPreferences.dailyCount);
+  $('planner-difficulty').value = cloudPreferences.difficultyPressure;
+  $('planner-tags').value = cloudPreferences.targetTags.join(', ');
+  $('planner-cooldown').value = String(cloudPreferences.cooldownDays);
+  cloudRenderRecommendationList();
+}
+$('recommendation-search').addEventListener('input', cloudRenderRecommendationList);
+$('recommendation-difficulty').addEventListener('change', cloudRenderRecommendationList);
+$('recommendation-import').addEventListener('click', () => {
+  if (!cloudUser) { alert('请先登录，再导入推荐题库。'); return; }
+  $('recommendation-file').click();
+});
+$('recommendation-file').addEventListener('change', async event => {
+  const file = event.target.files?.[0]; if (!file) return;
+  try {
+    if (file.size > 300000) throw new Error('推荐题库文件不能超过 300 KB。');
+    const payload = JSON.parse(await file.text());
+    const result = await cloudApi('recommendations/catalog', { method: 'PUT', body: cloudBody(payload) });
+    await cloudLoadRecommendations();
+    $('recommendation-status').textContent = `已导入 ${result.entries.length} 道推荐题。`;
+  } catch (error) { $('recommendation-status').textContent = `导入失败：${error.message}`; }
+  event.target.value = '';
+});
+$('recommendation-export').addEventListener('click', () => cloudDownloadJson(`acmcoder-recommendations-${new Date().toISOString().slice(0, 10)}.json`, { version: 1, entries: cloudCatalog }));
+$('save-preferences').addEventListener('click', async () => {
+  const preferences = {
+    dailyCount: Number($('planner-count').value), difficultyPressure: $('planner-difficulty').value,
+    cooldownDays: Number($('planner-cooldown').value),
+    targetTags: $('planner-tags').value.split(/[,，]/).map(tag => tag.trim()).filter(Boolean)
+  };
+  try {
+    const result = await cloudApi('recommendations/preferences', { method: 'PUT', body: cloudBody(preferences) });
+    cloudPreferences = result.preferences;
+    $('preference-status').textContent = '偏好已保存；重新生成今日计划时生效。';
+    await cloudLoadRecommendations();
+  } catch (error) { $('preference-status').textContent = `保存失败：${error.message}`; }
+});
 function cloudNote(message) { $('sync-notice').hidden = false; $('sync-text').textContent = message; }
 function cloudClearNote() {
   $('sync-notice').hidden = true;
@@ -167,7 +293,7 @@ function cloudRenderLibrary() {
     const name = document.createElement('strong'); name.textContent = item.title;
     const tags = document.createElement('span'); tags.textContent = `${item.favorite ? '★ ' : ''}${(item.tags || []).join(' · ')}`;
     button.append(name, tags);
-    button.addEventListener('click', () => { $('problem-select').value = item.id; loadProblem(item.id); $('practice').scrollIntoView({ behavior: 'smooth' }); });
+    button.addEventListener('click', () => { $('problem-select').value = item.id; loadProblem(item.id); cloudNavigate('practice'); });
     list.append(button);
   }
 }
@@ -217,13 +343,26 @@ async function cloudLoadProgress() {
     progressArea.append(row);
   }
   const planArea = $('plan-items'); planArea.replaceChildren();
-  $('plan-text').textContent = cloudPlan.length ? `北京时间 ${plan.day} 的计划可在不同设备继续。` : `北京时间 ${plan.day} 尚未生成计划。`;
+  $('plan-text').textContent = cloudPlan.length ? `北京时间 ${plan.day} 的计划可在不同设备继续。` : `北京时间 ${plan.day} 尚未生成计划。可按设置中的偏好生成。`;
   for (const item of cloudPlan) {
-    const row = document.createElement('label'); row.className = 'practice-row';
+    const row = document.createElement('div'); row.className = 'practice-row';
     const check = document.createElement('input'); check.type = 'checkbox'; check.checked = item.completed;
     check.addEventListener('change', async () => { item.completed = check.checked; try { await cloudApi('plans/today', { method: 'PUT', body: cloudBody({ plan: cloudPlan }) }); } catch (error) { check.checked = !check.checked; item.completed = check.checked; alert(error.message); } });
-    const label = document.createElement('span'); label.textContent = sample[item.problemId]?.title || '已删除题目';
-    row.append(check, label); planArea.append(row);
+    const recommendation = item.problemId.startsWith('rec_') ? cloudCatalog.find(entry => cloudRecId(entry.leetcodeSlug) === item.problemId) : null;
+    const label = document.createElement('span'); label.textContent = recommendation ? `${recommendation.title} · ${cloudDifficulty[recommendation.difficulty]}` : sample[item.problemId]?.title || '已删除题目';
+    row.append(check, label);
+    if (recommendation) {
+      const source = document.createElement('a'); source.href = recommendation.leetcodeUrl; source.target = '_blank'; source.rel = 'noopener noreferrer'; source.textContent = '原题'; row.append(source);
+      row.append(cloudRecommendationButton('加入并练习', () => {
+        const owned = cloudProblems.find(problem => problem.sourceUrl === recommendation.leetcodeUrl);
+        if (owned) { $('problem-select').value = owned.id; loadProblem(owned.id); cloudNavigate('practice'); }
+        else cloudAddRecommendation(recommendation);
+      }, true));
+      row.append(cloudRecommendationButton('跳过', () => cloudRecommendationAction(recommendation.leetcodeSlug, 'skip')));
+      row.append(cloudRecommendationButton('掌握', () => cloudRecommendationAction(recommendation.leetcodeSlug, 'mastered')));
+      row.append(cloudRecommendationButton('再练', () => cloudRecommendationAction(recommendation.leetcodeSlug, 'want_practice_again')));
+    } else if (sample[item.problemId]) row.append(cloudRecommendationButton('去练习', () => { $('problem-select').value = item.problemId; loadProblem(item.problemId); cloudNavigate('practice'); }));
+    planArea.append(row);
   }
 }
 async function cloudRecordResult(id, status, details) {
@@ -255,6 +394,7 @@ async function cloudInitialize() {
       const last = localStorage.getItem(lastProblemKey());
       if (last && sample[last] && last !== problem) { $('problem-select').value = last; loadProblem(last, false); }
       else await cloudSelectedProblem(problem);
+      await cloudLoadRecommendations();
       await cloudLoadProgress();
     }
   } catch (error) {
@@ -346,16 +486,8 @@ $('delete-problem').addEventListener('click', async () => {
   try { await cloudApi(`problems/${item.id}`, { method: 'DELETE' }); await cloudLoadProblems(); $('problem-select').value = 'sum'; loadProblem('sum'); await cloudLoadProgress(); } catch (error) { alert(error.message); }
 });
 $('make-plan').addEventListener('click', async () => {
-  const priority = item => {
-    if (cloudUnfinished.includes(item.id)) return 0;
-    const progress = cloudProgress.find(x => x.problemId === item.id);
-    if (progress && progress.lastStatus !== 'self_pass') return 1;
-    if (!progress) return 2;
-    return 3;
-  };
-  const ranked = cloudProblems.slice().sort((a, b) => priority(a) - priority(b) || a.title.localeCompare(b.title, 'zh-CN'));
-  const ids = [...ranked.map(x => x.id), 'sum', 'free'].slice(0, 3);
-  try { await cloudApi('plans/today', { method: 'PUT', body: cloudBody({ plan: ids.map(problemId => ({ problemId, completed: false })) }) }); await cloudLoadProgress(); } catch (error) { alert(error.message); }
+  try { await cloudApi('recommendations/generate', { method: 'POST' }); await cloudLoadProgress(); }
+  catch (error) { $('plan-text').textContent = `生成失败：${error.message}`; }
 });
 $('delete-account').addEventListener('click', async () => {
   if (!confirm('永久删除此免费版账号中的个人题库、草稿、进度和提交记录？建议先导出。')) return;
@@ -479,7 +611,7 @@ $('fetch-statement').addEventListener('click', async () => {
     const data = await cloudApi('import/fetch', { method: 'POST', body: cloudBody({ url: $('new-url').value.trim() }) });
     $('new-statement').value = data.statement;
     if (!$('new-title').value.trim()) $('new-title').value = data.title;
-    $('fetch-hint').textContent = '公开文本已获取，请核对许可与题面，并预览后保存到私人题库。';
+    $('fetch-hint').textContent = '公开题面已获取，请核对来源与内容；力扣平台样例不会自动转为 ACM stdin / 期望输出，请手动适配。';
   } catch (error) { $('fetch-hint').textContent = `${error.message} 仍可只收藏链接或手动粘贴题面。`; }
 });
 $('convert-sample').addEventListener('click', () => {

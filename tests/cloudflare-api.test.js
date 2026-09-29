@@ -92,3 +92,45 @@ test('batch import validation identifies the bad sample before writing', async (
   assert.match(plan.data.day, /^\d{4}-\d{2}-\d{2}$/);
   assert.deepEqual((await call('a', 'plans/recommendations')).data.problemIds, []);
 });
+
+test('recommendation preferences generate an owned daily plan and allow a public question to join practice', async () => {
+  const { call } = fixture();
+  const catalog = await call('a', 'recommendations/catalog');
+  assert.equal(catalog.status, 200);
+  assert.equal(catalog.data.entries.length, 30);
+  const preferences = await call('a', 'recommendations/preferences', 'PUT', { dailyCount: 2, difficultyPressure: 'conservative', cooldownDays: 3, targetTags: ['数组'] });
+  assert.equal(preferences.status, 200);
+  const generated = await call('a', 'recommendations/generate', 'POST');
+  assert.equal(generated.status, 200);
+  assert.equal(generated.data.plan.length, 2);
+  assert.ok(generated.data.plan.every(item => item.problemId.startsWith('rec_')));
+  assert.equal((await call('b', 'plans/today')).data.plan.length, 0);
+  const slug = catalog.data.entries[0].leetcodeSlug;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ data: { question: { title: 'Two Sum', translatedTitle: '两数之和', translatedContent: '<p>找出两个数。</p>' } } });
+  try {
+    const added = await call('a', `recommendations/${slug}/add`, 'POST');
+    assert.equal(added.status, 201);
+    assert.equal(added.data.problem.statement, '找出两个数。');
+    assert.deepEqual(added.data.problem.cases, []);
+    assert.equal((await call('a', `recommendations/${slug}/add`, 'POST')).data.existing, true);
+  } finally { globalThis.fetch = originalFetch; }
+  assert.equal((await call('b', 'problems')).data.problems.length, 0);
+  assert.equal((await call('a', `recommendations/${slug}/action`, 'POST', { action: 'mastered' })).status, 200);
+  assert.equal((await call('a', 'recommendations/ranked')).data.entries.some(item => item.leetcodeSlug === slug), false);
+  assert.equal((await call('a', `recommendations/${slug}/action`, 'POST', { action: 'want_practice_again' })).status, 200);
+  assert.equal((await call('a', 'recommendations/ranked')).data.entries.some(item => item.leetcodeSlug === slug), true);
+});
+
+test('imported recommendations use the same settings row and reject invented plan IDs', async () => {
+  const { call } = fixture();
+  const entry = { leetcodeSlug: 'unique-new-question', title: '自选题', difficulty: 'hard', tags: ['图'], frequencyScore: 0.9 };
+  assert.equal((await call('a', 'recommendations/catalog', 'PUT', { entries: [entry] })).status, 200);
+  assert.equal((await call('a', 'recommendations/preferences', 'PUT', { dailyCount: 1, difficultyPressure: 'intensive', cooldownDays: 2, targetTags: ['图'] })).status, 200);
+  const plan = await call('a', 'recommendations/generate', 'POST');
+  assert.deepEqual(plan.data.plan, [{ problemId: 'rec_unique-new-question', completed: false }]);
+  assert.equal((await call('a', 'plans/today', 'PUT', { plan: [{ problemId: 'rec_invented', completed: false }] })).status, 400);
+  assert.equal((await call('a', 'recommendations/catalog')).data.entries[0].title, '自选题');
+  assert.equal((await call('a', 'recommendations/preferences')).data.preferences.dailyCount, 1);
+  assert.equal((await call('b', 'recommendations/catalog')).data.entries.length, 30);
+});
