@@ -1,0 +1,13 @@
+{
+  "name": "acmcoder-web",
+  "pages_build_output_dir": "./public",
+  "compatibility_date": "2026-09-29",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "acmcoder-web",
+      "database_id": "6ae0c511-d343-4cca-87f1-f6063f60e6ec",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
