@@ -1,5 +1,6 @@
 import { normalizeDraft, draftId, snapshot } from './practice.js';
 import { validateRecord } from './records.js';
+import { normalizeBackup } from './backup.js';
 
 const requestValue = request => new Promise((resolve,reject) => {
   request.onsuccess = () => resolve(request.result);
@@ -144,8 +145,8 @@ export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,s
       return {version:3,exportedAt:new Date().toISOString(),records};
     }),
     restoreBackup:(backup,{mode='merge'}={})=>enqueue(async()=>{
-      if(backup?.version!==3 || !Array.isArray(backup.records) || mode!=='merge')throw new Error('请使用 V3 完整备份。');
-      const records=backup.records.map(validateRecord);
+      if(mode!=='merge')throw new Error('仅支持合并恢复。');
+      const records=normalizeBackup(backup).records;
       const ids=new Set(records.filter(r=>r.kind==='problem').map(r=>r.id));
       return transaction(allStores,'readwrite',async s=>{
         const result={imported:0,conflicts:[],skipped:0};

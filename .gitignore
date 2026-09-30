@@ -2,6 +2,7 @@ node_modules/
 .DS_Store
 *.log
 dist/
+/functions/
 coverage/
 data/memory/
 data/recommendation/*
