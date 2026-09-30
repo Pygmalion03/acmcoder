@@ -15,7 +15,7 @@ async function main(){
   const store=createExtensionStore({namespace:user?`account:${user.id}`:'extension-guest',sync:!!user});
   if(!user)await migrateExtensionDrafts({store});
   let engine,workspace,timer;
-  const statusText=()=>({saved:'已同步到云端',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'连接已暂停，请重新连接账号',retrying:'网络暂不可用，稍后自动重试；内容已保留',error:'同步暂未完成，本机练习已保留'}[engine?.getStatus().state]||'已保存到此插件');
+  const statusText=()=>({quota:'今日云端自测额度已用完，运行结果保留本机；其他内容继续同步',saved:'已同步到云端',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'连接已暂停，请重新连接账号',retrying:'网络暂不可用，稍后自动重试；内容已保留',error:'同步暂未完成，本机练习已保留'}[engine?.getStatus().state]||'已保存到此插件');
   const account={user,rememberOption:true,remember:session.remember,loginAvailable:true,statusText,connect:async remember=>{await store.flush();await auth.connect(remember);location.reload();},sync:()=>engine.syncNow(),async mergeGuest(){
     const guest=createExtensionStore();const result=await store.restoreBackup(await guest.exportBackup());await store.setMeta('guest-merge-conflicts',result.conflicts);await engine.syncNow();return result;
   },async logout(){clearTimeout(timer);engine?.pause();await store.flush();await auth.logout();location.reload();}};

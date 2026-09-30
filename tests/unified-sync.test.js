@@ -114,3 +114,27 @@ test('conflict copies keep the canonical AI conversation ID readable after cloud
  const id=`${copy.problemId}--python`;assert.equal((await b.store.getRecord({kind:'conversation',id}))?.payload.messages[0].content,'保留对话');
  await b.engine.syncNow();await a.engine.syncNow();assert.equal((await a.store.getRecord({kind:'conversation',id}))?.problemId,copy.problemId);
 });
+
+test('daily run limit retains the durable queue across reopen, syncs drafts, and resumes after UTC reset',async()=>{
+ const {db}=createTestDatabase();let now=Date.parse('2026-10-01T12:00:00Z');
+ const repo=createRecordRepository(db,{clock:()=>now,limits:{dailyRuns:1}}),remote=createSyncRepository(db,repo);
+ const indexedDB=new IDBFactory(),options={namespace:'account:a',indexedDB,storage:null,sync:true};
+ let store=createBrowserStore(options),jobs=[];
+ const timers={clock:()=>now,setTimeout:(fn,delay)=>{const job={fn,at:now+delay};jobs.push(job);return job;},clearTimeout:job=>{jobs=jobs.filter(x=>x!==job);}};
+ const transport={migrate:async()=>{},push:mutations=>remote.push({userId:'a',mutations}),pull:cursor=>remote.pull({userId:'a',cursor})};
+ let engine=createSyncEngine({store,accountId:'a',transport,...timers});
+ await store.putRecord(problem);await store.saveDraft(draft);
+ for(const id of ['first','second'])await store.putRecord({kind:'run',id,problemId:'sum',language:'python',payload:{stdout:id,status:'self_pass'}});
+ await engine.syncNow();assert.equal(engine.getStatus().state,'quota');assert.equal(await store.syncPendingCount(),1);
+ assert.equal((await repo.get({userId:'a',kind:'draft',id:'sum--python'})).payload.code,'原代码');
+ assert.equal((await store.exportBackup()).records.filter(r=>r.kind==='run').length,2);
+ assert.equal(jobs.length,1);assert.equal(jobs[0].at,Date.parse('2026-10-02T00:00:00Z'));
+ engine.pause();assert.equal(jobs.length,0);await store.flush();
+ store=createBrowserStore(options);engine=createSyncEngine({store,accountId:'a',transport,...timers});
+ await store.saveDraft({...await store.getDraft(draft),code:'quota期间继续编辑'});await engine.syncNow();
+ assert.equal(engine.getStatus().state,'quota');assert.equal((await repo.get({userId:'a',kind:'draft',id:'sum--python'})).payload.code,'quota期间继续编辑');
+ assert.equal(await store.syncPendingCount(),1);assert.equal(jobs.length,1);
+ const retry=jobs.shift();now=retry.at;await retry.fn();
+ assert.equal(engine.getStatus().state,'saved');assert.equal(await store.syncPendingCount(),0);assert.equal((await repo.list({userId:'a',kind:'run'})).items.length,2);
+ engine.pause();
+});

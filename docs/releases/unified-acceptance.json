@@ -1,14 +1,41 @@
 {
   "scope": "Original 18-task unified product roadmap; this file does not replace the delivery log or final requirement audit.",
   "checks": {
-    "anonymous-site": {"status":"passed","evidence":"unified-delivery-log.md: public HTTPS Python, import, persistence and rewrite"},
-    "offline-extension": {"status":"passed","evidence":"unified-delivery-log.md: E1/E2 real installed Chrome for Testing, network blocked"},
-    "local-docker": {"status":"passed","evidence":"unified-delivery-log.md: S3 isolated Docker new volume, three languages and recreation"},
-    "durable-history": {"status":"passed","evidence":"unified-delivery-log.md: history, backup and recovery milestone 5416774"},
-    "sync-conflict-delete": {"status":"passed","evidence":"unified-delivery-log.md: independent real GitHub local/web conflict copying; SQLite deletion coverage"},
-    "two-real-accounts": {"status":"blocked","evidence":"Only one real GitHub account tested; synthetic account isolation is not this acceptance."},
-    "ai-real-three-clients": {"status":"blocked","evidence":"Provider Key must be configured by user; only controlled compatibility service accepted."},
-    "ai-original-import": {"status":"blocked","evidence":"Source/catalog path accepted; a real model original problem still pending."},
-    "old-install-upgrade": {"status":"blocked","evidence":"Commit 25814b7: real v3.0.4 fixture volume retained questions, samples and legacy self-test count; progress migrated and full backup restored, real local UI passed. User stable WSL upgrade still needs sudo restart; old key migration remains pending."}
+    "anonymous-site": {
+      "status": "passed",
+      "evidence": "unified-delivery-log.md: public HTTPS Python, import, persistence and rewrite"
+    },
+    "offline-extension": {
+      "status": "passed",
+      "evidence": "unified-delivery-log.md: E1/E2 real installed Chrome for Testing, network blocked"
+    },
+    "local-docker": {
+      "status": "passed",
+      "evidence": "unified-delivery-log.md: S3 isolated Docker new volume, three languages and recreation"
+    },
+    "durable-history": {
+      "status": "passed",
+      "evidence": "unified-delivery-log.md: history, backup and recovery milestone 5416774"
+    },
+    "sync-conflict-delete": {
+      "status": "passed",
+      "evidence": "unified-delivery-log.md: independent real GitHub local/web conflict copying; SQLite deletion coverage"
+    },
+    "two-real-accounts": {
+      "status": "blocked",
+      "evidence": "Only one real GitHub account tested; synthetic account isolation is not this acceptance."
+    },
+    "ai-real-three-clients": {
+      "status": "blocked",
+      "evidence": "Provider Key must be configured by user; only controlled compatibility service accepted."
+    },
+    "ai-original-import": {
+      "status": "blocked",
+      "evidence": "Source/catalog path accepted; a real model original problem still pending."
+    },
+    "old-install-upgrade": {
+      "status": "blocked",
+      "evidence": "Commits 25814b7 and ce34f0e: real v3.0.4 fixture volumes retained questions, samples and self-test count; migrated synthetic old Key supports real HTTP requests after container restart and stays out of learning backup. User stable WSL upgrade still needs sudo restart; this fixture does not replace it."
+    }
   }
 }

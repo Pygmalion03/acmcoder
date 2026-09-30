@@ -37,10 +37,10 @@ export function createBrowserSyncAdapter({transaction,read,enqueue}){
     return records;
   }
   return {track,api:{
-    syncStage:()=>enqueue(()=>transaction(['sync'],'readwrite',async s=>{
+    syncStage:({skipNewRuns=false}={})=>enqueue(()=>transaction(['sync'],'readwrite',async s=>{
       const entries=await value(s('sync').getAll());
       const order=r=>r.kind==='problem'?0:r.kind==='attempt'?1:r.kind==='draft'?3:2;
-      const eligible=entries.filter(e=>!e.conflict&&(e.inflight||e.pending)).sort((a,b)=>order(a.local)-order(b.local));
+      const eligible=entries.filter(e=>!e.conflict&&(e.inflight||e.pending)&&!(skipNewRuns&&e.local.kind==='run'&&!e.local.deleted)).sort((a,b)=>order(a.local)-order(b.local));
       // One request remains comfortably below the free D1 query limit.
       const selected=eligible.slice(0,1);
       for(const e of selected){e.inflight??=e.pending;s('sync').put(e,key(e.local));}

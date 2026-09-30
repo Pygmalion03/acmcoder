@@ -164,7 +164,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       if(action==='merge-guest'){const result=await account.mergeGuest();toast(`合并 ${result.imported} 条，保留冲突 ${result.conflicts.length} 条。`);await refresh();await render();}
       if(action==='connect-account'){target.disabled=true;try{await account.connect(!!$('remember-device')?.checked);}finally{target.disabled=false;}}
       if(action==='cloud-usage'){
-        const {usage,limits}=await account.usage();toast(`云端 ${usage.problems} / ${limits.problems} 题（含归档），${(usage.bytes/1048576).toFixed(2)} / ${(limits.userBytes/1048576).toFixed(2)} MiB。容量不足时本机保存和导出仍可用。`);
+        const {usage,limits,resetAt}=await account.usage();toast(`云端 ${usage.problems} / ${limits.problems} 题（含归档），${(usage.bytes/1048576).toFixed(2)} / ${(limits.userBytes/1048576).toFixed(2)} MiB；今日新增自测 ${usage.dailyRuns} / ${limits.dailyRuns} 次，${new Date(resetAt).toLocaleString()} 恢复额度。达到上限时本机保存和导出仍可用。`);
       }
       if(action==='delete-account'){
         let dialog=$('account-delete-dialog');if(!dialog){dialog=document.createElement('dialog');dialog.id='account-delete-dialog';root.append(dialog);}

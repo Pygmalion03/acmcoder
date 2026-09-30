@@ -34,7 +34,7 @@ export async function migrateLegacyRecords(db,repo,{userId,cursor=null,limit=25}
       const builtIn = ['sum','free'].includes(row.problem_id);
       await repo.apply({userId,mutation:{mutationId:`legacy-parent-${await hashId(row.problem_id)}`,kind:'problem',id:row.problem_id,op:'put',baseRevision:0,payload:{title:row.problem_id === 'sum' ? '两个整数相加' : row.problem_id === 'free' ? '自由练习' : '已移除题目（历史恢复）',statement:'',sourceKind:builtIn ? 'builtin' : 'legacy',archivedAt:builtIn ? null : 1}}});
     }
-    const result = await repo.apply({userId,mutation:{mutationId:`legacy-${kind}-${await hashId(sourceId)}`,kind,id:targetId,op:'put',baseRevision:0,...(row.problem_id ? {problemId:row.problem_id} : {}),...(['draft','run'].includes(kind) ? {language:'python'} : {}),payload:convert(kind,row)}});
+    const result = await repo.apply({userId,legacyImport:true,mutation:{mutationId:`legacy-${kind}-${await hashId(sourceId)}`,kind,id:targetId,op:'put',baseRevision:0,...(row.problem_id ? {problemId:row.problem_id} : {}),...(['draft','run'].includes(kind) ? {language:'python'} : {}),payload:convert(kind,row)}});
     if (result.conflicts.length) throw new Error('MIGRATION_CONFLICT');
     await db.prepare('INSERT OR IGNORE INTO record_legacy_ids(user_id,kind,source_id,target_id) VALUES(?,?,?,?)').bind(userId,kind,sourceId,targetId).run();
     imported++;

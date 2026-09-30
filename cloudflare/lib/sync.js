@@ -13,8 +13,8 @@ export function createSyncRepository(db, records) {
           const response=await records.apply({userId,mutation});
           result.applied.push(...response.applied);result.conflicts.push(...response.conflicts);
         }catch(error){
-          if(!/^(CAPACITY_REACHED|PROBLEM_NOT_FOUND|IMMUTABLE_RECORD|MUTATION_REUSED)$/.test(error.message))throw error;
-          result.errors.push({mutationId:mutation.mutationId,code:error.message});
+          if(!/^(CAPACITY_REACHED|DAILY_RUN_LIMIT|PROBLEM_NOT_FOUND|IMMUTABLE_RECORD|MUTATION_REUSED)$/.test(error.message))throw error;
+          result.errors.push({mutationId:mutation.mutationId,code:error.message,...(error.retryAt?{retryAt:error.retryAt}:{})});
           if(error.message==='CAPACITY_REACHED')break;
         }
       }

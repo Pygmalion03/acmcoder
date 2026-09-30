@@ -1,11 +1,11 @@
 import { validateMutation, recordBytes, RECORD_KINDS } from '../../shared/records.js';
 import { migrateLegacyRecords } from './record-migration.js';
 
-export const DEFAULT_RECORD_LIMITS = { userBytes: 8 * 1024 * 1024, globalBytes: 128 * 1024 * 1024, problems: 200 };
+export const DEFAULT_RECORD_LIMITS = { userBytes: 8 * 1024 * 1024, globalBytes: 128 * 1024 * 1024, problems: 200, dailyRuns: 100 };
 const unpack = row => row ? { kind:row.kind, id:row.id, ...(row.problem_id ? { problemId:row.problem_id } : {}), ...(row.language ? { language:row.language } : {}), revision:row.revision, updatedAt:row.updated_at, payload: row.deleted ? null : JSON.parse(row.payload_json), deleted:!!row.deleted } : null;
 const hash = async value => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), n => n.toString(16).padStart(2,'0')).join('');
 
-export function createRecordRepository(db, { limits = {} } = {}) {
+export function createRecordRepository(db, { limits = {}, clock = () => Date.now() } = {}) {
   limits = { ...DEFAULT_RECORD_LIMITS, ...limits };
   for (const value of Object.values(limits)) if (!Number.isSafeInteger(value) || value < 1) throw new Error('INVALID_LIMIT');
   const raw = (userId,kind,id) => db.prepare('SELECT * FROM unified_records WHERE user_id=? AND kind=? AND id=?').bind(userId,kind,id).first();
@@ -19,7 +19,7 @@ export function createRecordRepository(db, { limits = {} } = {}) {
     const page = rows.slice(0,limit);
     return { items:page.map(unpack), nextCursor:rows.length > limit ? `${page.at(-1).kind}:${page.at(-1).id}` : null };
   }
-  async function apply({ userId,mutation }) {
+  async function apply({ userId,mutation,legacyImport = false }) {
     const m = validateMutation(mutation);
     const fingerprint = await hash(JSON.stringify(m));
     const cached = await replay(userId,m);
@@ -42,10 +42,15 @@ export function createRecordRepository(db, { limits = {} } = {}) {
     const delta = bytes - (previous?.bytes || 0) + 512;
     const problemDelta = m.kind === 'problem' ? (deleted ? -1 : previous ? 0 : 1) : 0;
     const revision = m.baseRevision + 1;
+    const now = clock(), day = new Date(now).toISOString().slice(0,10);
     const result = { applied:[{ mutationId:m.mutationId,revision }], conflicts:[], cursor:0 };
     await db.prepare('INSERT OR IGNORE INTO record_usage(user_id) VALUES(?)').bind(userId).run();
     const statements = [
       db.prepare('INSERT INTO record_mutations(user_id,mutation_id,fingerprint,result_json) VALUES(?,?,?,?)').bind(userId,m.mutationId,fingerprint,JSON.stringify(result)),
+      ...(!deleted && m.kind==='run' && !previous && !legacyImport ? [
+        db.prepare('INSERT INTO record_daily_runs(user_id,day,count) VALUES(?,?,1) ON CONFLICT(user_id,day) DO UPDATE SET count=count+1 WHERE count<?').bind(userId,day,limits.dailyRuns),
+        db.prepare('UPDATE record_mutations SET run_quota_ok=changes() WHERE user_id=? AND mutation_id=?').bind(userId,m.mutationId),
+      ] : []),
       db.prepare('UPDATE record_usage SET bytes=bytes+?, problems=problems+? WHERE user_id=? AND bytes+?<=? AND problems+?<=?').bind(delta,problemDelta,userId,delta,limits.userBytes,problemDelta,limits.problems),
       db.prepare('UPDATE record_mutations SET capacity_ok=changes() WHERE user_id=? AND mutation_id=?').bind(userId,m.mutationId),
       db.prepare('UPDATE record_totals SET bytes=bytes+? WHERE id=1 AND bytes+?<=?').bind(delta,delta,limits.globalBytes),
@@ -54,7 +59,7 @@ export function createRecordRepository(db, { limits = {} } = {}) {
         SELECT ?,?,?,?,?,?,?,?,?,? WHERE (?=0 OR EXISTS(SELECT 1 FROM unified_records WHERE user_id=? AND kind=? AND id=? AND revision=? AND deleted=0)) AND (? IS NULL OR EXISTS(SELECT 1 FROM unified_records WHERE user_id=? AND kind='problem' AND id=? AND deleted=0))
         ON CONFLICT(user_id,kind,id) DO UPDATE SET problem_id=excluded.problem_id,language=excluded.language,revision=excluded.revision,updated_at=excluded.updated_at,payload_json=excluded.payload_json,deleted=excluded.deleted,bytes=excluded.bytes
         WHERE unified_records.revision=? AND unified_records.deleted=0`)
-        .bind(userId,m.kind,m.id,deleted ? previous.problem_id : m.problemId || null,deleted ? previous.language : m.language || null,revision,Date.now(),payload,deleted ? 1 : 0,bytes,m.baseRevision,userId,m.kind,m.id,m.baseRevision,deleted?null:m.problemId||null,userId,m.problemId||null,m.baseRevision),
+        .bind(userId,m.kind,m.id,deleted ? previous.problem_id : m.problemId || null,deleted ? previous.language : m.language || null,revision,now,payload,deleted ? 1 : 0,bytes,m.baseRevision,userId,m.kind,m.id,m.baseRevision,deleted?null:m.problemId||null,userId,m.problemId||null,m.baseRevision),
       db.prepare(`UPDATE record_mutations SET applied=changes(),result_json=json_set(result_json,'$.cursor',(SELECT COALESCE(MAX(seq),0) FROM record_changes WHERE user_id=?)) WHERE user_id=? AND mutation_id=?`).bind(userId,userId,m.mutationId)
     ];
     if(deleted&&m.kind==='problem'){
@@ -68,6 +73,11 @@ export function createRecordRepository(db, { limits = {} } = {}) {
     catch (error) {
       const saved = await replay(userId,m);
       if (saved) { if (saved.fingerprint !== fingerprint) throw new Error('MUTATION_REUSED'); return JSON.parse(saved.result_json); }
+      if (/daily_run_available/.test(error.message)) {
+        const quota = new Error('DAILY_RUN_LIMIT');
+        quota.retryAt = Date.parse(`${day}T00:00:00Z`) + 86400000;
+        throw quota;
+      }
       if (/capacity_available/.test(error.message)) throw new Error('CAPACITY_REACHED');
       if (/mutation_applied|unified_records.user_id, unified_records.problem_id/.test(error.message)) return conflict();
       throw error;

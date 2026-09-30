@@ -43,7 +43,7 @@ test('practice history and old plans survive new activity and remain fully expor
 
 function fixture() {
   const sqlite = new DatabaseSync(':memory:');
-  for (const file of ['0001_initial.sql','0002_restore_entries.sql','0003_unified_records.sql','0004_device_auth.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
+  for (const file of ['0001_initial.sql','0002_restore_entries.sql','0003_unified_records.sql','0004_device_auth.sql','0005_daily_run_quota.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
   const db = {
     prepare(sql) {
       return {
@@ -259,6 +259,7 @@ test('account deletion requires explicit confirmation and removes only that acco
  for(const user of ['a','b']){
   sqlite.prepare('INSERT INTO record_usage(user_id,bytes,problems) VALUES(?,1000,1)').run(user);
   sqlite.prepare('INSERT INTO record_migrations(user_id,completed) VALUES(?,1)').run(user);
+  sqlite.prepare('INSERT INTO record_daily_runs(user_id,day,count) VALUES(?,?,1)').run(user,'2026-10-01');
   sqlite.prepare(`INSERT INTO unified_records(user_id,kind,id,revision,updated_at,payload_json,bytes) VALUES(?,'problem','saved',1,1,?,1000)`).run(user,JSON.stringify({title:'Saved'}));
   sqlite.prepare(`INSERT INTO device_grants(id,user_id,name,access_hash,access_expires,refresh_hash,expires_at,created_at,last_used_at) VALUES(?,?,'test',?,9999999999,?,9999999999,1,1)`).run('grant-'+user,user,'access-'+user,'refresh-'+user);
   sqlite.prepare('INSERT INTO device_refresh_tokens(token_hash,grant_id) VALUES(?,?)').run('refresh-'+user,'grant-'+user);
@@ -266,7 +267,7 @@ test('account deletion requires explicit confirmation and removes only that acco
  assert.equal((await call('a','account','DELETE',{confirmation:'DELETE'},'https://evil.test')).status,403);
  assert.equal((await call('a','account','DELETE',{})).status,400);assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM users').get().n,2);
  assert.equal((await call('a','account','DELETE',{confirmation:'DELETE'})).status,200);
- for(const table of ['users','sessions','unified_records','record_changes','record_usage','record_migrations','device_grants']){
+ for(const table of ['users','sessions','unified_records','record_changes','record_usage','record_migrations','device_grants','record_daily_runs']){
   const column=table==='users'?'id':'user_id';assert.equal(sqlite.prepare(`SELECT COUNT(*) n FROM ${table} WHERE ${column}=?`).get('a').n,0);
   assert.ok(sqlite.prepare(`SELECT COUNT(*) n FROM ${table} WHERE ${column}=?`).get('b').n>0);
  }
@@ -277,6 +278,23 @@ test('account deletion requires explicit confirmation and removes only that acco
 test('account usage reports configured capacity for only the authenticated account',async()=>{
  const {call,sqlite}=fixture();sqlite.prepare('INSERT INTO record_usage(user_id,bytes,problems) VALUES(?,2048,3)').run('a');
  const result=await call('a','account/usage','GET',undefined,origin,{RECORD_USER_BYTES:'4096'});assert.equal(result.status,200);
- assert.deepEqual(result.data,{usage:{bytes:2048,problems:3},limits:{userBytes:4096,problems:200}});
+ assert.deepEqual(result.data.usage,{bytes:2048,problems:3,dailyRuns:0});
+ assert.deepEqual(result.data.limits,{userBytes:4096,problems:200,dailyRuns:100});
+ assert.match(result.data.day,/^\d{4}-\d{2}-\d{2}$/);
+ assert.equal(result.data.resetAt,Date.parse(`${result.data.day}T00:00:00Z`)+86400000);
  assert.equal((await call('b','account/usage')).data.usage.bytes,0);
+});
+
+test('daily run quota is enforced by direct and sync APIs and ignores client migration flags',async()=>{
+ const {call,sqlite}=fixture();sqlite.prepare('INSERT INTO record_migrations(user_id,completed) VALUES(?,1)').run('a');
+ const mutation={mutationId:'quota-parent',kind:'problem',id:'quota-parent',op:'put',baseRevision:0,payload:{title:'限额验收'}};
+ assert.equal((await call('a','records','POST',{protocolVersion:1,mutation})).status,200);
+ const day=new Date().toISOString().slice(0,10);sqlite.prepare('INSERT INTO record_daily_runs(user_id,day,count) VALUES(?,?,100)').run('a',day);
+ const run={mutationId:'over-quota',kind:'run',id:'over-quota',problemId:'quota-parent',language:'python',op:'put',baseRevision:0,payload:{status:'self_pass'}};
+ const direct=await call('a','records','POST',{protocolVersion:1,legacyImport:true,mutation:{...run,legacyImport:true}});
+ assert.equal(direct.status,429);assert.equal(direct.data.code,'DAILY_RUN_LIMIT');assert.equal(direct.data.retryAt,Date.parse(`${day}T00:00:00Z`)+86400000);
+ const sync=await call('a','sync/push','POST',{protocolVersion:1,legacyImport:true,mutations:[run]});
+ assert.equal(sync.status,200);assert.equal(sync.data.errors[0].code,'DAILY_RUN_LIMIT');assert.equal(sync.data.errors[0].retryAt,direct.data.retryAt);
+ assert.equal(sqlite.prepare("SELECT COUNT(*) n FROM unified_records WHERE kind='run'").get().n,0);
+ assert.equal((await call('a','account/usage')).data.usage.dailyRuns,100);assert.equal((await call('b','account/usage')).data.usage.dailyRuns,0);
 });

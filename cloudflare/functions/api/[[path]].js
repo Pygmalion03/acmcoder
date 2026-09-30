@@ -512,9 +512,11 @@ async function route({ request, env }) {
     if (!user.deviceId&&!['GET', 'HEAD'].includes(method)) assertOrigin(request);
     if(method==='GET'&&path.join('/')==='account/usage'){
       const usage=await db.prepare('SELECT bytes,problems FROM record_usage WHERE user_id=?').bind(user.id).first()||{bytes:0,problems:0};
+      const day=new Date().toISOString().slice(0,10);
+      const daily=await db.prepare('SELECT count FROM record_daily_runs WHERE user_id=? AND day=?').bind(user.id,day).first();
       const userBytes=Number(env.RECORD_USER_BYTES||DEFAULT_RECORD_LIMITS.userBytes);
       if(!Number.isSafeInteger(userBytes)||userBytes<1)throw new Error('INVALID_LIMIT');
-      return json({usage,limits:{userBytes,problems:DEFAULT_RECORD_LIMITS.problems}});
+      return json({usage:{...usage,dailyRuns:daily?.count||0},day,resetAt:Date.parse(`${day}T00:00:00Z`)+86400000,limits:{userBytes,problems:DEFAULT_RECORD_LIMITS.problems,dailyRuns:DEFAULT_RECORD_LIMITS.dailyRuns}});
     }
     if(path.join('/')==='ai/chat'&&method==='POST'){
       const data=await body(request,120000);await reserveAiRequest(db,user.id);
@@ -557,7 +559,7 @@ async function route({ request, env }) {
         return json({error:'记录接口不存在。'},404);
       } catch(error) {
         const code = error.message;
-        if (/^(INVALID_|CREDENTIAL_|MUTATION_REUSED|IMMUTABLE_|PROBLEM_NOT_FOUND|MIGRATION_CONFLICT|CAPACITY_REACHED)/.test(code)) return json({code,error:code === 'CAPACITY_REACHED' ? '云端容量已满，已有数据会保留；请继续在此设备练习或导出。' : code},code === 'CAPACITY_REACHED' ? 429 : 409);
+        if (/^(INVALID_|CREDENTIAL_|MUTATION_REUSED|IMMUTABLE_|PROBLEM_NOT_FOUND|MIGRATION_CONFLICT|CAPACITY_REACHED|DAILY_RUN_LIMIT)/.test(code)) return json({code,error:code === 'CAPACITY_REACHED' ? '云端容量已满，已有数据会保留；请继续在此设备练习或导出。' : code === 'DAILY_RUN_LIMIT' ? '今日云端新增自测记录已达上限，本机结果保留，额度恢复后继续同步。' : code,...(error.retryAt?{retryAt:error.retryAt}:{})},['CAPACITY_REACHED','DAILY_RUN_LIMIT'].includes(code) ? 429 : 409);
         throw error;
       }
     }

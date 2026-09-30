@@ -1,6 +1,6 @@
 # 升级、备份与恢复
 
-当前统一候选版为 4.0.0-rc.1；稳定3.0.4及原有数据应先保留。候选包不是商店自动更新或正式稳定发布。
+当前统一候选版为 4.0.0-rc.2；稳定3.0.4及原有数据应先保留。候选包不是商店自动更新或正式稳定发布。
 
 ## 升级前
 
@@ -29,7 +29,7 @@
 Docker保持原数据挂载路径；不用新空卷替换旧卷。源码构建候选镜像可以用：
 
 ```sh
-docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.1 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
+docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.2 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
 ```
 
 准备好原数据导出后停止旧容器，再使用相同数据挂载启动新镜像。需要回退时先保留升级后的记录，使用旧镜像及升级前独立备份；不要删除新记录或降级迁移表来“回滚”。协议不兼容时停止云写入，先升级客户端，设备草稿与队列保留。

@@ -24,7 +24,7 @@ test('backup pages and restores do not truncate long-lived history at legacy lim
 });
 function fixture() {
   const sqlite = new DatabaseSync(':memory:');
-  for (const file of ['0001_initial.sql', '0002_restore_entries.sql', '0003_unified_records.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
+  for (const file of ['0001_initial.sql', '0002_restore_entries.sql', '0003_unified_records.sql', '0005_daily_run_quota.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
   const db = {
     prepare(sql) {
       return { bind(...params) {

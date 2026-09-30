@@ -49,3 +49,20 @@ test('conflict copy commits atomically and remains syncable after reopening the 
   assert.equal((await store.getDraft({problemId:copied.problemId,language:'python'})).code,'离线版本');assert.equal((await store.getDraft(key)).code,'云端版本');assert.deepEqual(await store.syncConflicts(),[]);assert.ok(await store.syncPendingCount());
  }finally{await fs.rm(dataDir,{recursive:true,force:true});}
 });
+
+test('file sync quota metadata and pending runs survive restart while drafts can be staged',async()=>{
+ const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'acmcoder-file-quota-'));
+ try{
+  let store=createLocalStore({dataDir,namespace:'account:a',sync:true});
+  await store.syncPullPage({changes:[{kind:'problem',id:'sum',revision:1,payload:{title:'求和'}}],nextCursor:1});
+  await store.putRecord({kind:'run',id:'pending-run',problemId:'sum',language:'python',payload:{stdout:'42'}});
+  const [run]=await store.syncStage();assert.equal(run.kind,'run');
+  await store.setMeta('sync:dailyRunRetryAt',Date.parse('2026-10-02T00:00:00Z'));
+  await store.saveDraft(draft);store=createLocalStore({dataDir,namespace:'account:a',sync:true});
+  assert.equal(await store.getMeta('sync:dailyRunRetryAt'),Date.parse('2026-10-02T00:00:00Z'));
+  const [next]=await store.syncStage({skipNewRuns:true});assert.equal(next.kind,'draft');
+  await store.syncAcknowledge({applied:[{mutationId:next.mutationId,revision:1}],conflicts:[],errors:[]});
+  assert.deepEqual((await store.syncStage())[0],run);
+  assert.equal((await store.exportBackup()).records.find(r=>r.kind==='run').payload.stdout,'42');
+ }finally{await fs.rm(dataDir,{recursive:true,force:true});}
+});
