@@ -14,7 +14,7 @@ await fs.cp(path.join(root,'shared'),path.join(destination,'shared'),{recursive:
 await fs.copyFile(path.join(root,'data/recommendation/default-catalog.json'),path.join(destination,'shared/catalog.json'));
 if(target==='extension'){
   await bundlePython(path.join(destination,'vendor/python'));
-  for(const name of ['capture.js','store.js','runner.js']){
+  for(const name of ['capture.js','store.js','runner.js','handoff.js']){
     const file=path.join(destination,name);const text=await fs.readFile(file,'utf8');
     await fs.writeFile(file,text.replaceAll("from '../shared/","from './shared/"));
   }

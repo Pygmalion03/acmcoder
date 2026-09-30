@@ -13,10 +13,13 @@
   "host_permissions": [
     "https://leetcode.cn/*",
     "https://leetcode.com/*",
-    "http://127.0.0.1:43117/*"
+    "http://127.0.0.1:43117/*",
+    "https://acmcoder.pygmalion.top/*",
+    "https://acmcoder-unified-preview.pages.dev/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_title": "ACMCoder"
@@ -34,6 +37,16 @@
         "content-script.js"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://acmcoder.pygmalion.top/*",
+        "https://acmcoder-unified-preview.pages.dev/*"
+      ],
+      "js": [
+        "website-bridge.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "sandbox": {

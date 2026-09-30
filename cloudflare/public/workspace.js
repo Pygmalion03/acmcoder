@@ -3,12 +3,15 @@ import {createBrowserRunner} from '/shared/runner.js';
 import {mountWorkspace} from '/shared/ui/workspace.js';
 import {migrateBrowserDrafts} from '/shared/legacy-browser.js';
 import {createSyncEngine,createSyncTransport} from '/shared/sync.js';
+import {createWebsiteHandoff} from '/shared/handoff-client.js';
+import {offerHandoff} from '/shared/handoff-ui.js';
 
 async function main(){
   const frame=document.createElement('iframe');
   frame.hidden=true;frame.setAttribute('sandbox','allow-scripts');frame.title='隔离 Python 运行环境';document.body.append(frame);
   const session=await fetch('/api/auth/session').then(r=>r.ok?r.json():null).catch(()=>null);
-  const user=session?.authenticated?session.user:null;
+  const nonce=new URLSearchParams(location.hash.slice(1)).get('handoff');
+  const user=!nonce&&session?.authenticated?session.user:null;
   const namespace=user?`account:${user.id}`:'guest';
   const store=createBrowserStore({namespace,sync:!!user});
   await migrateBrowserDrafts({store,namespace});
@@ -32,6 +35,11 @@ async function main(){
     window.addEventListener('focus',async()=>{await engine.syncNow();if(!['code','stdin','expected'].includes(document.activeElement?.id))await workspace?.refreshFromCloud();});
   }
   const catalog=await fetch('/shared/catalog.json').then(r=>r.ok?r.json():{entries:[]}).catch(()=>({entries:[]}));
-  workspace=await mountWorkspace(document.getElementById('app'),{store,runner,account,catalog:catalog.entries});
+  const handoff=createWebsiteHandoff();
+  workspace=await mountWorkspace(document.getElementById('app'),{store,runner,account,catalog:catalog.entries,client:{handoffLabel:'在插件继续 ↗',handoff:records=>handoff.send(records)}});
+  if(nonce){
+    try{const incoming=await handoff.consume(nonce);history.replaceState(null,'',location.pathname);await offerHandoff({store,records:incoming.records,workspace});}
+    catch(error){const note=document.createElement('p');note.textContent=error.message;document.getElementById('app').prepend(note);}
+  }
 }
 main().catch(error=>{const message=document.createElement('p');message.textContent=`工作区暂时无法打开：${error.message}。原有数据不会被删除。`;document.getElementById('app').append(message);});
