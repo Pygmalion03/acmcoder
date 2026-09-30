@@ -5,7 +5,7 @@ import {createCloudAuth} from './cloud-auth.js';
 import {withoutCredentials} from '../../shared/backup.js';
 import {createSyncEngine} from '../../shared/sync.js';
 
-const methods=new Set(['getDraft','saveDraft','startRewrite','finishRewrite','discardRewrite','listAttempts','getRecord','listRecords','putRecord','getMeta','setMeta','archiveProblem','restoreProblem','deleteProblem','exportBackup','restoreBackup','flush','syncConflicts','syncResolve']);
+const methods=new Set(['getDraft','saveDraft','startRewrite','finishRewrite','discardRewrite','listAttempts','getRecord','listRecords','putRecord','getMeta','setMeta','archiveProblem','restoreProblem','deleteProblem','exportBackup','restoreBackup','flush','syncConflicts','syncResolve','syncCopyConflict']);
 export function createUnifiedApi({dataDir,credentialDir,memoryFile,cloudFetch}){
   const stores=new Map(),engines=new Map(),timers=new Map(),subscriptions=new Map();
   const auth=createCloudAuth({credentialDir,fetch:cloudFetch});let migration=null;
@@ -13,7 +13,7 @@ export function createUnifiedApi({dataDir,credentialDir,memoryFile,cloudFetch}){
     engines.get(namespace)?.pause();subscriptions.get(namespace)?.();clearTimeout(timers.get(namespace));
     const accountId=namespace.slice(8),call=(p,d)=>auth.fetch(p,d,accountId);
     const engine=createSyncEngine({store,accountId,transport:{async migrate(){let cursor=null;do{({nextCursor:cursor}=await call('records/migrate',{protocolVersion:1,cursor}));}while(cursor);},push:mutations=>call('sync/push',{protocolVersion:1,mutations}),pull:cursor=>call(`sync/pull?cursor=${cursor}&limit=50`)}});
-    engines.set(namespace,engine);subscriptions.set(namespace,store.subscribe(()=>{clearTimeout(timers.get(namespace));const timer=setTimeout(()=>engine.syncNow(),1500);timer.unref();timers.set(namespace,timer);}));
+    engines.set(namespace,engine);subscriptions.set(namespace,store.subscribe(()=>{clearTimeout(timers.get(namespace));const timer=setTimeout(()=>engine.syncNow({automatic:true}),1500);timer.unref();timers.set(namespace,timer);}));
   }
   async function getStore(namespace){
     if(!stores.has(namespace)){

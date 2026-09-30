@@ -35,3 +35,17 @@ test('account file copies retain sync outbox and conflicts across process restar
     assert.equal(await createLocalStore({dataDir,namespace:'account:b',sync:true}).getDraft(key),null);
   }finally{await fs.rm(dataDir,{recursive:true,force:true});}
 });
+
+test('conflict copy commits atomically and remains syncable after reopening the file store',async()=>{
+ const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'acmcoder-copy-conflict-'));let fail=false;
+ try{
+  let store=createLocalStore({dataDir,namespace:'account:a',sync:true,beforeCommit:async()=>{if(fail)throw new Error('disk full');}});
+  await store.syncPullPage({changes:[{kind:'problem',id:'sum',revision:1,payload:{title:'求和',statement:'完整题面'}},{kind:'draft',id:'sum--python',problemId:'sum',language:'python',revision:1,payload:{...draft,mode:'normal'}}],nextCursor:1});
+  await store.saveDraft({...await store.getDraft(key),code:'离线版本'});
+  await store.syncPullPage({changes:[{kind:'draft',id:'sum--python',problemId:'sum',language:'python',revision:2,payload:{...draft,code:'云端版本',mode:'normal'}}],nextCursor:2});
+  const [conflict]=await store.syncConflicts();fail=true;await assert.rejects(store.syncCopyConflict(conflict.key),/disk full/);fail=false;
+  assert.equal((await store.listRecords({kind:'problem'})).length,1);assert.equal((await store.syncConflicts()).length,1);assert.equal((await store.getDraft(key)).code,'离线版本');
+  const copied=await store.syncCopyConflict(conflict.key);store=createLocalStore({dataDir,namespace:'account:a',sync:true});
+  assert.equal((await store.getDraft({problemId:copied.problemId,language:'python'})).code,'离线版本');assert.equal((await store.getDraft(key)).code,'云端版本');assert.deepEqual(await store.syncConflicts(),[]);assert.ok(await store.syncPendingCount());
+ }finally{await fs.rm(dataDir,{recursive:true,force:true});}
+});

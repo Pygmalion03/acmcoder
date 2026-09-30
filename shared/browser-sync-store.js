@@ -29,6 +29,11 @@ export function createBrowserSyncAdapter({transaction,read,enqueue}){
     if(record.deleted){s(table).delete(id);if(record.kind==='problem')s('meta').put({deletedAt:record.updatedAt},`deleted:${record.id}`);}
     else s(table).put(table==='records'?record:{...record.payload,id:record.id,problemId:record.problemId,language:record.language,updatedAt:record.updatedAt,syncEpoch:epoch});
   }
+  async function problemRecords(s,problemId){
+    const records=(await value(s('records').getAll())).filter(r=>r.kind==='problem'?r.id===problemId:r.problemId===problemId);
+    for(const table of ['drafts','attempts'])for(const row of await value(s(table).getAll()))if(row.problemId===problemId)records.push(toSyncRecord(table,row));
+    return records;
+  }
   return {track,api:{
     syncStage:()=>enqueue(()=>transaction(['sync'],'readwrite',async s=>{
       const entries=await value(s('sync').getAll());
@@ -52,6 +57,12 @@ export function createBrowserSyncAdapter({transaction,read,enqueue}){
       }
     },false)),
     syncPullPage:page=>enqueue(()=>transaction(tables,'readwrite',async s=>{
+      // Keep a recovery bundle only when another device deletes a problem that
+      // has unsynced local work. Clean it when the user resolves those conflicts.
+      const entries=await value(s('sync').getAll());
+      for(const record of page.changes)if(record.kind==='problem'&&record.deleted&&entries.some(e=>(e.local?.problemId===record.id||e.local?.kind==='problem'&&e.local.id===record.id)&&(e.conflict||!same(e.local,e.base)))){
+        if(!await value(s('meta').get(`sync:recovery:${record.id}`)))s('meta').put(await problemRecords(s,record.id),`sync:recovery:${record.id}`);
+      }
       for(const input of page.changes){
         const record=input.deleted?input:validateRecord(input);
         const id=key(record);let e=await value(s('sync').get(id));
@@ -71,6 +82,34 @@ export function createBrowserSyncAdapter({transaction,read,enqueue}){
       s('meta').put(page.nextCursor,'sync:cursor');
     },false)),
     syncConflicts:()=>read(['sync'],async s=>(await value(s('sync').getAll())).filter(e=>e.conflict).map(e=>({key:key(e.local),...e.conflict}))),
+    syncCopyConflict:id=>enqueue(()=>transaction(tables,'readwrite',async s=>{
+      const entries=await value(s('sync').getAll()),selected=entries.find(e=>e.local&&key(e.local)===id);
+      if(!selected?.conflict)throw new Error('冲突已处理。');
+      const problemId=selected.local.kind==='problem'?selected.local.id:selected.local.problemId;
+      if(!problemId)throw new Error('这项设置冲突无法另存为题目，请选择版本或导出。');
+      const recovery=await value(s('meta').get(`sync:recovery:${problemId}`))||[];
+      const group=new Map([...recovery,...await problemRecords(s,problemId)].map(r=>[key(r),r]));
+      const related=entries.filter(e=>e.local?.kind==='problem'?e.local.id===problemId:e.local?.problemId===problemId);
+      for(const e of related)if(e.conflict&&!e.conflict.local.deleted)group.set(key(e.local),e.conflict.local);
+      const original=group.get(`problem:${problemId}`);
+      if(!original)throw new Error('原题面无法恢复，请导出双方内容后手动导入。');
+      const newId=crypto.randomUUID(),ids=new Map([...group.values()].filter(r=>!['problem','draft'].includes(r.kind)).map(r=>[r.id,crypto.randomUUID()]));
+      const changes=new Map();
+      for(const r of group.values()){
+        const next=structuredClone(r);next.revision=0;next.syncEpoch=0;next.updatedAt=Date.now();
+        if(r.kind==='problem'){next.id=newId;next.payload.title=`${r.payload.title.slice(0,150)} · 冲突副本`;next.payload.archivedAt=null;}
+        else{next.problemId=newId;next.id=r.kind==='draft'?`${newId}--${r.language}`:ids.get(r.id);if(next.payload.previousAttemptId){const mapped=ids.get(next.payload.previousAttemptId);if(!mapped)throw new Error('重写历史不完整，请先导出冲突。');next.payload.previousAttemptId=mapped;}}
+        const validated=validateRecord(next);writeRemote(s,validated);changes.set(key(validated),validated);
+      }
+      // Copy and acceptance of the original cloud versions commit together.
+      const deletedParent=related.some(e=>e.local.kind==='problem'&&(e.base?.deleted||e.conflict?.remote?.deleted));
+      for(const e of related)if(e.conflict||deletedParent){
+        const originalKey=key(e.local),old=e.local;e.base=e.conflict?.remote||e.base;e.local=e.base;e.conflict=null;e.inflight=null;e.pending=null;e.epoch=(e.epoch||0)+1;
+        writeRemote(s,e.local||{kind:old.kind,id:old.id,problemId:old.problemId,deleted:true},e.epoch);s('sync').put(e,originalKey);
+      }
+      s('meta').delete(`sync:recovery:${problemId}`);await track(s,changes);
+      return {problemId:newId,records:changes.size};
+    },false)),
     syncResolve:(id,choice)=>enqueue(()=>transaction(tables,'readwrite',async s=>{
       const e=await value(s('sync').get(id));if(!e?.conflict)throw new Error('冲突已处理。');
       if(!['local','cloud'].includes(choice))throw new Error('请选择保留本地或云端版本。');
@@ -79,6 +118,8 @@ export function createBrowserSyncAdapter({transaction,read,enqueue}){
       e.base=remote;e.local=choice==='local'?e.conflict.local:remote;e.conflict=null;e.inflight=null;e.pending=mutation(e);
       if(e.local){e.epoch=(e.epoch||0)+1;writeRemote(s,e.local,e.epoch);}else writeRemote(s,{...remote,...e,kind:id.split(':')[0],id:id.slice(id.indexOf(':')+1),deleted:true});
       s('sync').put(e,id);
+      const problemId=e.local?.kind==='problem'?e.local.id:e.local?.problemId;
+      if(problemId&&!(await value(s('sync').getAll())).some(item=>item.conflict&&(item.local.problemId===problemId||item.local.kind==='problem'&&item.local.id===problemId)))s('meta').delete(`sync:recovery:${problemId}`);
     },false)),
     syncPendingCount:()=>read(['sync'],async s=>(await value(s('sync').getAll())).filter(e=>e.pending||e.inflight).length)
   }};

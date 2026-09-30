@@ -113,7 +113,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
     let dialog=$('conflicts-dialog');
     if(!dialog){dialog=document.createElement('dialog');dialog.id='conflicts-dialog';root.append(dialog);}
     const conflicts=await store.syncConflicts();
-    dialog.innerHTML=`<div class="dialog-title"><h2>同步冲突 · 保留双方</h2>${button('close-conflicts','关闭')}</div><p>在选择之前，两个版本都会保留。云端彻底删除的内容只能导出后以新题保存。</p>${conflicts.map(c=>`<section><h3>${escape(c.local.kind)} · ${escape(c.local.id)}</h3><div class="compare"><pre>${escape(c.local.payload?.code??JSON.stringify(c.local.payload,null,2))}</pre><pre>${escape(c.remote?.deleted?'云端已彻底删除':c.remote?.payload?.code??JSON.stringify(c.remote?.payload,null,2))}</pre></div><div class="actions">${c.remote?.deleted?'':button('keep-local','保留本地','',c.key)}${button('keep-cloud','保留云端','',c.key)}${button('export-conflict','导出双方内容','',c.key)}</div></section>`).join('')||'<p>当前没有冲突。</p>'}`;
+    dialog.innerHTML=`<div class="dialog-title"><h2>同步冲突 · 保留双方</h2>${button('close-conflicts','关闭')}</div><p>在选择之前，两个版本都会保留。另存为新题会保留本地题面与历史，原题采用云端版本；云端已删除的原题不会复活。</p>${conflicts.map(c=>`<section><h3>${escape(c.local.kind)} · ${escape(c.local.id)}</h3><div class="compare"><pre>${escape(c.local.payload?.code??JSON.stringify(c.local.payload,null,2))}</pre><pre>${escape(c.remote?.deleted?'云端已彻底删除':c.remote?.payload?.code??JSON.stringify(c.remote?.payload,null,2))}</pre></div><div class="actions">${c.remote?.deleted?'':button('keep-local','保留本地','',c.key)}${button('keep-cloud','保留云端','',c.key)}${c.local.kind==='problem'||c.local.problemId?button('copy-conflict','另存为新题','primary',c.key):''}${button('export-conflict','导出双方内容','',c.key)}</div></section>`).join('')||'<p>当前没有冲突。</p>'}`;
     if(!dialog.open)dialog.showModal();
   }
   let deleting=null;
@@ -135,6 +135,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       if(action==='conflicts')await showConflicts();
       if(action==='close-conflicts')$('conflicts-dialog').close();
       if(action==='keep-local'||action==='keep-cloud'){await store.syncResolve(id,action==='keep-local'?'local':'cloud');await account.sync();await showConflicts();}
+      if(action==='copy-conflict'){target.disabled=true;try{const result=await store.syncCopyConflict(id);await account.sync();$('conflicts-dialog').close();await refresh();await navigate('practice',result.problemId);toast('已另存为新题，原题和两份内容均已保留。');}catch(error){target.disabled=false;throw error;}}
       if(action==='export-conflict'){
         const item=(await store.syncConflicts()).find(c=>c.key===id);const url=URL.createObjectURL(new Blob([JSON.stringify(item,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='acmcoder-conflict.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
       }

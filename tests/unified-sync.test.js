@@ -54,3 +54,43 @@ test('an editor opened before remote changes cannot silently overwrite the newer
  assert.equal((await b.store.syncConflicts())[0].local.payload.code,'typed in stale editor');
  assert.equal((await repo.get({userId:'a',kind:'draft',id:'sum--python'})).payload.code,'new remote');
 });
+
+test('copying a conflict preserves rewrite history under new IDs and keeps the cloud original',async()=>{
+ const {device}=setup(),a=device(),b=device();await a.store.putRecord({...problem,payload:{title:'求和',statement:'原题面',rawSamples:['输入 1 2，输出 3']}});await a.store.saveDraft(draft);await a.engine.syncNow();await b.engine.syncNow();
+ await b.store.startRewrite({...draft,template:''});await b.store.saveDraft({...await b.store.getDraft(draft),code:'离线重写'});
+ await a.store.saveDraft({...await a.store.getDraft(draft),code:'云端新版'});await a.engine.syncNow();await b.engine.syncNow();
+ const [conflict]=await b.store.syncConflicts();const copy=await b.store.syncCopyConflict(conflict.key);
+ assert.notEqual(copy.problemId,'sum');assert.equal((await b.store.getDraft(draft)).code,'云端新版');
+ const copied=await b.store.getDraft({problemId:copy.problemId,language:'python'});assert.equal(copied.code,'离线重写');assert.equal(copied.mode,'rewrite');
+ const previous=(await b.store.listAttempts({problemId:copy.problemId})).items.find(r=>r.id===copied.previousAttemptId);assert.equal(previous.code,'原代码');assert.equal(previous.problemId,copy.problemId);
+ assert.equal((await b.store.getRecord({kind:'problem',id:copy.problemId})).payload.statement,'原题面');assert.deepEqual(await b.store.syncConflicts(),[]);
+ await b.engine.syncNow();await a.engine.syncNow();assert.equal((await a.store.getDraft({problemId:copy.problemId,language:'python'})).code,'离线重写');assert.equal((await a.store.getDraft(draft)).code,'云端新版');
+ await assert.rejects(b.store.syncCopyConflict(conflict.key),/冲突已处理/);
+});
+
+test('copy after cloud deletion recovers the statement and snapshots without resurrecting deleted IDs',async()=>{
+ const {device,repo}=setup(),a=device(),b=device();await a.store.putRecord({...problem,payload:{title:'求和',statement:'删除前题面',rawSamples:['原始样例']}});await a.store.saveDraft(draft);await a.engine.syncNow();await b.engine.syncNow();
+ await b.store.startRewrite({...draft,template:''});await b.store.saveDraft({...await b.store.getDraft(draft),code:'删除期间离线重写'});
+ await a.store.deleteProblem('sum',{confirmed:true});await a.engine.syncNow();await b.engine.syncNow();
+ const [conflict]=await b.store.syncConflicts();const copy=await b.store.syncCopyConflict(conflict.key);
+ assert.equal((await b.store.getRecord({kind:'problem',id:copy.problemId})).payload.statement,'删除前题面');
+ assert.equal((await b.store.listAttempts({problemId:copy.problemId})).items[0].code,'原代码');
+ await b.engine.syncNow();await a.engine.syncNow();assert.equal((await repo.get({userId:'a',kind:'problem',id:'sum'})).deleted,true);assert.equal(await b.store.getDraft(draft),null);
+ assert.equal((await a.store.getDraft({problemId:copy.problemId,language:'python'})).code,'删除期间离线重写');assert.deepEqual(await b.store.syncConflicts(),[]);
+});
+
+test('temporary network errors retry with backoff and automatically deliver the durable queue',async()=>{
+ const {device}=setup(),a=device();await a.store.putRecord(problem);await a.store.saveDraft(draft);
+ let now=0,scheduled=[],online=false;const engine=createSyncEngine({store:a.store,accountId:'a',transport:{...a.transport,pull:async cursor=>{if(!online)throw new TypeError('offline');return a.transport.pull(cursor);}},clock:()=>now,setTimeout:(fn,delay)=>{const job={fn,at:now+delay};scheduled.push(job);return job;},clearTimeout:job=>{scheduled=scheduled.filter(x=>x!==job);}});
+ await engine.syncNow();assert.equal(engine.getStatus().state,'retrying');assert.ok(engine.getStatus().nextRetryAt>now);assert.ok(await a.store.syncPendingCount());
+ const before=engine.getStatus().nextRetryAt;await engine.syncNow({automatic:true});assert.equal(engine.getStatus().nextRetryAt,before);assert.equal(scheduled.length,1);
+ const first=scheduled.shift();now=first.at;await first.fn();const second=scheduled.shift();assert.ok(second.at-now>first.at);
+ online=true;now=second.at;await second.fn();assert.equal(await a.store.syncPendingCount(),0);assert.equal(engine.getStatus().state,'saved');assert.equal(scheduled.length,0);
+});
+
+test('pause cancels retry and quota failures retain work without automatic retries',async()=>{
+ const {device}=setup(),a=device();await a.store.putRecord(problem);let scheduled=[];
+ const timers={setTimeout:(fn,delay)=>{const job={fn,delay};scheduled.push(job);return job;},clearTimeout:job=>{scheduled=scheduled.filter(x=>x!==job);}};
+ const engine=createSyncEngine({store:a.store,accountId:'a',transport:{...a.transport,pull:async()=>{throw new TypeError('offline');}},...timers});await engine.syncNow();assert.equal(scheduled.length,1);engine.pause();assert.equal(scheduled.length,0);assert.equal(engine.getStatus().state,'paused');
+ const quota=createSyncEngine({store:a.store,accountId:'a',transport:{...a.transport,push:async()=>({applied:[],conflicts:[],errors:[{code:'CAPACITY_REACHED'}]})},...timers});await quota.syncNow();assert.equal(quota.getStatus().state,'error');assert.equal(scheduled.length,0);assert.ok(await a.store.syncPendingCount());
+});

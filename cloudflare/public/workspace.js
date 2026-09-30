@@ -21,7 +21,7 @@ async function main(){
   await migrateBrowserDrafts({store,namespace});
   const runner=createBrowserRunner({frame});
   let engine,workspace,timer;
-  const statusText=()=>({saved:'已同步到云端',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'同步已暂停，请重新连接账号',error:'同步暂未完成；本机内容已保留',idle:'已保存到此设备'}[engine?.getStatus().state]||'已保存到此设备');
+  const statusText=()=>({saved:'已同步到云端',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'同步已暂停，请重新连接账号',retrying:'网络暂不可用，稍后自动重试；内容已保留',error:'同步暂未完成；本机内容已保留',idle:'已保存到此设备'}[engine?.getStatus().state]||'已保存到此设备');
   async function deviceCall(path,data){const response=await fetch(`/api/devices${path}`,{method:data?'POST':'GET',headers:data?{'content-type':'application/json'}:{},...(data?{body:JSON.stringify(data)}:{})});const result=await response.json();if(!response.ok)throw new Error(result.error||'设备管理暂不可用。');return result;}
   const account={devices:async()=>(await deviceCall('')).devices,revoke:deviceId=>deviceCall('/revoke',{deviceId}),user,loginAvailable:!!session?.loginAvailable,statusText,async sync(){await engine.syncNow();},async mergeGuest(){
     const guest=createBrowserStore({namespace:'guest'});const result=await store.restoreBackup(await guest.exportBackup());
@@ -34,10 +34,10 @@ async function main(){
   if(user){
     engine=createSyncEngine({store,accountId:user.id,transport:createSyncTransport({accountId:user.id}),onStatus(){const el=document.getElementById('sync-status');if(el)el.textContent=statusText();}});
     await engine.syncNow();
-    store.subscribe(()=>{clearTimeout(timer);timer=setTimeout(()=>engine.syncNow(),1500);});
+    store.subscribe(()=>{clearTimeout(timer);timer=setTimeout(()=>engine.syncNow({automatic:true}),1500);});
     window.addEventListener('online',()=>engine.syncNow());
     // Refresh between visits, not while the user is entering code.
-    window.addEventListener('focus',async()=>{await engine.syncNow();if(!['code','stdin','expected'].includes(document.activeElement?.id))await workspace?.refreshFromCloud();});
+    window.addEventListener('focus',async()=>{await engine.syncNow({automatic:true});if(!['code','stdin','expected'].includes(document.activeElement?.id))await workspace?.refreshFromCloud();});
   }
   const catalog=await fetch('/shared/catalog.json').then(r=>r.ok?r.json():{entries:[]}).catch(()=>({entries:[]}));
   const handoff=createWebsiteHandoff();
