@@ -148,3 +148,9 @@
 - 同commit的Docker app `acmcoder-app:unified-rc1-12b5217`在独立新卷、read-only/cap-drop/no-new-privileges环境运行；统一UI、version.json、草稿API/备份、Python/C++/Java真实执行全部通过。删除测试容器后使用同一卷重建，读取原草稿stdin和代码仍一致。Linux amd64本地image ID `sha256:a16ea66601acc64146db4b24edcb73fafcca96d64c1b7d203152a4ddae0f2388`；这是本地镜像标识，不是GHCR registry digest。日志`/tmp/acmcoder-r1-docker-build.log`。
 - Pages预览部署`1ef23ae8-c608-4610-bb53-e51be5ac9f7c` success，同commit固定网址`https://1ef23ae8.acmcoder-unified-preview.pages.dev`；公开域名version.json与客户端一致。真实Chrome设置页显示`4.0.0-rc.1 · 候选版 · 12b5217 · python`，原GitHub账号与已同步状态保留；未刷新等待用户配置API的旧标签页。本批无数据库迁移，旧固定部署仍保留。
 - 额外旧卷演练：实际`ghcr.io/pygmalion03/acmcoder-app:v3.0.4`在隔离卷通过API捕获中文题目、原生Python运行AC并导出旧记录，然后同卷切换候选镜像。新版题面/样例迁移、原文件和旧接口AC次数保留通过；**新版progress记录为0，旧AC次数尚未迁入新记录**。这是实际发现的待修正项，不能将此演练标为完整升级验收。没有读写用户稳定服务数据或真实密钥，正式43117服务未重启。
+
+## R1 旧统计迁移修复 — 2026-10-01
+
+- 为本地progress.json增加独立的一次性迁移步骤，早先题面迁移已完成的安装也会执行；关联已迁入题目，未捕获题面则保留可补充来源的父记录。保留旧文件和不含凭据的私有迁移副本；统计进入统一progress和完整备份，不制造不存在的代码或运行快照。
+- 题库和练习页显示“旧版自测通过N次”；原版runner的AC是样例自测结果，不能冒称原平台隐藏测试通过。删除过的迁入题不会由旧统计复活，重启不重复累加或覆盖后来写入的记录；迁移中断后能重试。
+- 新测试先因缺少progress失败。修复后迁移、文件事务、备份、HTTP/旧API和生命周期相关 **39/39通过**；测试覆盖123次记录、106道题、已完成题面迁移、删除标记和完成标记写入前的中断。不重复上一批333项全量；本批实际Docker/UI验收待下条补记。

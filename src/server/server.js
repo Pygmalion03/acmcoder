@@ -336,7 +336,7 @@ export function createAcmcoderServer(options = {}) {
   const checkDockerRunner = options.checkDockerRunner || defaultCheckDockerRunner;
   const sessionToken = options.sessionToken || randomBytes(32).toString("base64url");
   const activeRuns=new Map();
-  const unified=createUnifiedApi({dataDir:options.unifiedDataDir||process.env.ACMCODER_UNIFIED_DATA_DIR||path.join(projectRoot,'data/unified'),credentialDir:options.credentialDir||process.env.ACMCODER_CREDENTIAL_DIR,memoryFile,cloudFetch:options.cloudFetch});
+  const unified=createUnifiedApi({dataDir:options.unifiedDataDir||process.env.ACMCODER_UNIFIED_DATA_DIR||path.join(projectRoot,'data/unified'),credentialDir:options.credentialDir||process.env.ACMCODER_CREDENTIAL_DIR,memoryFile,progressFile,cloudFetch:options.cloudFetch});
 
   return http.createServer(async (request, response) => {
     const requestUrl = new URL(request.url, "http://127.0.0.1");

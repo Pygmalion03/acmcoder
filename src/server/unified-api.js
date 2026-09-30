@@ -4,9 +4,10 @@ import {createLocalStore} from './unified-store.js';
 import {createCloudAuth} from './cloud-auth.js';
 import {withoutCredentials} from '../../shared/backup.js';
 import {createSyncEngine} from '../../shared/sync.js';
+import {migrateLegacyProgress} from './legacy-progress.js';
 
 const methods=new Set(['getDraft','saveDraft','startRewrite','finishRewrite','discardRewrite','listAttempts','getRecord','listRecords','putRecord','getMeta','setMeta','archiveProblem','restoreProblem','deleteProblem','exportBackup','restoreBackup','flush','syncConflicts','syncResolve','syncCopyConflict','backupCopyConflict']);
-export function createUnifiedApi({dataDir,credentialDir,memoryFile,cloudFetch}){
+export function createUnifiedApi({dataDir,credentialDir,memoryFile,progressFile,cloudFetch}){
   const stores=new Map(),engines=new Map(),timers=new Map(),subscriptions=new Map();
   const auth=createCloudAuth({credentialDir,fetch:cloudFetch});let migration=null;
   function bindEngine(namespace,store){
@@ -22,7 +23,7 @@ export function createUnifiedApi({dataDir,credentialDir,memoryFile,cloudFetch}){
     }
     return stores.get(namespace);
   }
-  async function migrate(){
+  async function migratePages(){
     const store=await getStore('local-guest');if(await store.getMeta('legacy-file-migrated'))return;
     if(memoryFile){
       let raw;try{raw=await fs.readFile(memoryFile,'utf8');}catch(error){if(error.code!=='ENOENT')throw error;}
@@ -34,6 +35,10 @@ export function createUnifiedApi({dataDir,credentialDir,memoryFile,cloudFetch}){
       }
     }
     await store.setMeta('legacy-file-migrated',true);
+  }
+  async function migrate(){
+    await migratePages();
+    await migrateLegacyProgress({store:await getStore('local-guest'),progressFile,memoryFile,dataDir});
   }
   return {async handle(operation,data={}){
     if(!migration)migration=migrate().catch(error=>{migration=null;throw error;});await migration;
