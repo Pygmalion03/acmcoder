@@ -215,3 +215,8 @@
 - 真实路径发现并修正：clang -cc1不接受driver的-fno-exceptions，保留noeh；替换runner仅改hash不会重载桥接文档，因此使用独立query+nonce。构建时删除输出目录使临时Python预览的cwd失效，已改为每次使用绝对directory后重启会话自建43118预览；不是用户稳定服务故障，没有借此修改产品后端。
 - 相关检查最初8项通过；补握手、损坏缓存/重试等后10项通过。完整回归357项中356通过，唯一失败是版本README旧rc.3；更新README/部署引用/rc.4说明后命名和版本相关7项复查通过。日志/tmp/acmcoder-rc4-cpp-full-tests.log。不重复未受文档修正影响的356项运行检查，不声称最初全量零失败。
 - 公开Cloudflare静态上传、真实已安装插件断网运行、固定commit候选包与公网部署关联仍待下一批。Java可选有界评估结论保持不进入本次浏览器支持，本地Java不删除；原18任务和真实AI、两账号、用户旧安装升级、许可证/商店身份等门槛继续保留，未标目标完成。
+
+- 产品源码固定commit `ef688b8d0005d2c5450150699a453a16e6b20650` 已推送到codex/unified-product。Mac归档在WSL隔离目录 `/tmp/acmcoder-rc4-ef688b8` 构建三个客户端，候选一致性与打包通过；同固定源码的runner/缓存/版本/文档检查15/15通过。自己的43118静态预览改为此固定构建，实际简单ACM输入3 5输出8通过。未为浏览器阶段重建本地Docker镜像或给旧镜像写新版本标签。
+- Mac候选目录 `dist/releases/4.0.0-rc.4`：插件ZIP33,740,055字节，SHA256 `500911c864b696624f0af8bc9170cd37f99b295addd9e4afb20afb971b19cde3`；源码包786,212字节，SHA256 `f6e8898736e1842bcd07cfa945e733a30df7e9880eb824beefd0a1136a236b11`。manifest记录同源码，公网部署/image均未关联，不能作为已部署证明。所有旧候选仍保留。
+- Chrome profile yu（浏览器2）的控制调用及重新读取可用表面连续两次超时；停止重复同一路径，没有宣称已经安装/断网验证rc.4。内置浏览器此前的产品实测结果不替代扩展验收。
+- Cloudflare最新API核对Pages静态asset上传与部署manifest字段后，预览项目读取可用，生产D1仍为独立预览库。Wrangler4.144.0实际whoami明确未认证。插件能取得短时upload授权对象，但使用该对象的官方静态上传探针和连接器原生upload调用均返回403/code8000013；探针只含公开测试文本，未上传运行资源，未返回/打印授权值。需要恢复可用于静态上传的授权后才能继续公网分发。公开version.json实读仍为rc.3/28d8288/Python，canonical deployment ef947ebc保持不变；正式acmcoder-web与其D1未触碰。
