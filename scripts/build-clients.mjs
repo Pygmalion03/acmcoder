@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {bundlePython} from './bundle-python.mjs';
+import {bundleCpp} from './bundle-cpp.mjs';
 import { fileURLToPath } from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {buildInfo,extensionVersion} from './release-version.mjs';
@@ -15,6 +16,7 @@ await fs.mkdir(destination,{recursive:true});
 await fs.cp(path.join(root,source),destination,{recursive:true});
 await fs.cp(path.join(root,'shared'),path.join(destination,'shared'),{recursive:true});
 await fs.copyFile(path.join(root,'data/recommendation/default-catalog.json'),path.join(destination,'shared/catalog.json'));
+if(target!=='local-web')await bundleCpp(path.join(destination,'vendor/cpp'));
 if(target==='extension'){
   await bundlePython(path.join(destination,'vendor/python'));
   for(const name of ['capture.js','store.js','runner.js','handoff.js']){

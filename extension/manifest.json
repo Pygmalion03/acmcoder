@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ACMCoder",
-  "version": "4.0.0.3",
-  "description": "LeetCode ACM practice with offline Python, durable drafts and rewrite history.",
+  "version": "4.0.0.4",
+  "description": "LeetCode ACM practice with offline Python and C++17, durable drafts and rewrite history.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -55,12 +55,13 @@
   ],
   "sandbox": {
     "pages": [
-      "runner/index.html"
+      "runner/index.html",
+      "shared/runners/cpp-bridge.html"
     ]
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'; frame-src 'self';",
     "sandbox": "sandbox allow-scripts; default-src 'none'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src blob:; connect-src 'none'; object-src 'none';"
   },
-  "version_name": "4.0.0-rc.3"
+  "version_name": "4.0.0-rc.4"
 }

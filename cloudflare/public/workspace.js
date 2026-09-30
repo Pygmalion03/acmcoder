@@ -1,5 +1,7 @@
 import {createBrowserStore} from '/shared/browser-store.js';
 import {createBrowserRunner} from '/shared/runner.js';
+import {createCppRunner} from '/shared/runners/cpp-runner.js';
+import {createMultiRunner} from '/shared/runners/multi-runner.js';
 import {mountWorkspace} from '/shared/ui/workspace.js';
 import {migrateBrowserDrafts} from '/shared/legacy-browser.js';
 import {createSyncEngine,createSyncTransport} from '/shared/sync.js';
@@ -19,7 +21,8 @@ async function main(){
   const namespace=user?`account:${user.id}`:'guest';
   const store=createBrowserStore({namespace,sync:!!user});
   await migrateBrowserDrafts({store,namespace});
-  const runner=createBrowserRunner({frame});
+  const cppFrame=document.createElement('iframe');cppFrame.hidden=true;cppFrame.setAttribute('sandbox','allow-scripts');cppFrame.title='隔离 C++ 运行环境';document.body.append(cppFrame);
+  const runner=createMultiRunner({python:createBrowserRunner({frame}),cpp:createCppRunner({frame:cppFrame})});
   let engine,workspace,timer;
   const statusText=()=>({quota:'今日云端自测额度已用完，运行结果保留本机；其他内容继续同步',saved:'已同步到云端',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'同步已暂停，请重新连接账号',retrying:'网络暂不可用，稍后自动重试；内容已保留',error:'同步暂未完成；本机内容已保留',idle:'已保存到此设备'}[engine?.getStatus().state]||'已保存到此设备');
   async function deviceCall(path,data){const response=await fetch(`/api/devices${path}`,{method:data?'POST':'GET',headers:data?{'content-type':'application/json'}:{},...(data?{body:JSON.stringify(data)}:{})});const result=await response.json();if(!response.ok)throw new Error(result.error||'设备管理暂不可用。');return result;}
@@ -42,7 +45,7 @@ async function main(){
   const ai={description:'网站通过登录后的短时转发请求；支持 OpenAI、DeepSeek、SiliconFlow 和阿里云兼容地址。',async transport(input){if(!user)throw new Error('网站转发需要先连接 GitHub 账号。');const response=await fetch('/api/ai/chat',{method:'POST',headers:{'content-type':'application/json','x-acm-expected-user':user.id},body:JSON.stringify({provider:input.provider,key:input.key,messages:input.messages}),signal:input.signal});const result=await response.json();if(!response.ok)throw new Error(result.error||'模型连接失败。');return result;}};
   const catalog=await fetch('/shared/catalog.json').then(r=>r.ok?r.json():{entries:[]}).catch(()=>({entries:[]}));
   const handoff=createWebsiteHandoff();
-  workspace=await mountWorkspace(document.getElementById('app'),{store,runner,account,catalog:catalog.entries,client:{ai,handoffLabel:'在插件继续 ↗',handoff:records=>handoff.send(records)}});
+  workspace=await mountWorkspace(document.getElementById('app'),{store,runner,account,catalog:catalog.entries,client:{languages:['python','cpp'],description:'浏览器内 Python / C++17 · 执行最长 5 秒',ai,handoffLabel:'在插件继续 ↗',handoff:records=>handoff.send(records)}});
   if(nonce){
     try{const incoming=await handoff.consume(nonce);history.replaceState(null,'',location.pathname);await offerHandoff({store,records:incoming.records,workspace});}
     catch(error){const note=document.createElement('p');note.textContent=error.message;document.getElementById('app').prepend(note);}

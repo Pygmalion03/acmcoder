@@ -2,7 +2,7 @@
 
 ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地/Docker版共用题库、今日安排、自动保存、重新手撕和长期历史；代码由你编写，自测只代表当前样例通过。
 
-当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.3`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。候选版尚未完成真实AI、双账号和旧安装升级等验收，不能视为完整正式发布。
+当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.4`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。公开部署仍为 rc.3；rc.4 正在验收浏览器 C++17。候选版尚未完成公网 C++ 分发、离线 C++ 实装、真实AI、双账号和旧安装升级等验收，不能视为完整正式发布。
 
 - **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python；登录GitHub可跨设备同步。
 - **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python，不需要本地服务或网站打开。商店未上架。
@@ -19,7 +19,7 @@ node scripts/check-release.mjs --candidate
 npm start
 ```
 
-浏览器插件安装目录为 `dist/extension/`。源码 `extension/` 缺少生成的共享文件和Python运行资源，不能直接安装新版。发行包由 `node scripts/package-release.mjs --candidate` 生成；在无Git的运行镜像中需提供固定源码归档和源commit。正式发行检查未通过前不生成稳定tag或更新镜像latest。
+浏览器插件安装目录为 `dist/extension/`。源码 `extension/` 缺少生成的共享文件和Python/C++运行资源，不能直接安装新版。发行包由 `node scripts/package-release.mjs --candidate` 生成；在无Git的运行镜像中需提供固定源码归档和源commit。正式发行检查未通过前不生成稳定tag或更新镜像latest。
 
 ## 稳定3.0.4的Docker安装
 

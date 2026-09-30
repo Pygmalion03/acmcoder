@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {extensionVersion} from './release-version.mjs';
+import {extensionVersion,releaseLanguages} from './release-version.mjs';
 
-export const REQUIRED_ACCEPTANCE=['anonymous-site','offline-extension','local-docker','durable-history','sync-conflict-delete','two-real-accounts','ai-real-three-clients','ai-original-import','old-install-upgrade'];
+export const REQUIRED_ACCEPTANCE=['anonymous-site','offline-extension','browser-cpp-two-clients','local-docker','durable-history','sync-conflict-delete','two-real-accounts','ai-real-three-clients','ai-original-import','old-install-upgrade'];
 export function validateRelease({version,lockVersion,clients,manifest,tag,candidate=false,license=false,acceptance={}}){
   const failures=[];
   if(lockVersion!==version)failures.push('Lockfile version differs from package.json');
@@ -15,7 +15,7 @@ export function validateRelease({version,lockVersion,clients,manifest,tag,candid
   for(const target of ['site','extension','local-web']){
     const c=clients.find(c=>c.target===target);
     if(!c||c.version!==version||c.protocolVersion!==1||c.minProtocolVersion!==1)failures.push(`Missing or mismatched ${target} metadata`);
-    const expectedLanguages=target==='local-web'?['python','cpp','java']:['python'];
+    const expectedLanguages=releaseLanguages(version,target);
     if(c&&JSON.stringify(c.languages)!==JSON.stringify(expectedLanguages))failures.push(`Unexpected ${target} language claim`);
   }
   if(candidate&&!/-rc\.[1-9]\d*$/.test(version))failures.push('Candidate checks require an explicitly named RC');

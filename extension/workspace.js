@@ -7,6 +7,7 @@ import {createExtensionAI} from './ai.js';
 import {createExtensionAuth} from './auth.js';
 import {createSyncEngine} from './shared/sync.js';
 const frame=document.createElement('iframe');frame.hidden=true;frame.title='隔离 Python';document.body.append(frame);
+const cppFrame=document.createElement('iframe');cppFrame.hidden=true;cppFrame.title='隔离 C++';document.body.append(cppFrame);
 const status=document.getElementById('capture-status');
 async function main(){
   const auth=createExtensionAuth(),session=await auth.status();
@@ -20,9 +21,9 @@ async function main(){
     const guest=createExtensionStore();const result=await store.restoreBackup(await guest.exportBackup());await store.setMeta('guest-merge-conflicts',result.conflicts);await engine.syncNow();return result;
   },async logout(){clearTimeout(timer);engine?.pause();await store.flush();await auth.logout();location.reload();}};
   if(user){engine=createSyncEngine({store,accountId:user.id,transport:auth.transport(user.id),onStatus(){const el=document.getElementById('sync-status');if(el)el.textContent=statusText();}});await engine.syncNow();store.subscribe(()=>{clearTimeout(timer);timer=setTimeout(()=>engine.syncNow({automatic:true}),1500);});window.addEventListener('online',()=>engine.syncNow());window.addEventListener('focus',async()=>{await engine.syncNow({automatic:true});if(!['code','stdin','expected'].includes(document.activeElement?.id))await workspace?.refreshFromCloud();});}
-  const runner=await createExtensionRunner({frame});
+  const runner=await createExtensionRunner({frame,cppFrame});
   const catalog=await fetch(chrome.runtime.getURL('shared/catalog.json')).then(r=>r.json());
-  workspace=await mountWorkspace(document.getElementById('app'),{store,runner,account,catalog:catalog.entries,client:{ai:createExtensionAI(),name:'extension',fetchProblem:fetchProblemUrl,handoffLabel:'在网站继续 ↗',handoff:async records=>{const response=await chrome.runtime.sendMessage({type:'ACMCODER_HANDOFF_CREATE',records});if(!response?.ok)throw new Error(response?.error||'接续失败。');},description:'插件内离线运行 · 最长 5 秒',storage:'当前数据保存在此插件。请在卸载前导出备份。',legacyUrl:chrome.runtime.getURL('sidebar.html')}});
+  workspace=await mountWorkspace(document.getElementById('app'),{store,runner,account,catalog:catalog.entries,client:{languages:['python','cpp'],ai:createExtensionAI(),name:'extension',fetchProblem:fetchProblemUrl,handoffLabel:'在网站继续 ↗',handoff:async records=>{const response=await chrome.runtime.sendMessage({type:'ACMCODER_HANDOFF_CREATE',records});if(!response?.ok)throw new Error(response?.error||'接续失败。');},description:'插件内离线 Python / C++17 · 执行最长 5 秒',storage:'当前数据保存在此插件。请在卸载前导出备份。',legacyUrl:chrome.runtime.getURL('sidebar.html')}});
   if(nonce){
     try{const response=await chrome.runtime.sendMessage({type:'ACMCODER_HANDOFF_CONSUME',nonce,tabId:(await chrome.tabs.getCurrent())?.id});if(!response?.ok)throw new Error(response?.error||'接续失效。');history.replaceState(null,'',location.pathname);await offerHandoff({store,records:response.result.records,workspace});}
     catch(error){status.textContent=error.message;}

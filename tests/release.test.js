@@ -1,14 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {extensionVersion} from '../scripts/release-version.mjs';
+import {extensionVersion,releaseLanguages} from '../scripts/release-version.mjs';
 import {validateRelease,REQUIRED_ACCEPTANCE} from '../scripts/check-release.mjs';
 
-const fixture=version=>({version,lockVersion:version,manifest:{version:extensionVersion(version),version_name:version},clients:['site','extension','local-web'].map(target=>({version,commit:'a'.repeat(40),target,protocolVersion:1,minProtocolVersion:1,languages:target==='local-web'?['python','cpp','java']:['python']}))});
+const fixture=version=>({version,lockVersion:version,manifest:{version:extensionVersion(version),version_name:version},clients:['site','extension','local-web'].map(target=>({version,commit:'a'.repeat(40),target,protocolVersion:1,minProtocolVersion:1,languages:target==='local-web'?['python','cpp','java']:version==='4.0.0-rc.1'?['python']:['python','cpp']}))});
 test('extension RC numbers update monotonically into the stable version',()=>{
   const order=version=>extensionVersion(version).split('.').map(Number);
   assert.ok(order('4.0.0-rc.2')[3]>order('4.0.0-rc.1')[3]);
   assert.ok(order('4.0.0')[3]>order('4.0.0-rc.2')[3]);assert.ok(order('4.0.1-rc.1')[2]>order('4.0.0')[2]);
   for(const version of ['4.0.0-rc.65535','65536.0.0','04.0.0','4.0.0-beta'])assert.throws(()=>extensionVersion(version));
+});
+test('old RC metadata retains Python while rc4 adds browser C++ without removing local Java',()=>{
+  assert.deepEqual(releaseLanguages('4.0.0-rc.3','site'),['python']);
+  assert.deepEqual(releaseLanguages('4.0.0-rc.4','extension'),['python','cpp']);
+  assert.deepEqual(releaseLanguages('4.0.0','site'),['python','cpp']);
+  assert.deepEqual(releaseLanguages('4.0.0-rc.4','local-web'),['python','cpp','java']);
 });
 test('release checks reject mixed source commits, wrong tag and unaccepted stable releases',()=>{
   const candidate=fixture('4.0.0-rc.1');assert.deepEqual(validateRelease({...candidate,candidate:true}),[]);

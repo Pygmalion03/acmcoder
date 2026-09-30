@@ -1,0 +1,91 @@
+{
+  "scope": "Actual rc.4 worktree website practice page; public rc.3 and installed offline extension have not been upgraded",
+  "evidenceKind": "Concise transcription of visible UI and read-only DOM results from actual Codex in-app Chromium; not a downloaded full raw report",
+  "url": "http://127.0.0.1:43118/workspace.html",
+  "runtime": "Clang22.1.8 / wasi-sdk33 / C++17; product worker bundle with bounded compiler memory",
+  "sandbox": "iframe allow-scripts only, opaque-origin messages, CSP connect-src none",
+  "standardLibraryAndUTF8": {
+    "passed": true,
+    "features": [
+      "vector",
+      "map",
+      "sort",
+      "string",
+      "getline",
+      "cin",
+      "cout",
+      "cerr"
+    ],
+    "stdin": "你好\n",
+    "stdoutExactly": "你好:2🙂",
+    "stderrExactly": "独立错误流"
+  },
+  "repeats": {
+    "passed": true,
+    "count": 20,
+    "minimumObservedMs": 3207,
+    "maximumObservedMs": 3967,
+    "includesAutomationObservationDelay": true
+  },
+  "compileError": {
+    "passed": true,
+    "diagnostic": "main.cc:1:13: error: unknown type name 'invalid'",
+    "stdout": ""
+  },
+  "userMemory": {
+    "passed": true,
+    "limitMiB": 64,
+    "requestedMiB": 80,
+    "stdoutExactly": "BOUNDED\n"
+  },
+  "infiniteLoop": {
+    "passed": true,
+    "automaticTimeoutMessage": "运行超过 5 秒，已停止。"
+  },
+  "manualCancel": {
+    "passed": true,
+    "duringResourcePreparation": true,
+    "duringActualExecution": true,
+    "message": "已停止运行。"
+  },
+  "recoveryAndLargePayload": {
+    "passed": true,
+    "sourceChars": 131072,
+    "stdinChars": 200000,
+    "stdoutExactly": "200000",
+    "stderrExactly": ""
+  },
+  "draftAfterReload": {
+    "passed": true,
+    "codeAndChineseInputRetained": true
+  },
+  "initialIssuesFixed": [
+    "-cc1 does not accept driver -fno-exceptions; noeh retained",
+    "Replacing a runner needs a unique document URL, not just a changed fragment nonce"
+  ],
+  "notProven": [
+    "Public Cloudflare static resource download",
+    "Actual installed extension offline execution",
+    "Total browser-process heap maximum",
+    "Public cold-start time",
+    "All 18 roadmap tasks complete"
+  ],
+  "splitUTF8Writes": {
+    "passed": true,
+    "stdoutExactly": "你",
+    "stderrExactly": "好",
+    "interleavedFd1AndFd2": true
+  },
+  "virtualFileBudget": {
+    "passed": true,
+    "attemptedSeekBytes": 1073741824,
+    "allocationRefusedBeforeGrowth": true,
+    "observedMessageBeforeChineseCopyUpdate": "C++ virtual files exceed 32 MiB"
+  },
+  "outputLimit": {
+    "passed": true,
+    "attemptedChars": 40000,
+    "stdoutChars": 32768,
+    "message": "输出超过上限，已截断"
+  }
+}

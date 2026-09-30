@@ -1,4 +1,4 @@
-export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=globalThis.window,initData={},loadingMessage='Python 加载超时，请检查网络后重试。'}) {
+export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=globalThis.window,initData={},language:runnerLanguage='python',codeLimit=50000,stdinLimit=32000,loadingMessage='Python 加载超时，请检查网络后重试。'}) {
   let ready=false,active=null,loadingTimer=null,runTimer=null;
   const nonce=crypto.randomUUID();
   const send=data=>frame.contentWindow?.postMessage({...data,nonce},'*');
@@ -23,15 +23,17 @@ export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=
       runTimer=setTimeout(()=>finish({kind:'error',text:'运行超过 5 秒，已停止。'}),5000);
     }
     if (['complete','error'].includes(data.kind)) {finish(data);return;}
-    if (['running','stdout','stderr'].includes(data.kind)) emit(data);
+    if (['compiling','running','stdout','stderr'].includes(data.kind)) emit(data);
   }
   host.addEventListener('message',onMessage);
-  frame.src=`${bridgeUrl}#${nonce}`;
+  // Changing only a fragment does not rerun the bridge script. A fresh runner
+  // must load a new document so its nonce/ready handshake cannot remain stale.
+  frame.src=`${bridgeUrl}${bridgeUrl.includes('?')?'&':'?'}session=${nonce}#${nonce}`;
   function cancel(id) { if(active?.id===id) finish({kind:'error',cancelled:true,text:'已停止运行。'}); }
   return {
     run({id,language,code,stdin,signal},onEvent) {
-      if(language!=='python') return Promise.reject(new Error('此端暂只支持 Python。'));
-      if(typeof code!=='string' || code.length>50000 || typeof stdin!=='string' || stdin.length>32000) return Promise.reject(new Error('代码或输入超过运行限制。'));
+      if(language!==runnerLanguage) return Promise.reject(new Error('运行器语言不匹配。'));
+      if(typeof code!=='string' || code.length>codeLimit || typeof stdin!=='string' || stdin.length>stdinLimit) return Promise.reject(new Error('代码或输入超过运行限制。'));
       if(active) cancel(active.id);
       let abort;
       const result=new Promise(resolve=>{

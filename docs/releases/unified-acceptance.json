@@ -9,6 +9,10 @@
       "status": "passed",
       "evidence": "unified-delivery-log.md: E1/E2 real installed Chrome for Testing, network blocked"
     },
+    "browser-cpp-two-clients": {
+      "status": "pending",
+      "evidence": "rc.4 worktree: real local website workspace passed C++17 standard library/UTF-8/separate streams/20 repeats/memory bound/cancel/recovery/128KiB code/200000-char input. Public distribution and real installed offline extension remain unverified."
+    },
     "local-docker": {
       "status": "passed",
       "evidence": "unified-delivery-log.md: S3 isolated Docker new volume, three languages and recreation"

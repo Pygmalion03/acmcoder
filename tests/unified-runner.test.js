@@ -28,3 +28,9 @@ test('runner accepts only its sandbox and active id, and cancel allows another r
   assert.equal(JSON.stringify(sent).includes('expected'),false);
   runner.destroy();
 });
+
+test('a replacement runner reloads its bridge document instead of changing only the hash',()=>{
+  const frame={src:'',contentWindow:{postMessage(){}}},host={addEventListener(){},removeEventListener(){}};
+  const first=createBrowserRunner({frame,host});const firstDocument=frame.src.split('#')[0];first.destroy();
+  const second=createBrowserRunner({frame,host});assert.notEqual(frame.src.split('#')[0],firstDocument);second.destroy();
+});

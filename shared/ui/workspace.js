@@ -125,7 +125,8 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       if(event.type==='stdout')runOutput+=event.text;
       if(event.type==='stderr')runError+=event.text;
       if(runId!==id||view!=='practice'||selected!==captured.problemId)return;
-      if(event.type==='loading')$('result-label').textContent='正在加载 Python…';
+      if(event.type==='loading')$('result-label').textContent=event.text||`正在加载 ${{python:'Python',cpp:'C++',java:'Java'}[captured.language]}…`;
+      if(event.type==='compiling')$('result-label').textContent=event.text||'正在编译…';
       if(event.type==='running')$('result-label').textContent='正在运行…';
       if(event.type==='stdout'){output+=event.text;$('stdout').textContent=output;}
       if(event.type==='stderr'){errorOutput+=event.text;$('stderr').textContent=errorOutput;}

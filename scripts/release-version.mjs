@@ -10,11 +10,16 @@ export function extensionVersion(version){
   return [...parts,build].join('.');
 }
 
+export function releaseLanguages(version,target){
+  const parts=extensionVersion(version).split('.').map(Number);
+  const cpp=parts[0]>4||(parts[0]===4&&(parts[1]>0||parts[2]>0||parts[3]>=4));
+  return target==='local-web'?['python','cpp','java']:cpp?['python','cpp']:['python'];
+}
 export async function buildInfo(root,target){
   const {version}=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8'));
   extensionVersion(version);
   let commit=process.env.ACMCODER_BUILD_COMMIT||process.env.CF_PAGES_COMMIT_SHA||process.env.GITHUB_SHA;
   if(!commit){try{commit=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();}catch{commit='unknown';}}
   if(commit!=='unknown'&&!/^[a-f0-9]{40}$/.test(commit))throw new Error('Build commit must be a full Git SHA');
-  return {version,commit,protocolVersion:1,minProtocolVersion:1,target,channel:version.includes('-')?'candidate':'stable',languages:target==='local-web'?['python','cpp','java']:['python'],features:{acm:true,autosave:true,rewrite:true,history:true,archive:true,backup:true,sync:true,aiBYOK:true,problemImport:true},acceptance:'See docs/releases/unified-feature-matrix.md; capabilities are not acceptance evidence.'};
+  return {version,commit,protocolVersion:1,minProtocolVersion:1,target,channel:version.includes('-')?'candidate':'stable',languages:releaseLanguages(version,target),features:{acm:true,autosave:true,rewrite:true,history:true,archive:true,backup:true,sync:true,aiBYOK:true,problemImport:true},acceptance:'See docs/releases/unified-feature-matrix.md; capabilities are not acceptance evidence.'};
 }

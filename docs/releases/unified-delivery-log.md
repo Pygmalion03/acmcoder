@@ -204,3 +204,14 @@
 - Java第一候选CheerpJ4.3因自托管/再分发许可需商业授权，不符合当前离线及零新增运营费用条件。第二候选Doppio0.5/BrowserFS1.4.3/JCLv3.2：Node浏览器发行预检实际javac编译新源码并输出结果，80MiB数组分配成功。早期Node适配漏BrowserFS全局/FS构造器，不作为依赖不兼容结论。浏览器启动的HEAD及setImmediate适配问题已定位：使用固定JCL尺寸元数据和MessageChannel后，真实浏览器8/9通过，20次重复约3.75–4.71s、冷运行5.25s、最大心跳103ms、1MiB/128KiB/中文/取消恢复通过。内存用例仍输出UNBOUNDED 83886080；20MiB非托管堆标注不限制托管对象/数组总量。未证明可执行的用户总内存预算，且还需原生JS互操作隔离，不继续无限移植，不纳入本次正式浏览器Java。本地Java保持原有支持。见 `evidence/java-chromium-2026-10-01.json`。
 - 浏览器初始连接两次观察超时后继续独立预检，重新取得当前有效内置浏览器并完成真实实验；没有把超时当作已运行任务成功。内置浏览器导出按钮未返回可读下载句柄，证据JSON明确为可见结果的简要转录，不声称保存了完整自动下载或截图。原始结果在本轮UI确认，公开站的私人AI设置页未触碰。
 - 新增 `docs/browser-language-support.md` 与R2商店文案/权限/隐私/审核流程草稿 `docs/extension-store-listing.md`。图标、宣传图、真实扩展截图、公开隐私地址与商店身份仍待补齐，未提交审核、未花费费用。WSL准备器重新校验全部资源和JS语法检查通过，日志 `/tmp/acmcoder-language-pins.log`；Node预检日志 `/tmp/acmcoder-cpp22-standard-preflight.log`、`/tmp/acmcoder-java-preflight.log`。此次仅实验和资料，不重跑未受影响的351项产品检查、不重建或部署rc.3。
+
+## L1 — C++17 产品适配与真实本地练习页，2026-10-01
+
+- 开始时核对 Mac HEAD 7d0731f，保留最初 checkpoint tag、私有回退目录和 rc.3 插件 ZIP；其 SHA256 仍为 158209e5d3be89344b34cf6a995930d156e8ba62754a759af9a0471e3739619b。原有五个未提交 Cloudflare/旧计划修改及工具目录未纳入本批。公开站仍 rc.3；正式43117服务和用户数据未修改。
+- 新增固定来源的 gzip C++ 构建器、逐文件压缩/解压摘要校验与公共缓存、独立 C++ RunnerAdapter、无网络不透明隔离帧、按语言取消的统一运行入口。网站和插件练习页采用相同 C++17 入口和独立语言草稿；本地仍用原生三语言。源版本进入4.0.0-rc.4工作区候选，旧rc.3能力元数据保持Python，稳定发行另增加 browser-cpp-two-clients 门槛。
+- 给固定 LLVM WASM 添加512MiB最大内存，memfs128MiB；用户WASM由lld写入64MiB上限。JS虚拟文件累计32MiB，避免通过seek/文件写入绕过用户linear-memory上限。编译30秒、执行5秒；每次任务退出/取消后终止worker。源码/stdin各200,000字符，仍受既有记录整体大小约束，输出共32,768字符。没有冒称整个浏览器进程只占64MiB。
+- 97KB的SDK33 memfs适配器和1707字节官方iostream保存为小型固定资源，来源/摘要/可重建步骤在third_party/cpp。巨型clang/lld/sysroot仍仅构建时下载；许可证保留运行器Apache/LLVM Exceptions、stb及固定SDK33 wasi-libc的多许可/原组件通知，不代替用户选择根LICENSE。网站/插件实际打包压缩运行文件约28.2MB，最大单文件仍低于Pages25MiB。
+- 实际Codex内置Chromium打开本地网站构建的统一workspace，在connect-src none的隔离帧编译新源码：vector/map/sort/string/getline/cin/cout/cerr、中文/emoji和没有额外换行的独立stdout/stderr通过；20次连续运行均通过，自动化含观察的耗时3.207–3.967秒。实际编译错误反馈，80MiB申请返回BOUNDED，死循环5秒自动停止，加载中及执行中手动停止，停止后128KiB源码+200,000字符输入输出200000均通过。刷新后草稿恢复。分段UTF-8跨两个流写入分别输出“你”/“好”，1GiB虚拟seek写入被32MiB预算拒绝，40,000字符输出在32,768处明确截断。见cpp-product-local-2026-10-01.json；这些不是公网或扩展断网证据。
+- 真实路径发现并修正：clang -cc1不接受driver的-fno-exceptions，保留noeh；替换runner仅改hash不会重载桥接文档，因此使用独立query+nonce。构建时删除输出目录使临时Python预览的cwd失效，已改为每次使用绝对directory后重启会话自建43118预览；不是用户稳定服务故障，没有借此修改产品后端。
+- 相关检查最初8项通过；补握手、损坏缓存/重试等后10项通过。完整回归357项中356通过，唯一失败是版本README旧rc.3；更新README/部署引用/rc.4说明后命名和版本相关7项复查通过。日志/tmp/acmcoder-rc4-cpp-full-tests.log。不重复未受文档修正影响的356项运行检查，不声称最初全量零失败。
+- 公开Cloudflare静态上传、真实已安装插件断网运行、固定commit候选包与公网部署关联仍待下一批。Java可选有界评估结论保持不进入本次浏览器支持，本地Java不删除；原18任务和真实AI、两账号、用户旧安装升级、许可证/商店身份等门槛继续保留，未标目标完成。

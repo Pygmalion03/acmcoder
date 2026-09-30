@@ -1,4 +1,6 @@
 import {createBrowserRunner} from '../shared/runner.js';
+import {createCppRunner} from '../shared/runners/cpp-runner.js';
+import {createMultiRunner} from '../shared/runners/multi-runner.js';
 let runtime;
 async function loadRuntime(){
   const root=chrome.runtime.getURL('vendor/python/');
@@ -13,8 +15,10 @@ async function loadRuntime(){
     return {name:file.name,bytes};
   }));
 }
-export async function createExtensionRunner({frame}){
+export async function createExtensionRunner({frame,cppFrame}){
   runtime??=loadRuntime().catch(error=>{runtime=null;throw error;});
   const resources=await runtime;
-  return createBrowserRunner({frame,bridgeUrl:chrome.runtime.getURL('runner/index.html'),initData:{resources},loadingMessage:'本地 Python 启动超时，请重新打开侧栏。'});
+  const python=createBrowserRunner({frame,bridgeUrl:chrome.runtime.getURL('runner/index.html'),initData:{resources},loadingMessage:'本地 Python 启动超时，请重新打开侧栏。'});
+  if(!cppFrame)return python;
+  return createMultiRunner({python,cpp:createCppRunner({frame:cppFrame,bridgeUrl:chrome.runtime.getURL('shared/runners/cpp-bridge.html'),resourceRoot:chrome.runtime.getURL('vendor/cpp/')})});
 }
