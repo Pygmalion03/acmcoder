@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-01",
+  "environment": "Real Codex in-app Chromium browser, Mac localhost tunnel to registered WSL preview 43118",
+  "capture": "Concise transcription of the visible probe result JSON; not a Node test result",
+  "source": "cppstudio-io/wasm-clang-runtime v0.1.0 at df1180d80184733c6a01599f76b92b4001d20f87; same-version official iostream replacement",
+  "directWorker": {"firstRunMs":3806.5,"downloadedBytes":95161999,"maximumHeartbeatGapMs":109.9,"allNinePassed":true},
+  "isolatedWorker": {
+    "origin":"opaque null",
+    "boundary":{"opaqueOrigin":true,"networkBlocked":true,"indexedDBBlocked":true,"noExtensionAPI":true},
+    "timingScope":"Worker load/compile/link/run after trusted parent has fetched public resource bytes; not end-to-end public-network loading",
+    "maximumHeartbeatGapMs":158.7,
+    "cases":[
+      {"name":"standard-libraries-fresh-source","passed":true,"ms":2238.4,"stdout":"结果 11\n\n"},
+      {"name":"unicode-multiline","passed":true,"ms":925.9,"stdout":"中文输入\n第二行🐍\n\n"},
+      {"name":"compile-error","passed":true,"ms":8.8,"kind":"CompileError"},
+      {"name":"20-repeats","passed":true,"runMs":[855.3,830.6,817.3,784.9,768.6,759,749.2,755.1,759.2,762.8,812.3,756.1,801,782,749.6,746.1,737.2,759.1,762.2,749.4]},
+      {"name":"1MiB-stdin","passed":true,"ms":627.2,"stdout":"1048576\n\n"},
+      {"name":"128KiB-source","passed":true,"ms":744.9},
+      {"name":"64MiB-memory-bound","passed":true,"ms":51.6,"stdout":"BOUNDED\n\n","allocationAttemptBytes":83886080},
+      {"name":"infinite-loop-cancel","passed":true,"msIncludingCompilation":465.3,"phase":"executing","reason":"loop-cancel"},
+      {"name":"recovery-after-cancel","passed":true,"ms":2373.7}
+    ]
+  },
+  "resources":[
+    {"name":"clang22","bytes":36037953,"gzipBytes":13504973,"sha256":"3f3da7691ecc5d02d7f056ba849eed408fcf494656ad65b5756ba285e59d30a5"},
+    {"name":"lld22","bytes":19142147,"gzipBytes":7629630,"sha256":"4d88d4faa2bbe22dfb099bf28d8c5884fb3e90462acca4057dbb96746ce99ac4"},
+    {"name":"sysroot22-standard.tar","bytes":39884800,"gzipBytes":6816212,"sha256":"2e362ff853eedda29ad2a9bb05bfd50d9a9492cd3ee0e47385f685c90bfd8193"},
+    {"name":"memfs","bytes":97099,"gzipBytes":38317,"sha256":"8354810a29ce761771e19fea911c95d2ba666668dc31aa0a605ecb82ab0c1b1c"},
+    {"name":"isolated-worker.js","bytes":51458,"gzipBytes":16183,"sha256":"832fb73d0c3931e0b1963831cd4a476df1f4fc831f054167edd1832335ea8fa6"}
+  ],
+  "remaining":["Public static resource distribution", "Packaged extension offline acceptance", "Product RunnerAdapter and language drafts", "Exact stdout/stderr separation instead of bridge diagnostic slicing", "Explicit language standard capability", "Redistribution notices"]
+}

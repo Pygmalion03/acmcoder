@@ -193,3 +193,14 @@
 - Mac候选目录`dist/releases/4.0.0-rc.3`：插件ZIP 5,566,465字节，SHA256 `158209e5d3be89344b34cf6a995930d156e8ba62754a759af9a0471e3739619b`；源码tar.gz 692,489字节，SHA256 `331830228112a9137df9afb9354f69295c88ac1017dd2b0212662b8eb43769b3`。manifest关联实际预览部署和本地镜像，GHCR多架构、商店与GitHub稳定Release仍未发布。全部旧候选包、固定部署和最初快照保留。
 
 - 隔离rc.3容器重启后Docker随机回环端口由36435变为36436；一次沿用旧端口的smoke观察最终报ECONNREFUSED，属于验收命令地址过期，没有据此重建镜像或修改源码。核对实际新映射后，只读API验证原草稿code/stdin及commit仍一致，没有先写回同一数据来制造持久化证据。容器`acmcoder-rc3-smoke-28d8288`与原测试卷保留。
+
+## L1 — 浏览器 C++ / Java 有界实机实验，2026-10-01
+
+- 核对当前 Mac HEAD bb6cce3、原回退 tag 和 rc.3 ZIP/源码包仍在；此次不更改公开 rc.3、正式 43117 或用户学习记录。原有五个未提交修改及配置/工具目录保留，不混入实验提交。先前能力说明中的“待探针”已得到新证据，不把本批技术实验冒充18项统一版全部交付。
+- 新增 `experiments/browser-languages` 固定来源准备器、浏览器完整探针、隔离帧及两个明确标注为非浏览器的 Node 预检。巨型资源只在 WSL `/tmp/acmcoder-browser-language-assets` 和忽略的 `dist/local-web/language-probe`；12项下载校验固定 SHA256。无需sudo、不执行依赖安装脚本；原生SDK只构建memfs，用户代码由浏览器内clang/javac重新编译。
+- C++第二候选 cppstudio v0.1.0/Clang22.1.8/wasi-sdk33。原发行的iostream为教学桩，实际std::getline编译失败；用同版本官方SDK完整iostream替换该头文件，修正UTF-8 stdin/输出及动态WASI方法绑定，链接显式64MiB上限。Node最小预检通过后，在真实Codex内置Chromium的43118页面运行全部9项：标准库、中文多行/emoji、编译错误、20次重复、1MiB输入、128KiB源码、80MiB分配被64MiB预算拒绝、死循环取消、取消后恢复。普通Worker冷加载编译执行3806.5ms、20次热运行约705–925ms，主线程最大110ms。
+- 同候选再用 `sandbox=allow-scripts` 的不透明帧、`connect-src none` 与固定5项公共字节资源，不访问应用凭据或存储。全部9项再次通过，opaqueOrigin/networkBlocked/indexedDBBlocked/noExtensionAPI全为true；20次热运行737–855ms，主线程最大159ms，实际执行开始后定时终止可恢复。耗时465.3ms包含编译，不冒称纯取消延迟。完整范围/简要转录见 `evidence/cpp-chromium-2026-10-01.json`。
+- C++实际资源原始95,161,999字节；5项gzip合计28,005,315字节，最大13,504,973字节。逐文件可满足Pages25MiB限制，不能沿用把所有资源内嵌在小Worker的方法。产品RunnerAdapter、精确stdout/stderr、标准声明、压缩静态分发/离线包、第三方通知及网站/扩展实装仍未完成；C++尚未启用下拉选项。此前binji候选缺链接符号结论保留，只评估两个候选。
+- Java第一候选CheerpJ4.3因自托管/再分发许可需商业授权，不符合当前离线及零新增运营费用条件。第二候选Doppio0.5/BrowserFS1.4.3/JCLv3.2：Node浏览器发行预检实际javac编译新源码并输出结果，80MiB数组分配成功。早期Node适配漏BrowserFS全局/FS构造器，不作为依赖不兼容结论。浏览器启动的HEAD及setImmediate适配问题已定位：使用固定JCL尺寸元数据和MessageChannel后，真实浏览器8/9通过，20次重复约3.75–4.71s、冷运行5.25s、最大心跳103ms、1MiB/128KiB/中文/取消恢复通过。内存用例仍输出UNBOUNDED 83886080；20MiB非托管堆标注不限制托管对象/数组总量。未证明可执行的用户总内存预算，且还需原生JS互操作隔离，不继续无限移植，不纳入本次正式浏览器Java。本地Java保持原有支持。见 `evidence/java-chromium-2026-10-01.json`。
+- 浏览器初始连接两次观察超时后继续独立预检，重新取得当前有效内置浏览器并完成真实实验；没有把超时当作已运行任务成功。内置浏览器导出按钮未返回可读下载句柄，证据JSON明确为可见结果的简要转录，不声称保存了完整自动下载或截图。原始结果在本轮UI确认，公开站的私人AI设置页未触碰。
+- 新增 `docs/browser-language-support.md` 与R2商店文案/权限/隐私/审核流程草稿 `docs/extension-store-listing.md`。图标、宣传图、真实扩展截图、公开隐私地址与商店身份仍待补齐，未提交审核、未花费费用。WSL准备器重新校验全部资源和JS语法检查通过，日志 `/tmp/acmcoder-language-pins.log`；Node预检日志 `/tmp/acmcoder-cpp22-standard-preflight.log`、`/tmp/acmcoder-java-preflight.log`。此次仅实验和资料，不重跑未受影响的351项产品检查、不重建或部署rc.3。

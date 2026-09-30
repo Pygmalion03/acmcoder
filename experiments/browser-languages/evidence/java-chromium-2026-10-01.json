@@ -1,0 +1,22 @@
+{
+  "date":"2026-10-01",
+  "environment":"Real Codex in-app Chromium browser, localhost tunnel to registered WSL preview 43118",
+  "capture":"Concise transcription of visible browser result JSON; independent of Node preflight",
+  "candidate":"DoppioJVM 0.5.0, BrowserFS 1.4.3, official JCL v3.2",
+  "mode":"Known synthetic sources in ordinary Worker; not a production user-code sandbox",
+  "adaptations":["MessageChannel setImmediate", "Known JCL file-size metadata in place of unsupported HEAD requests", "Finite stdin empty-buffer EOF"],
+  "maximumHeartbeatGapMs":102.6,
+  "cases":[
+    {"name":"standard-libraries-fresh-source","passed":true,"ms":5245.9,"stdout":"结果 11\n","exitCode":0},
+    {"name":"unicode-multiline","passed":true,"ms":3099.8,"stdout":"中文输入\n第二行🐍\n"},
+    {"name":"compile-error","passed":true,"ms":434.6,"kind":"CompileError"},
+    {"name":"20-repeats","passed":true,"runMs":[3748.1,3768.7,3769.7,3993.7,3878.5,3875.2,3971.4,4012.2,4603.3,4203.5,4038.9,4033.8,4193.4,4294.4,4147.5,4117,4140.7,4713.3,4237.4,4134.6]},
+    {"name":"1MiB-stdin","passed":true,"ms":4444.6,"stdout":"1048576\n"},
+    {"name":"128KiB-source","passed":true,"ms":4404},
+    {"name":"64MiB-memory-bound","passed":false,"ms":3555.8,"stdout":"UNBOUNDED 83886080\n","allocationAttemptBytes":83886080},
+    {"name":"infinite-loop-cancel","passed":true,"msIncludingCompilation":3552,"phase":"executing","reason":"loop-cancel"},
+    {"name":"recovery-after-cancel","passed":true,"ms":6246.7}
+  ],
+  "decision":"Not admitted to this release's browser languages: unmanaged heap setting is not a bound on managed object/array allocation, and no enforceable per-user total heap budget has been demonstrated. Do not start an unbounded JVM port.",
+  "limitations":["64MiB is the probe budget, not a claim that all Java must use that heap", "A separate sandbox would still be required to block native JavaScript interop", "JCL full redistribution notices not yet assembled", "Local and Docker Java remain supported"]
+}
