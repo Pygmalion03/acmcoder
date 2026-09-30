@@ -166,3 +166,15 @@
 - 固定该源码 Git archive 构建本地 `acmcoder-app:key-ce34f0e`，镜像ID `sha256:579adf2e040d9f961592c153a41b35467b728cc4736a419376490a7250c0b1fe`，日志 `/tmp/acmcoder-key-docker-build.log`。构建最初因误传短commit被版本校验拒绝，改为完整40位commit后通过；无错误候选发布。
 - 隔离旧卷演练：停止会话创建的25814b7容器，真实 `ghcr.io/pygmalion03/acmcoder-app:v3.0.4` 通过旧设置API写入明确合成Key；保留原题目/统计/统一数据卷，切换到该源码镜像并挂载新独立凭据卷。新版旧接口问答与容器内真实HTTP提供商联调成功，设置响应/普通设置文件/统一完整备份均不含合成Key，凭据文件0600，旧progress保留，version.json是完整源码commit。容器再次重启后同检查通过；脚本 `/tmp/acmcoder-key-upgrade-smoke.mjs`。该脚本只使用合成配置，不读取用户真实Key。
 - 当前运行验收容器 `acmcoder-key-upgrade-ce34f0e`，远端回环36433；旧验收容器停止、镜像和卷保留。正式服务43117没有重启；公开站与rc1下载包仍固定12b5217，等待下一批统一候选构建。本次完成旧凭据存储迁移这一子项；真实外部AI三端调用、用户现有安装实机升级及整个A1/R1仍未标完成。
+
+## rc.2 — 每日新增运行记录与持久待同步队列
+
+- 固定源码 `041e198308d75f4d0024e2c1e6fda675b0b52cdd`，根版本4.0.0-rc.2、插件数字版本4.0.0.2；共享站点/插件/本地客户端一致性检查通过。新SQL迁移0005增加日计数及事务约束，与新记录提交同事务；重试和失败事务不重复占额度，删除不返还当天额度，旧服务器历史内部迁移不消耗新的日额度。UTC日期、100次上限和恢复时间可在真实设置页查看。
+- 达到日额度的新运行记录持久保留在客户端，按服务器返回的恢复时间接续；重新打开继续保留，后台草稿/其他记录仍可发送。浏览器与真实文件适配器验证队列及额度时间恢复，不将历史删到100条。相关存储/仓库/同步/HTTP/旧备份 **48/48通过**，日志 `/tmp/acmcoder-daily-run-tests.log`。本阶段完整检查首次349项中348通过，唯一失败是新增版本说明缺失；补说明及标题后文档目标 **4/4通过**，日志 `/tmp/acmcoder-rc2-milestone-tests.log`、`/tmp/acmcoder-rc2-doc-tests.log`；没有将初次全量日志说成349全过。
+- 先取得预览D1的Time Travel书签 `00000016-00000000-000050f6-6cf0dea36009274155716e02bd5e2913`，只读取聚合量（1账号、13条统一记录）。对预览D1 `0324388b-a210-4af8-ab6c-6e403ccba1a2` 应用0005成功，不改已应用迁移、不清理用户记录。该书签属于Cloudflare有限保留期的辅助恢复点，不替代此前长期源码快照或用户学习导出。
+- 从Mac固定Git archive在WSL隔离目录 `/tmp/acmcoder-rc2-041e198` 构建三个客户端及发行包；候选一致性与源码归档commit检查通过。Pages direct-upload部署 `ccc0a8e1-e21b-48cb-a3d9-ba2079a90163` success，固定网址 `https://ccc0a8e1.acmcoder-unified-preview.pages.dev/`，公开预览域名切换至同commit。正式网站项目与稳定镜像latest未改；旧固定部署保留。
+- 用仅本轮创建的合成账号对真实预览API写入100条自测，重复最后4条没有再计数，101条的records接口返回429/DAILY_RUN_LIMIT，sync接口返回带恢复时间的逐项错误；草稿继续保存，100条历史完整分页可读，显式删除1条不返还日额度。测试代码 `/tmp/acmcoder-rc2-cloud-smoke.mjs`，只生成自己临时会话，不读真实Cookie/Key。清理精确测试账号后，聚合仍为1真实账号、13条记录，测试计数和会话均为0。该合成账号不替代双真实GitHub账号验收。
+- 真实Mac Chrome设置页显示 `4.0.0-rc.2 · 候选版 · 041e198 · python`，Pygmalion03仍已连接、已同步；可见用量为4/200题、0.02/8.00MiB、1/100次及当地08:00恢复。未刷新用户等待配置真实AI的旧页面。隔离43118预览更新相同local-web产物并重启会话自己的tmux，version.json同commit、三语言；正式43117服务未重启。
+- 本地镜像 `acmcoder-app:unified-rc2-041e198`，实际ID `sha256:9ea9ef65b32ca720f1bd854994e19bb05460b8b286b8017d010f7e5d7333dc74`，只验证linux/amd64，没有冒称已发布多架构GHCR digest。第一次临时验收命令漏掉/tmp的exec导致C++ EACCES；修正为已有CI同样的 `rw,exec,nosuid,nodev`，复用原测试卷后，统一界面、版本、持久草稿、Python/C++/Java实际运行全部通过，无源码/镜像重建。容器 `acmcoder-rc2-smoke-041e198`，远端回环36434；构建日志 `/tmp/acmcoder-rc2-docker-build.log`。
+- Mac发行目录 `dist/releases/4.0.0-rc.2`：插件ZIP 5,566,463字节，SHA256 `806887b3088e06469902a79ca09854d8076a061bde7c4931684f1c3ba27d2f4e`；源码tar.gz 688,029字节，SHA256 `f8039dd789c260bc1d9d9e86416178b4ab70aeadfa729aa60852fa7ea501dc9f`。manifest已关联实际部署和本地镜像，正式GHCR/商店/稳定Release仍标未发布。此前rc.1包与最初回退快照继续保留。
+- 后续仍需兼容性与最终发布审计，包括保留的旧固定部署写接口是否同样受新增额度约束；本轮真实边界验收针对新的公开预览接口。真实AI三端/原创导题、双真实账号、用户现有安装实机升级、浏览器Java/C++有界验证及许可证/商店身份等仍未完成；本批候选准备不构成18任务全部交付。
