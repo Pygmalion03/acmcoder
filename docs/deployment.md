@@ -165,3 +165,5 @@ ACMCODER_LLM_MODEL
 Compose新增`data/unified:/app/data/unified`和`credentials:/app/credentials`两个独立卷，保留原memory/recommendation卷。GitHub上的旧`latest`镜像尚未更新，正式新镜像在统一版本发布阶段提供；当前验证镜像为本地`acmcoder-app:unified-preview`。升级前应备份原数据，不能用测试卷替换用户卷。
 
 独立验证入口`http://127.0.0.1:43118/workspace.html`由WSL tmux `acmcoder-unified-preview`运行，临时测试数据目录`/tmp/acmcoder-unified-local-preview`，用于验证并会清理。正式43117服务更新需要按项目指南重启后验收，不以测试入口代替旧数据迁移验收。
+
+Mac/WSL源码同步需额外排除`data/unified`、`credentials`、`.wrangler`、`.dev.vars*`、`.superpowers`和浏览器测试缓存；这些内容仅留在运行端。当前`acmcoder-v3` Mutagen会话已保留原双向安全配置并补充这些排除，避免学习数据库和设备凭据随源码回传。
