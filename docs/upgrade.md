@@ -24,6 +24,8 @@
 
 保留 data/memory、data/recommendation、data/unified。credentials单独保留并限制本机权限，切勿放入学习备份、Git或源码同步。更新源码时保持既有运行数据目录；新本地版会迁移旧题面文件，保留原文件与迁移副本。浏览器旧草稿在当前浏览器首次进入时迁移，不删除原键。
 
+旧AI接口首次读取配置时，将 settings.json 中的明文Key迁入独立凭据文件；设置页、问答和今日计划沿用该配置。默认凭据目录是 ~/.local/share/acmcoder/credentials，可用 ACMCODER_CREDENTIAL_DIR 指定，Docker Compose 已使用独立 credentials 挂载。凭据文件0600、新建目录0700，先原子写入并确认持久化，再移除普通设置文件中的Key；失败保留原配置，下次读取重试。定制 settingsFile 的调用方应明确指定独立 credentialDir；测试默认放在该临时目录的 .credentials 子目录。统一练习页仍需要在其自带API设置里自行配置或解锁Key，不会自动将旧服务器Key返回浏览器或同步。
+
 Docker保持原数据挂载路径；不用新空卷替换旧卷。源码构建候选镜像可以用：
 
 ```sh

@@ -323,6 +323,7 @@ export function createAcmcoderServer(options = {}) {
   const deletedProblemsFile = options.deletedProblemsFile || getDefaultDeletedProblemsFile();
   const progressFile = options.progressFile || getDefaultProgressFile();
   const assistSettingsFile = options.assistSettingsFile || getDefaultAssistSettingsFile();
+  const assistCredentialOptions = {credentialDir: options.credentialDir || process.env.ACMCODER_CREDENTIAL_DIR};
   const recommendationCatalogFile = options.recommendationCatalogFile || getDefaultRecommendationCatalogFile();
   const plannerProfileFile = options.plannerProfileFile || getDefaultPlannerProfileFile();
   const dailyPlanFile = options.dailyPlanFile || getDefaultDailyPlanFile();
@@ -442,7 +443,7 @@ export function createAcmcoderServer(options = {}) {
           progressFile,
           options: body,
         });
-        const settings = await loadAssistSettings(assistSettingsFile);
+        const settings = await loadAssistSettings(assistSettingsFile, process.env, assistCredentialOptions);
         const plan = await generateDailyPlan({
           candidates,
           date,
@@ -500,14 +501,14 @@ export function createAcmcoderServer(options = {}) {
       }
 
       if (request.method === "GET" && requestUrl.pathname === "/api/assist/settings") {
-        const settings = await loadAssistSettings(assistSettingsFile);
+        const settings = await loadAssistSettings(assistSettingsFile, process.env, assistCredentialOptions);
         sendJson(response, 200, { settings: getPublicAssistSettings(settings) });
         return;
       }
 
       if (request.method === "POST" && requestUrl.pathname === "/api/assist/settings") {
         const body = await readJsonBody(request);
-        const settings = await saveAssistSettings(body, assistSettingsFile);
+        const settings = await saveAssistSettings(body, assistSettingsFile, process.env, assistCredentialOptions);
         sendJson(response, 200, { settings: getPublicAssistSettings(settings) });
         return;
       }
@@ -524,7 +525,7 @@ export function createAcmcoderServer(options = {}) {
         request.once("aborted", abortRequest);
         response.once("close", abortClosedResponse);
         try {
-          const settings = await loadAssistSettings(assistSettingsFile);
+          const settings = await loadAssistSettings(assistSettingsFile, process.env, assistCredentialOptions);
           const advice = await requestCodeAdvice({
             settings,
             fetch: assistFetch,

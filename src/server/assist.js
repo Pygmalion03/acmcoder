@@ -1,7 +1,7 @@
-import fs from "node:fs/promises";
 import path from "node:path";
 
 import { projectRoot } from "../core/problems.js";
+import {assistCredentialFile, serializeAssistSettings, readAssistSettings, writeAssistSettings} from './assist-settings.js';
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_MODEL = "gpt-4.1-mini";
@@ -75,34 +75,34 @@ export function normalizeAssistHistory(history = []) {
   return kept;
 }
 
-export async function loadAssistSettings(settingsFile = getDefaultAssistSettingsFile(), env = process.env) {
-  try {
-    const saved = JSON.parse(await fs.readFile(settingsFile, "utf8"));
-    return normalizeSettings({ ...getDefaultAssistSettings(env), ...saved }, env);
-  } catch (error) {
-    if (error.code !== "ENOENT") {
-      throw error;
-    }
-    return normalizeSettings(getDefaultAssistSettings(env), env);
-  }
+function credentialFile(settingsFile, env, options) {
+  return assistCredentialFile(settingsFile, {credentialDir: options.credentialDir || env.ACMCODER_CREDENTIAL_DIR ||
+    (path.resolve(settingsFile) !== path.resolve(getDefaultAssistSettingsFile()) ? path.join(path.dirname(settingsFile), '.credentials') : undefined)});
 }
 
-export async function saveAssistSettings(input, settingsFile = getDefaultAssistSettingsFile(), env = process.env) {
-  const existing = await loadAssistSettings(settingsFile, env);
-  const values = input && typeof input === "object" ? input : {};
-  const next = normalizeSettings(
-    {
-      ...existing,
-      apiKey: Object.hasOwn(values, "apiKey") ? values.apiKey : existing.apiKey,
-      baseUrl: Object.hasOwn(values, "baseUrl") ? values.baseUrl : existing.baseUrl,
-      model: Object.hasOwn(values, "model") ? values.model : existing.model,
-    },
-    env,
-  );
+export async function loadAssistSettings(settingsFile = getDefaultAssistSettingsFile(), env = process.env, options = {}) {
+  const file = credentialFile(settingsFile, env, options);
+  return serializeAssistSettings(settingsFile, () => readAssistSettings(settingsFile, file, value => normalizeSettings(value, env)));
+}
 
-  await fs.mkdir(path.dirname(settingsFile), { recursive: true });
-  await fs.writeFile(settingsFile, `${JSON.stringify(next, null, 2)}\n`, "utf8");
-  return next;
+export async function saveAssistSettings(input, settingsFile = getDefaultAssistSettingsFile(), env = process.env, options = {}) {
+  const file = credentialFile(settingsFile, env, options);
+  return serializeAssistSettings(settingsFile, async () => {
+    const existing = await readAssistSettings(settingsFile, file, value => normalizeSettings(value, env));
+    const values = input && typeof input === "object" ? input : {};
+    const next = normalizeSettings(
+      {
+        ...existing,
+        apiKey: Object.hasOwn(values, "apiKey") ? values.apiKey : existing.apiKey,
+        baseUrl: Object.hasOwn(values, "baseUrl") ? values.baseUrl : existing.baseUrl,
+        model: Object.hasOwn(values, "model") ? values.model : existing.model,
+      },
+      env,
+    );
+
+    await writeAssistSettings(settingsFile, file, next);
+    return next;
+  });
 }
 
 export function getPublicAssistSettings(settings) {
