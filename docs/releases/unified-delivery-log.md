@@ -80,3 +80,9 @@
 - 公开入口`https://acmcoder-unified-preview.pages.dev/`，不可变入口`https://74f078f0.acmcoder-unified-preview.pages.dev/`。真实Mac Chrome验证共享首页及CSP下Python自测通过；匿名粘贴题面/原始样例→练习→运行→刷新后中文题面、样例、代码及stdin保留，无pageerror。截图`/tmp/acmcoder-public-import-fallback.png`。
 - **真实限制：**本轮Cloudflare直接请求leetcode.cn与leetcode.com均失败，界面明确提示可保留原链接并粘贴题面。公开站的官方题面一键抓取不能标为验收通过；已有真实浏览器插件当前页捕获及网站接续证据仍有效，不以模拟抓取测试代替该限制。
 - 公开读取新增匿名额度回归的最小相关检查17项通过；本轮最新完整检查仍为此前305/305，不把后续增量测试描述成又一次全量检查。网站真实GitHub OAuth仍缺独立配置，Codex GitHub插件连接不能代替它。正式43117服务仍active，尚未获得用户执行sudo重启的回复，旧数据实机验收保持未完成。
+
+## 网站 OAuth 配置准备
+
+- 经用户要求，使用其已登录Chrome中的GitHub新建页创建专用OAuth应用`ACMCoder Unified Preview`（应用设置`https://github.com/settings/applications/3894485`）。主页为预览站，回调精确为`https://acmcoder-unified-preview.pages.dev/api/auth/github/callback`，未启用通配回调或GitHub device flow；GitHub显示创建成功。本站自己的设备授权仍走既有独立协议。
+- 已通过Cloudflare连接将该应用公开Client ID写入独立预览项目Production的`GITHUB_CLIENT_ID`，核对原EXTENSION_IDS/NODE_VERSION/PUBLIC_ORIGIN仍在，生产正式站未修改。
+- GitHub停在生成新Client Secret按钮，Cloudflare Production已准备好名为`GITHUB_CLIENT_SECRET`、类型为密钥的空白输入项，等待用户自行生成、粘贴并保存。依据用户AGENTS中禁止读取/复制真实凭据的规则，未生成、读取或复制该Secret。此项保存前不部署、不声称真实OAuth登录通过；保存后由当前会话完成部署与真实登录联调。
