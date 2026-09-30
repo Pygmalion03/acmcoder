@@ -19,7 +19,8 @@ export function createBrowserSyncAdapter({transaction,read,enqueue}){
     for(const record of changes.values()){
       const entry=await value(s('sync').get(key(record)))||{base:null,inflight:null,conflict:null};
       entry.local=record;
-      if(record.kind==='draft'&&(record.syncEpoch||0)!==(entry.epoch||0))entry.conflict={local:record,remote:entry.base};
+      if(entry.conflict)entry.conflict.local=record;
+      else if(record.kind==='draft'&&(record.syncEpoch||0)!==(entry.epoch||0))entry.conflict={local:record,remote:entry.base};
       entry.pending=entry.conflict?null:mutation(entry);s('sync').put(entry,key(record));
     }
   }

@@ -68,6 +68,16 @@ test('copying a conflict preserves rewrite history under new IDs and keeps the c
  await assert.rejects(b.store.syncCopyConflict(conflict.key),/冲突已处理/);
 });
 
+test('editing after a conflict keeps the latest local content in the conflict copy',async()=>{
+ const {device}=setup(),a=device(),b=device();await a.store.putRecord(problem);await a.store.saveDraft(draft);await a.engine.syncNow();await b.engine.syncNow();
+ await a.store.saveDraft({...await a.store.getDraft(draft),code:'cloud'});await b.store.saveDraft({...await b.store.getDraft(draft),code:'first local'});await a.engine.syncNow();await b.engine.syncNow();
+ await b.store.saveDraft({...await b.store.getDraft(draft),code:'last local',stdin:'last input'});
+ const [conflict]=await b.store.syncConflicts();assert.equal(conflict.local.payload.code,'last local');assert.equal(conflict.remote.payload.code,'cloud');
+ const copy=await b.store.syncCopyConflict(conflict.key);assert.equal((await b.store.getDraft({problemId:copy.problemId,language:'python'})).code,'last local');
+ assert.equal((await b.store.getDraft({problemId:copy.problemId,language:'python'})).stdin,'last input');
+ await b.engine.syncNow();await a.engine.syncNow();assert.equal((await a.store.getDraft({problemId:copy.problemId,language:'python'})).code,'last local');
+});
+
 test('copy after cloud deletion recovers the statement and snapshots without resurrecting deleted IDs',async()=>{
  const {device,repo}=setup(),a=device(),b=device();await a.store.putRecord({...problem,payload:{title:'求和',statement:'删除前题面',rawSamples:['原始样例']}});await a.store.saveDraft(draft);await a.engine.syncNow();await b.engine.syncNow();
  await b.store.startRewrite({...draft,template:''});await b.store.saveDraft({...await b.store.getDraft(draft),code:'删除期间离线重写'});

@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createUnifiedApi } from './unified-api.js';
+import {createChatTransport} from '../../shared/ai.js';
+import {validateAIRequest} from '../../cloudflare/lib/ai-relay.js';
 import http from "node:http";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -159,13 +161,13 @@ function sendNoContent(response) {
   response.end();
 }
 
-async function readJsonBody(request) {
+async function readJsonBody(request,maxBytes=64*1024*1024) {
   const chunks=[];let size=0;
   for await (const chunk of request) {
-    size+=chunk.length;if(size>64*1024*1024)throw new Error('Request body is too large.');chunks.push(chunk);
+    size+=chunk.length;if(size>maxBytes)throw new Error('Request body is too large.');chunks.push(chunk);
   }
   const body=Buffer.concat(chunks).toString('utf8');
-  return body ? JSON.parse(body) : {};
+  try{return body ? JSON.parse(body) : {};}catch{throw new Error('Invalid JSON request.');}
 }
 
 async function serializeProblem(problem, includeCaseText = false) {
@@ -361,6 +363,16 @@ export function createAcmcoderServer(options = {}) {
         if(operation!=='session'&&(request.method!=='POST'||!hasValidSessionToken(request,sessionToken))){sendJson(response,401,{error:'A valid ACMCoder session token is required.'});return;}
         try{sendJson(response,200,{result:await unified.handle(operation,request.method==='POST'?await readJsonBody(request):{})});}
         catch(error){sendJson(response,error.code==='account_changed'?409:400,{error:error.message,code:error.code});}return;
+      }
+      if(request.method==='POST'&&requestUrl.pathname==='/api/unified-ai/chat'){
+        if(!hasValidSessionToken(request,sessionToken)){sendJson(response,401,{error:'A valid ACMCoder session token is required.'});return;}
+        const controller=new AbortController(),cancel=()=>{if(!response.writableEnded)controller.abort();};response.once('close',cancel);
+        const timeout=setTimeout(()=>controller.abort(),60000);
+        try{
+          const data=await readJsonBody(request,120000),input=validateAIRequest(data,{allowLoopback:data.allowLoopback===true});
+          const result=await createChatTransport({fetch:assistFetch,allowLoopback:data.allowLoopback===true})({...input,signal:controller.signal});sendJson(response,200,result);
+        }catch(error){sendJson(response,400,{error:error.message});}
+        finally{clearTimeout(timeout);response.removeListener('close',cancel);}return;
       }
       if(request.method==='POST'&&requestUrl.pathname==='/api/import/fetch'){
         if(!hasValidSessionToken(request,sessionToken)){sendJson(response,401,{error:'A valid ACMCoder session token is required.'});return;}

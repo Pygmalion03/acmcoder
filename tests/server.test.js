@@ -15,6 +15,16 @@ function listen(server) {
   });
 }
 
+test('unified AI local relay needs session token and explicit permission for loopback HTTP',async()=>{
+ let calls=0;const server=createAcmcoderServer({sessionToken:'test-session',assistFetch:async()=>{calls++;return Response.json({choices:[{message:{content:'test-key response'}}]});}});const port=await listen(server);
+ const data={provider:{baseUrl:'http://127.0.0.1:11434/v1',model:'local'},key:'test-key',messages:[{role:'user',content:'hi'}]};
+ const call=(body,token='test-session')=>fetch(`http://127.0.0.1:${port}/api/unified-ai/chat`,{method:'POST',headers:{'content-type':'application/json','x-acmcoder-token':token},body:JSON.stringify(body)});
+ try{
+  assert.equal((await call(data,'invalid')).status,401);assert.equal((await call(data)).status,400);assert.equal(calls,0);
+  const response=await call({...data,allowLoopback:true});assert.equal(response.status,200);assert.equal((await response.json()).message,'[密钥已隐藏] response');assert.equal(calls,1);
+ }finally{server.close();}
+});
+
 async function requestWithHost(port, pathname, headers = {}, method = "GET", body = "") {
   return new Promise((resolve, reject) => {
     const request = http.request({ hostname: "127.0.0.1", port, path: pathname, method, headers }, (response) => {

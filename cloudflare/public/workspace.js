@@ -39,9 +39,10 @@ async function main(){
     // Refresh between visits, not while the user is entering code.
     window.addEventListener('focus',async()=>{await engine.syncNow({automatic:true});if(!['code','stdin','expected'].includes(document.activeElement?.id))await workspace?.refreshFromCloud();});
   }
+  const ai={description:'网站通过登录后的短时转发请求；支持 OpenAI、DeepSeek、SiliconFlow 和阿里云兼容地址。',async transport(input){if(!user)throw new Error('网站转发需要先连接 GitHub 账号。');const response=await fetch('/api/ai/chat',{method:'POST',headers:{'content-type':'application/json','x-acm-expected-user':user.id},body:JSON.stringify({provider:input.provider,key:input.key,messages:input.messages}),signal:input.signal});const result=await response.json();if(!response.ok)throw new Error(result.error||'模型连接失败。');return result;}};
   const catalog=await fetch('/shared/catalog.json').then(r=>r.ok?r.json():{entries:[]}).catch(()=>({entries:[]}));
   const handoff=createWebsiteHandoff();
-  workspace=await mountWorkspace(document.getElementById('app'),{store,runner,account,catalog:catalog.entries,client:{handoffLabel:'在插件继续 ↗',handoff:records=>handoff.send(records)}});
+  workspace=await mountWorkspace(document.getElementById('app'),{store,runner,account,catalog:catalog.entries,client:{ai,handoffLabel:'在插件继续 ↗',handoff:records=>handoff.send(records)}});
   if(nonce){
     try{const incoming=await handoff.consume(nonce);history.replaceState(null,'',location.pathname);await offerHandoff({store,records:incoming.records,workspace});}
     catch(error){const note=document.createElement('p');note.textContent=error.message;document.getElementById('app').prepend(note);}

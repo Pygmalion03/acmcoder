@@ -4,6 +4,7 @@ import { catalogFor, normalizeCatalog, normalizePreferences, preferencesFor, rea
 import { createRecordRepository } from '../../lib/records.js';
 import { createSyncRepository } from '../../lib/sync.js';
 import { createDeviceAuth, DeviceAuthError } from '../../lib/device-auth.js';
+import {relayAI} from '../../lib/ai-relay.js';
 
 const SESSION_SECONDS = 14 * 24 * 3600;
 const MAX_BODY = 80000;
@@ -509,6 +510,14 @@ async function route({ request, env }) {
     const expectedUser = request.headers.get('x-acm-expected-user');
     if (expectedUser && expectedUser !== user.id) return json({ error: '账号已在其他标签页切换；当前草稿仍保留在本机。', code: 'account_changed' }, 409);
     if (!user.deviceId&&!['GET', 'HEAD'].includes(method)) assertOrigin(request);
+    if(path.join('/')==='ai/chat'&&method==='POST'){
+      const data=await body(request,120000);await reserveAiRequest(db,user.id);
+      const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),60000);
+      const cancel=()=>controller.abort();request.signal.addEventListener('abort',cancel,{once:true});
+      try{return json(await relayAI(data,{signal:controller.signal}));}
+      catch(error){return json({error:error.message},400);}
+      finally{clearTimeout(timeout);request.signal.removeEventListener('abort',cancel);}
+    }
     if (['records','sync'].includes(path[0])) {
       const limits = {};
       if (env.RECORD_USER_BYTES) limits.userBytes = Number(env.RECORD_USER_BYTES);

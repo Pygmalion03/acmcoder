@@ -18,6 +18,7 @@
     "https://acmcoder.pygmalion.top/*",
     "https://acmcoder-unified-preview.pages.dev/*"
   ],
+  "optional_host_permissions": ["https://*/*"],
   "background": {
     "service_worker": "background.js",
     "type": "module"

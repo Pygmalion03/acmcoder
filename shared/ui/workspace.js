@@ -1,9 +1,11 @@
 import {templates} from '../practice.js';
 import {normalizeProblem} from '../import.js';
+import {createAIPanel} from './ai.js';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const example={kind:'problem',id:'sum',payload:{title:'两个整数相加',statement:'读取两个整数，输出它们的和。\n\n输入：一行两个整数，以空格分隔。\n输出：两个整数的和。',sourceKind:'builtin',tags:['入门','标准输入输出'],rawSamples:['输入：3 5\n输出：8'],cases:[{stdin:'3 5\n',expected:'8\n'}],archivedAt:null}};
 export async function mountWorkspace(root,{store,runner,account,catalog=[],client={},clock=()=>new Date()}) {
+  const ai=client.ai?await createAIPanel({store,adapter:client.ai}):null;
   const languages=client.languages||['python'];let language=languages[0];
   let view='today',selected='sum',filter='mine',query='',draft=null,runId=null,noticeTimer=null,navigation=0;
   let problems=[],settings={theme:'light',timezone:'Asia/Shanghai',count:3},output='',errorOutput='';
@@ -74,6 +76,11 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   async function render(){
     root.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.action===`nav-${view}`?'page':'false'));
     $('content').innerHTML=view==='today'?await today():view==='library'?library():view==='practice'?await practice():settingsPage();
+    if(ai&&['settings','practice'].includes(view)){
+      if(view==='settings')$('content').querySelector('.settings>section:last-child').remove();
+      const panel=document.createElement('section');panel.className='glass ai-panel';$('content').append(panel);
+      await ai.mount(panel,view==='practice'?{problemId:selected,language,context:()=>({title:problem()?.payload.title,statement:problem()?.payload.statement,code:$('code')?.value,stdin:$('stdin')?.value,language})}:{});
+    }
     if(view==='practice'){$('code').addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();const el=event.target;el.setRangeText('    ',el.selectionStart,el.selectionEnd,'end');saveEditor().catch(e=>toast(e.message));}});}
   }
   let history=[];let historyCursor=null;
@@ -197,5 +204,5 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   window.addEventListener('pagehide',leaving);
   await render();
   // A delayed focus/pull must never replace an editor the user has started typing in.
-  return {navigate,async refreshFromCloud(){if(view==='practice')return;await refresh();if(view!=='practice')await render();},destroy(){window.removeEventListener('pagehide',leaving);runner.destroy?.();}};
+  return {navigate,async refreshFromCloud(){if(view==='practice')return;await refresh();if(view!=='practice')await render();},destroy(){window.removeEventListener('pagehide',leaving);ai?.destroy();runner.destroy?.();}};
 }

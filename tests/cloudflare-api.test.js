@@ -7,6 +7,20 @@ import { onRequest } from '../cloudflare/functions/api/[[path]].js';
 
 const origin = 'https://acmcoder.example';
 
+test('BYOK relay requires login and origin, rejects arbitrary targets and stores no key',async()=>{
+ const {call,sqlite,db}=fixture(),previous=globalThis.fetch;let requests=0;
+ globalThis.fetch=async(url,options)=>{requests++;assert.equal(url,'https://api.deepseek.com/v1/chat/completions');assert.equal(options.redirect,'error');return Response.json({choices:[{message:{content:'answer test-key'}}]});};
+ const data={provider:{baseUrl:'https://api.deepseek.com/v1',model:'chat'},key:'test-key',messages:[{role:'user',content:'自由提问'}]};
+ try{
+  const anonymous=await onRequest({request:new Request(`${origin}/api/ai/chat`,{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(data)}),env:{DB:db}});assert.equal(anonymous.status,401);
+  assert.equal((await call('a','ai/chat','POST',data,'https://evil.test')).status,403);assert.equal(requests,0);
+  const denied=await call('b','ai/chat','POST',{...data,provider:{baseUrl:'https://evil.test',model:'chat'}});assert.equal(denied.status,400);assert.equal(requests,0);
+  const result=await call('a','ai/chat','POST',data);assert.equal(result.status,200);assert.equal(result.data.message,'answer [密钥已隐藏]');assert.equal(requests,1);
+  assert.ok(!JSON.stringify(sqlite.prepare('SELECT * FROM user_settings').all()).includes('test-key'));
+  assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM unified_records').get().n,0);
+ }finally{globalThis.fetch=previous;}
+});
+
 test('practice history and old plans survive new activity and remain fully exportable', async () => {
   const { call, sqlite } = fixture();
   for (let i = 0; i < 105; i++) sqlite.prepare('INSERT INTO submissions (id,user_id,problem_id,status,code,stdout,stderr,created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(`old-${i}`, 'a', 'sum', 'self_pass', `print(${i})`, String(i), '', 100 + i);
