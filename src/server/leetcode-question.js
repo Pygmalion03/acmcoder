@@ -87,6 +87,7 @@ export async function fetchLeetCodeQuestionPage(
 ) {
   const response = await fetch(LEETCODE_GRAPHQL_URL, {
     method: "POST",
+    signal: AbortSignal.timeout(10000),
     headers: {
       "content-type": "application/json",
       referer: url,

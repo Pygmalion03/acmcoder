@@ -19,6 +19,10 @@ if(target==='extension'){
     await fs.writeFile(file,text.replaceAll("from '../shared/","from './shared/"));
   }
 }
+if(target==='local-web'){
+  await fs.copyFile(path.join(destination,'index.html'),path.join(destination,'legacy.html'));
+  await fs.copyFile(path.join(destination,'workspace.html'),path.join(destination,'index.html'));
+}
 const {version}=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8'));
 if(target==='extension'){
   const file=path.join(destination,'manifest.json');const manifest=JSON.parse(await fs.readFile(file,'utf8'));manifest.version=version;

@@ -6,7 +6,10 @@ services:
     volumes:
       - ./data/memory:/app/data/memory
       - ./data/recommendation:/app/data/recommendation
+      - ./data/unified:/app/data/unified
+      - ./credentials:/app/credentials
     environment:
       PORT: "43117"
       ACMCODER_HOST: "0.0.0.0"
+      ACMCODER_CREDENTIAL_DIR: "/app/credentials"
       ACMCODER_TRUSTED_HOSTS: "${ACMCODER_TRUSTED_HOSTS:-}"

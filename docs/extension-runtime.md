@@ -42,3 +42,11 @@ node scripts/build-clients.mjs extension
 练习页点击“在网站继续”，打开独立预览网站并显示题目、代码和记录数量。确认后写入网站匿名空间；已有不同版本时新建副本，原版本仍在。网站的“在插件继续”打开插件工作区确认导入；随后可关掉网站，继续在插件内离线练习，工具栏侧栏使用相同插件数据。
 
 接续仅在主动点击时发生，不要求网站登录、不自动上传账号云端。URL只带随机短期标识，正文暂存在可信扩展会话存储；五分钟失效、只能消费一次，且绑定确切目标标签页和来源。不同浏览器、未安装插件或失效时使用完整备份导入。当前接续目标是 `https://acmcoder-unified-preview.pages.dev`，生产切换随统一版最终发布进行。
+
+## 可选账号连接（开发预览）
+
+插件设置可发起GitHub账号连接，弹出网站确认设备和账号。默认仅保留到浏览器会话；勾选“保持连接”后最长30天，刷新令牌会轮换。匿名练习不会自动合并，需在连接后主动点击合并。网站关闭不影响设备同步；网站设置中的设备列表可撤销，撤销保留插件本机副本和离线运行。
+
+开发安装路径决定未打包插件的ID，授权回调必须登记在预览Pages的`EXTENSION_IDS`（逗号分隔）。当前真实验证ID为`jhnkppkcdcigomaahaoahelfbhmkklhf`，仅对应开发验证安装目录。商店固定ID和公开分发回调将在正式发布阶段配置；不要为了测试改变旧插件身份或覆盖其存储。未登记版本仍能匿名练习和同浏览器接续。
+
+网站自己的GitHub登录需专用OAuth应用：Homepage为预览站域名，callback为`https://acmcoder-unified-preview.pages.dev/api/auth/github/callback`，Pages Production配置`GITHUB_CLIENT_ID`和Secret类型的`GITHUB_CLIENT_SECRET`后重新部署。Codex中的GitHub插件授权用于开发工具，并不会给ACMCoder网站配置登录凭据。不得把真实密钥写进源码、备份或聊天。

@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import { randomBytes, timingSafeEqual } from "node:crypto";
+import { createUnifiedApi } from './unified-api.js';
 import http from "node:http";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -159,10 +160,11 @@ function sendNoContent(response) {
 }
 
 async function readJsonBody(request) {
-  let body = "";
+  const chunks=[];let size=0;
   for await (const chunk of request) {
-    body += chunk.toString();
+    size+=chunk.length;if(size>64*1024*1024)throw new Error('Request body is too large.');chunks.push(chunk);
   }
+  const body=Buffer.concat(chunks).toString('utf8');
   return body ? JSON.parse(body) : {};
 }
 
@@ -284,7 +286,12 @@ async function buildDailyPlannerInputs({ recommendationCatalogFile, plannerProfi
 }
 
 async function serveStatic(requestUrl, response) {
-  const requestedPath = requestUrl.pathname === "/" ? "/index.html" : requestUrl.pathname;
+  if(requestUrl.pathname.startsWith('/shared/')){
+    const root=path.join(projectRoot,'shared'),file=path.resolve(root,requestUrl.pathname.slice(8));
+    if(!file.startsWith(root+path.sep)){sendJson(response,403,{error:'Forbidden'});return;}
+    try{const bytes=await fs.readFile(file);response.writeHead(200,{'content-type':contentTypes[path.extname(file)]||'application/octet-stream'});response.end(bytes);}catch{sendJson(response,404,{error:'Not found'});}return;
+  }
+  const requestedPath = requestUrl.pathname === "/" ? "/workspace.html" : requestUrl.pathname==='/legacy.html'?'/index.html':requestUrl.pathname;
   const webRoot = path.join(projectRoot, "web");
   const filePath = path.normalize(path.join(webRoot, requestedPath));
 
@@ -324,6 +331,8 @@ export function createAcmcoderServer(options = {}) {
   const checkToolchain = options.checkToolchain || defaultCheckToolchain;
   const checkDockerRunner = options.checkDockerRunner || defaultCheckDockerRunner;
   const sessionToken = options.sessionToken || randomBytes(32).toString("base64url");
+  const activeRuns=new Map();
+  const unified=createUnifiedApi({dataDir:options.unifiedDataDir||process.env.ACMCODER_UNIFIED_DATA_DIR||path.join(projectRoot,'data/unified'),credentialDir:options.credentialDir||process.env.ACMCODER_CREDENTIAL_DIR,memoryFile,cloudFetch:options.cloudFetch});
 
   return http.createServer(async (request, response) => {
     const requestUrl = new URL(request.url, "http://127.0.0.1");
@@ -344,6 +353,21 @@ export function createAcmcoderServer(options = {}) {
       if (request.method === "OPTIONS") {
         sendNoContent(response);
         return;
+      }
+
+      const unifiedMatch=requestUrl.pathname.match(/^\/api\/unified\/(session|connect|poll|cancel|disconnect|sync|store)$/);
+      if(unifiedMatch){
+        const operation=unifiedMatch[1];
+        if(operation!=='session'&&(request.method!=='POST'||!hasValidSessionToken(request,sessionToken))){sendJson(response,401,{error:'A valid ACMCoder session token is required.'});return;}
+        try{sendJson(response,200,{result:await unified.handle(operation,request.method==='POST'?await readJsonBody(request):{})});}
+        catch(error){sendJson(response,error.code==='account_changed'?409:400,{error:error.message,code:error.code});}return;
+      }
+      if(request.method==='POST'&&requestUrl.pathname==='/api/import/fetch'){
+        if(!hasValidSessionToken(request,sessionToken)){sendJson(response,401,{error:'A valid ACMCoder session token is required.'});return;}
+        const {url:source}=await readJsonBody(request),url=new URL(source);
+        const match=/^\/problems\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/.exec(url.pathname);
+        if(url.protocol!=='https:'||!['leetcode.cn','leetcode.com'].includes(url.hostname)||!match||url.username||url.password||url.port||url.search){sendJson(response,400,{error:'请填写公开 LeetCode 题目链接。'});return;}
+        const page=await fetchLeetCodePage(match[1],url.href);sendJson(response,200,{title:page.title,statement:page.content,rawSamples:page.sample?[`输入：${page.sample.inputText}\n输出：${page.sample.outputText}`]:[],sourceUrl:url.href});return;
       }
 
       if (request.method === "GET" && requestUrl.pathname === "/api/health") {
@@ -562,6 +586,10 @@ export function createAcmcoderServer(options = {}) {
         return;
       }
 
+      if(request.method==='POST'&&requestUrl.pathname==='/api/run/cancel'){
+        if(!hasValidSessionToken(request,sessionToken)){sendJson(response,401,{error:'A valid ACMCoder session token is required.'});return;}
+        const {id}=await readJsonBody(request);activeRuns.get(id)?.abort();sendJson(response,200,{ok:true});return;
+      }
       if (request.method === "POST" && requestUrl.pathname === "/api/run") {
         if (!hasValidSessionToken(request, sessionToken)) {
           sendJson(response, 401, { error: "A valid ACMCoder session token is required." });
@@ -569,14 +597,19 @@ export function createAcmcoderServer(options = {}) {
         }
 
         const body = await readJsonBody(request);
-        const result = await runSubmission({
+        const controller=new AbortController();const id=typeof body.id==='string'?body.id:crypto.randomUUID();
+        if(activeRuns.has(id)){sendJson(response,409,{error:'This run is already active.'});return;}activeRuns.set(id,controller);
+        response.once('close',()=>{if(!response.writableEnded)controller.abort();});
+        let result;
+        try{result = await runSubmission({
           language: body.language,
           code: body.code,
           stdin: body.stdin,
           expected: body.expected,
           timeoutMs: body.timeoutMs,
           runner: body.runner,
-        });
+          signal:controller.signal,
+        });}finally{activeRuns.delete(id);}
         const progress =
           result.status === "AC"
             ? await recordAcceptedProgress(body.slug, progressFile)

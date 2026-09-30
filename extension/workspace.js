@@ -15,7 +15,7 @@ async function main(){
   if(!user)await migrateExtensionDrafts({store});
   let engine,workspace,timer;
   const statusText=()=>({saved:'已同步到云端',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'连接已暂停，请重新连接账号',error:'同步暂未完成，本机练习已保留'}[engine?.getStatus().state]||'已保存到此插件');
-  const account={user,loginAvailable:true,statusText,connect:async remember=>{await store.flush();await auth.connect(remember);location.reload();},sync:()=>engine.syncNow(),async mergeGuest(){
+  const account={user,rememberOption:true,remember:session.remember,loginAvailable:true,statusText,connect:async remember=>{await store.flush();await auth.connect(remember);location.reload();},sync:()=>engine.syncNow(),async mergeGuest(){
     const guest=createExtensionStore();const result=await store.restoreBackup(await guest.exportBackup());await store.setMeta('guest-merge-conflicts',result.conflicts);await engine.syncNow();return result;
   },async logout(){clearTimeout(timer);engine?.pause();await store.flush();await auth.logout();location.reload();}};
   if(user){engine=createSyncEngine({store,accountId:user.id,transport:auth.transport(user.id),onStatus(){const el=document.getElementById('sync-status');if(el)el.textContent=statusText();}});await engine.syncNow();store.subscribe(()=>{clearTimeout(timer);timer=setTimeout(()=>engine.syncNow(),1500);});window.addEventListener('online',()=>engine.syncNow());window.addEventListener('focus',async()=>{await engine.syncNow();if(!['code','stdin','expected'].includes(document.activeElement?.id))await workspace?.refreshFromCloud();});}

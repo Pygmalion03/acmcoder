@@ -4,6 +4,7 @@ import {normalizeProblem} from '../import.js';
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const example={kind:'problem',id:'sum',payload:{title:'两个整数相加',statement:'读取两个整数，输出它们的和。\n\n输入：一行两个整数，以空格分隔。\n输出：两个整数的和。',sourceKind:'builtin',tags:['入门','标准输入输出'],rawSamples:['输入：3 5\n输出：8'],cases:[{stdin:'3 5\n',expected:'8\n'}],archivedAt:null}};
 export async function mountWorkspace(root,{store,runner,account,catalog=[],client={},clock=()=>new Date()}) {
+  const languages=client.languages||['python'];let language=languages[0];
   let view='today',selected='sum',filter='mine',query='',draft=null,runId=null,noticeTimer=null,navigation=0;
   let problems=[],settings={theme:'light',timezone:'Asia/Shanghai',count:3},output='',errorOutput='';
   let last=await store.getMeta('location');
@@ -15,12 +16,12 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
     const old=globalThis.localStorage?.getItem('acmcoder-free-draft-v1:sum');
     let values={code:'a, b = map(int, input().split())\nprint(a + b)\n',stdin:'3 5\n',expected:'8\n'};
     try{if(old)values={...values,...JSON.parse(old)};}catch{/* retain original legacy key */}
-    if(!await store.getMeta('deleted:sum')&&!await store.getDraft({problemId:'sum',language:'python'}))await store.saveDraft({problemId:'sum',language:'python',...values,mode:'normal'});
+    if(!await store.getMeta('deleted:sum')&&!await store.getDraft({problemId:'sum',language}))await store.saveDraft({problemId:'sum',language,...values,mode:'normal'});
     await store.setMeta('initialized',true);
   }
   async function refresh(){problems=await store.listRecords({kind:'problem'});}
   await refresh();
-  if(last&&problems.some(p=>p.id===last.problemId)){selected=last.problemId;view=last.view;}
+  if(last&&problems.some(p=>p.id===last.problemId)){selected=last.problemId;view=last.view;if(languages.includes(last.language))language=last.language;}
   const $=id=>root.querySelector(`#${id}`);
   const problem=()=>problems.find(p=>p.id===selected);
   const button=(action,label,cls='',id='')=>`<button type="button" class="${cls}" data-action="${action}"${id?` data-id="${escape(id)}"`:''}>${label}</button>`;
@@ -30,7 +31,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   root.innerHTML=`<header class="glass"><div class="brand"><b>✦</b>ACMCoder</div><nav aria-label="工作区">${['today','library','practice'].map((name,i)=>button(`nav-${name}`,['☀ 今日','▤ 题库','⌘ 练习'][i])).join('')}</nav><div class="head-actions">${button('theme','◐','quiet')}${button('nav-settings','设置与数据','quiet')}</div></header><main id="content"></main><div id="notice" class="status-message" role="status" hidden></div>
     <dialog id="import-dialog"><div class="dialog-title"><h2>导入题目</h2>${button('close-import','✕','quiet')}</div><p class="muted">保留题面和原始样例，ACM 输入由你自行调整。</p><label>原题链接<input id="import-url" type="url" placeholder="https://leetcode.cn/problems/…/"></label>${button('fetch-import','读取公开题面','quiet')}<label>题目名称<input id="import-title" maxlength="160" placeholder="例如：两数之和"></label><label>题面<textarea id="import-statement" placeholder="粘贴题面，或从原题链接读取"></textarea></label><label>原始样例<textarea id="import-samples" placeholder="保留原平台样例，不自动转换函数参数"></textarea></label><p id="import-note" class="muted" role="status"></p><footer>${button('close-import','取消','quiet')}${button('save-import','导入并开始练习','primary')}</footer></dialog>
     <dialog id="delete-dialog"><h2>彻底删除这道题？</h2><p>本机的题面、草稿、重写记录与复习安排将一并删除。此操作无法撤销；需要保留时请先导出备份。</p><footer>${button('cancel-delete','取消')}${button('confirm-delete','彻底删除','danger')}</footer></dialog>`;
-  async function persistLocation(){await store.setMeta('location',{view,problemId:selected});}
+  async function persistLocation(){await store.setMeta('location',{view,problemId:selected,language});}
   async function saveEditor(){
     if(!draft||!$('code'))return;
     const current={...draft,code:$('code').value,stdin:$('stdin').value,expected:$('expected').value};
@@ -65,11 +66,11 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   }
   async function practice(){
     const p=problem();
-    draft=await store.getDraft({problemId:selected,language:'python'});
-    if(!draft)draft=await store.saveDraft({problemId:selected,language:'python',code:templates.python,stdin:p.payload.cases?.[0]?.stdin||'',expected:p.payload.cases?.[0]?.expected||'',mode:'normal'});
-    return `<div class="practice-heading"><div><span class="eyebrow">当前练习 · ACM</span><h2>${escape(p.payload.title)}</h2></div><span id="save-status" class="save-state">已保存到此设备</span></div><div class="workspace"><section class="glass"><div class="panel-head"><strong>题目</strong><span class="tag">完整程序</span></div><div class="statement-body">${escape(p.payload.statement||'暂无题面，请参考原题链接。')}${p.payload.sourceUrl?`<a class="source-url" href="${escape(p.payload.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看原题 ↗</a>`:''}${p.payload.rawSamples?.length?`<h3>原始样例</h3><pre>${escape(p.payload.rawSamples.join('\n\n'))}</pre>`:''}<p class="muted">在右侧编写完整程序，自行处理标准输入输出。</p></div></section><section class="glass editor-panel"><div class="panel-head"><strong>Python</strong><div class="editor-tools">${button('history','历史对照','quiet')}${button('rewrite','↻ 重新手撕','quiet')}</div></div>${draft.mode==='rewrite'?`<div class="rewrite-note"><span>原代码已保留，先独立完成这次重写。</span>${button('discard','放弃本次重写','quiet')}${button('finish','结束并对照','')}</div>`:''}<textarea id="code" class="code-editor" aria-label="代码" spellcheck="false" autocapitalize="off">${escape(draft.code)}</textarea><div class="editor-footer"><span class="muted">${escape(client.description||'浏览器内运行 · 最长 5 秒')}</span><div>${button('stop','停止','quiet')}${button('run','▷ 运行自测','primary')}</div></div><div class="test-grid"><label>标准输入 stdin<textarea id="stdin" spellcheck="false">${escape(draft.stdin)}</textarea></label><label>期望输出（可留空）<textarea id="expected" spellcheck="false">${escape(draft.expected)}</textarea></label></div><div id="result" class="result"><span id="result-label">运行后在这里查看结果</span><pre id="stdout"></pre><pre id="stderr"></pre></div></section></div><div id="comparison"></div><div class="section-heading">${button('review','明天再练','quiet')}${client.handoff?button('handoff',client.handoffLabel||'在另一端继续 ↗','quiet'):''}<span class="muted">样例通过仅代表当前自测，不代表原平台隐藏测试 AC。</span></div>`;
+    draft=await store.getDraft({problemId:selected,language});
+    if(!draft)draft=await store.saveDraft({problemId:selected,language,code:templates[language],stdin:p.payload.cases?.[0]?.stdin||'',expected:p.payload.cases?.[0]?.expected||'',mode:'normal'});
+    return `<div class="practice-heading"><div><span class="eyebrow">当前练习 · ACM</span><h2>${escape(p.payload.title)}</h2></div><span id="save-status" class="save-state">已保存到此设备</span></div><div class="workspace"><section class="glass"><div class="panel-head"><strong>题目</strong><span class="tag">完整程序</span></div><div class="statement-body">${escape(p.payload.statement||'暂无题面，请参考原题链接。')}${p.payload.sourceUrl?`<a class="source-url" href="${escape(p.payload.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看原题 ↗</a>`:''}${p.payload.rawSamples?.length?`<h3>原始样例</h3><pre>${escape(p.payload.rawSamples.join('\n\n'))}</pre>`:''}<p class="muted">在右侧编写完整程序，自行处理标准输入输出。</p></div></section><section class="glass editor-panel"><div class="panel-head"><strong>${languages.length>1?`<select id="practice-language" aria-label="编程语言">${languages.map(l=>`<option value="${l}" ${l===language?'selected':''}>${{python:'Python',cpp:'C++',java:'Java'}[l]}</option>`).join('')}</select>`:'Python'}</strong><div class="editor-tools">${button('history','历史对照','quiet')}${button('rewrite','↻ 重新手撕','quiet')}</div></div>${draft.mode==='rewrite'?`<div class="rewrite-note"><span>原代码已保留，先独立完成这次重写。</span>${button('discard','放弃本次重写','quiet')}${button('finish','结束并对照','')}</div>`:''}<textarea id="code" class="code-editor" aria-label="代码" spellcheck="false" autocapitalize="off">${escape(draft.code)}</textarea><div class="editor-footer"><span class="muted">${escape(client.description||'浏览器内运行 · 最长 5 秒')}</span><div>${button('stop','停止','quiet')}${button('run','▷ 运行自测','primary')}</div></div><div class="test-grid"><label>标准输入 stdin<textarea id="stdin" spellcheck="false">${escape(draft.stdin)}</textarea></label><label>期望输出（可留空）<textarea id="expected" spellcheck="false">${escape(draft.expected)}</textarea></label></div><div id="result" class="result"><span id="result-label">运行后在这里查看结果</span><pre id="stdout"></pre><pre id="stderr"></pre></div></section></div><div id="comparison"></div><div class="section-heading">${button('review','明天再练','quiet')}${client.handoff?button('handoff',client.handoffLabel||'在另一端继续 ↗','quiet'):''}<span class="muted">样例通过仅代表当前自测，不代表原平台隐藏测试 AC。</span></div>`;
   }
-  function settingsPage(){return `<div class="settings"><div class="hero"><div><span class="eyebrow">YOUR WORKSPACE</span><h1 class="gradient">设置与数据</h1><p class="muted">你写下的内容，由你保留。</p></div></div><section class="glass"><h3>本机数据</h3><p class="muted">${escape(client.storage||'当前保存在此浏览器。清除网站数据会移除未备份的内容。')}</p><div class="setting-row"><div><strong>完整备份</strong><small>包括题目、草稿、重写记录和复习安排</small></div>${button('export','导出备份')}</div><div class="setting-row"><div><strong>恢复备份</strong><small>合并导入，已有冲突不会被覆盖</small></div><label><input id="backup-file" type="file" accept="application/json,.json"></label></div></section><section class="glass"><h3>练习偏好</h3><div class="setting-row"><label for="timezone">日期与复习时区</label><select id="timezone">${['Asia/Shanghai','Asia/Tokyo','Europe/London','America/New_York','America/Los_Angeles'].map(z=>`<option ${z===settings.timezone?'selected':''}>${z}</option>`).join('')}</select></div><div class="setting-row"><span>界面主题</span>${button('theme',settings.theme==='dark'?'切换浅色':'切换深色')}</div></section><section class="glass"><h3>账号与同步</h3>${account?.user?`<p>已连接 ${escape(account.user.login)} · 本机独立保存账号副本</p><p id="sync-status" class="muted">${escape(account.statusText())}</p><div class="actions">${button('sync','立即同步')}${button('conflicts','查看冲突')}${button('merge-guest','合并此设备的匿名练习')}${button('logout','退出账号')}${account.devices?button('devices','已连接的设备'):''}</div><p class="muted">合并只在你点击后进行；冲突内容保留双方，可单独导出。</p>`:`<p class="muted">匿名练习保存在当前浏览器。登录后可以跨设备接续；登录不会自动上传匿名内容。</p>${account?.connect?`<label><input id="remember-device" type="checkbox"> 保持连接，最多 30 天</label>${button('connect-account','连接 GitHub 账号 ↗')}`:account?.loginAvailable?'<a href="/api/auth/github/start">使用 GitHub 连接账号 ↗</a>':'<p class="muted">账号连接尚未配置；匿名练习可正常使用。</p>'}`}</section><section class="glass"><h3>AI</h3><p class="muted">自带 API 正在接入。</p><a href="${escape(client.legacyUrl||'/legacy.html')}">打开原版界面 ↗</a></section></div>`;}
+  function settingsPage(){return `<div class="settings"><div class="hero"><div><span class="eyebrow">YOUR WORKSPACE</span><h1 class="gradient">设置与数据</h1><p class="muted">你写下的内容，由你保留。</p></div></div><section class="glass"><h3>本机数据</h3><p class="muted">${escape(client.storage||'当前保存在此浏览器。清除网站数据会移除未备份的内容。')}</p><div class="setting-row"><div><strong>完整备份</strong><small>包括题目、草稿、重写记录和复习安排</small></div>${button('export','导出备份')}</div><div class="setting-row"><div><strong>恢复备份</strong><small>合并导入，已有冲突不会被覆盖</small></div><label><input id="backup-file" type="file" accept="application/json,.json"></label></div></section><section class="glass"><h3>练习偏好</h3><div class="setting-row"><label for="timezone">日期与复习时区</label><select id="timezone">${['Asia/Shanghai','Asia/Tokyo','Europe/London','America/New_York','America/Los_Angeles'].map(z=>`<option ${z===settings.timezone?'selected':''}>${z}</option>`).join('')}</select></div><div class="setting-row"><span>界面主题</span>${button('theme',settings.theme==='dark'?'切换浅色':'切换深色')}</div></section><section class="glass"><h3>账号与同步</h3>${account?.user?`<p>已连接 ${escape(account.user.login)} · 本机独立保存账号副本</p><p id="sync-status" class="muted">${escape(account.statusText())}</p><div class="actions">${button('sync','立即同步')}${button('conflicts','查看冲突')}${button('merge-guest','合并此设备的匿名练习')}${button('logout','退出账号')}${account.connect?`${account.rememberOption?`<label><input id="remember-device" type="checkbox" ${account.remember?'checked':''}> 保持连接，最多 30 天</label>`:''}${button('connect-account','重新连接账号 ↗')}`:''}${account.devices?button('devices','已连接的设备'):''}</div><p class="muted">合并只在你点击后进行；冲突内容保留双方，可单独导出。</p>`:`<p class="muted">匿名练习保存在当前浏览器。登录后可以跨设备接续；登录不会自动上传匿名内容。</p>${account?.connect?`${account.rememberOption?'<label><input id="remember-device" type="checkbox"> 保持连接，最多 30 天</label>':''}${button('connect-account','连接 GitHub 账号 ↗')}`:account?.loginAvailable?'<a href="/api/auth/github/start">使用 GitHub 连接账号 ↗</a>':'<p class="muted">账号连接尚未配置；匿名练习可正常使用。</p>'}`}</section><section class="glass"><h3>AI</h3><p class="muted">自带 API 正在接入。</p><a href="${escape(client.legacyUrl||'/legacy.html')}">打开原版界面 ↗</a></section></div>`;}
   async function render(){
     root.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.action===`nav-${view}`?'page':'false'));
     $('content').innerHTML=view==='today'?await today():view==='library'?library():view==='practice'?await practice():settingsPage();
@@ -77,8 +78,8 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   }
   let history=[];let historyCursor=null;
   async function compare(attemptId,older=false){
-    if(!older&&!attemptId){const page=await store.listAttempts({problemId:selected,language:'python',limit:50});history=page.items;historyCursor=page.nextCursor;}
-    else if(older&&historyCursor){const page=await store.listAttempts({problemId:selected,language:'python',cursor:historyCursor,limit:50});history.push(...page.items);historyCursor=page.nextCursor;}
+    if(!older&&!attemptId){const page=await store.listAttempts({problemId:selected,language,limit:50});history=page.items;historyCursor=page.nextCursor;}
+    else if(older&&historyCursor){const page=await store.listAttempts({problemId:selected,language,cursor:historyCursor,limit:50});history.push(...page.items);historyCursor=page.nextCursor;}
     const attempts=history;
     const previous=attempts.find(a=>a.id===(attemptId||draft.previousAttemptId))||attempts.find(a=>a.reason==='before-rewrite')||attempts[0];
     if(!previous){toast('尚未开始过重写；点击“重新手撕”会先保留当前代码。');return;}
@@ -89,7 +90,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
     await saveEditor();const captured={...draft};output='';errorOutput='';$('stdout').textContent='';$('stderr').textContent='';$('result').dataset.state='';
     const id=crypto.randomUUID();runId=id;
     let runOutput='',runError='';
-    const result=await runner.run({id,language:'python',code:captured.code,stdin:captured.stdin},event=>{
+    const result=await runner.run({id,language:captured.language,code:captured.code,stdin:captured.stdin},event=>{
       if(event.type==='stdout')runOutput+=event.text;
       if(event.type==='stderr')runError+=event.text;
       if(runId!==id||view!=='practice'||selected!==captured.problemId)return;
@@ -97,6 +98,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       if(event.type==='running')$('result-label').textContent='正在运行…';
       if(event.type==='stdout'){output+=event.text;$('stdout').textContent=output;}
       if(event.type==='stderr'){errorOutput+=event.text;$('stderr').textContent=errorOutput;}
+      if(event.type==='cancelled')$('result-label').textContent='已停止';
       if(event.type==='error'){$('result-label').textContent=event.text;$('result').dataset.state='error';}
       if(event.type==='complete'){
         const normalize=s=>s.replace(/\r\n/g,'\n').trimEnd();
@@ -159,9 +161,9 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       }
       if(action==='run')await run();
       if(action==='stop'&&runId)runner.cancel(runId);
-      if(action==='rewrite'){await saveEditor();draft=await store.startRewrite({problemId:selected,language:'python',template:templates.python});await render();}
-      if(action==='finish'){await saveEditor();draft=await store.finishRewrite({problemId:selected,language:'python'});await render();await compare();}
-      if(action==='discard'){draft=await store.discardRewrite({problemId:selected,language:'python'});await render();toast('已放弃本次重写，原记录仍保留。');}
+      if(action==='rewrite'){await saveEditor();draft=await store.startRewrite({problemId:selected,language,template:templates[language]});await render();}
+      if(action==='finish'){await saveEditor();draft=await store.finishRewrite({problemId:selected,language});await render();await compare();}
+      if(action==='discard'){draft=await store.discardRewrite({problemId:selected,language});await render();toast('已放弃本次重写，原记录仍保留。');}
       if(action==='history'){await saveEditor();await compare();}
       if(action==='more-history')await compare($('history-version')?.value,true);
       if(action==='archive'){await store.archiveProblem(id);await refresh();await render();toast('已归档，记录完整保留。');}
@@ -180,6 +182,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   });
   root.addEventListener('change',async event=>{
     try{
+      if(event.target.id==='practice-language'){await saveEditor();if(runId){runner.cancel(runId);runId=null;}language=event.target.value;if(!languages.includes(language))throw new Error('语言不可用');history=[];historyCursor=null;await persistLocation();await render();}
       if(event.target.id==='history-version')await compare(event.target.value);
       if(event.target.id==='daily-count'||event.target.id==='timezone'){
         if(event.target.id==='history-version')await compare(event.target.value);
@@ -192,5 +195,6 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   const leaving=()=>{if(view==='practice')saveEditor().catch(()=>{});};
   window.addEventListener('pagehide',leaving);
   await render();
-  return {navigate,async refreshFromCloud(){await refresh();await render();},destroy(){window.removeEventListener('pagehide',leaving);runner.destroy?.();}};
+  // A delayed focus/pull must never replace an editor the user has started typing in.
+  return {navigate,async refreshFromCloud(){if(view==='practice')return;await refresh();if(view!=='practice')await render();},destroy(){window.removeEventListener('pagehide',leaving);runner.destroy?.();}};
 }

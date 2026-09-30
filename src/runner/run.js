@@ -45,7 +45,10 @@ export async function runSubmission(options) {
         hostWorkdir: workdir,
         stdin: "",
         timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+        signal: options.signal,
       });
+
+      if(compileResult.cancelled)return {status:'CANCELLED',stdout:compileResult.stdout,stderr:''};
 
       if (compileResult.runnerUnavailable) {
         return {
@@ -89,7 +92,10 @@ export async function runSubmission(options) {
       hostWorkdir: workdir,
       stdin: options.stdin ?? "",
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      signal: options.signal,
     });
+
+    if(runResult.cancelled)return {status:'CANCELLED',stdout:runResult.stdout,stderr:''};
 
     if (runResult.runnerUnavailable) {
       return {

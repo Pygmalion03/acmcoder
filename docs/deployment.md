@@ -153,3 +153,15 @@ ACMCODER_LLM_MODEL
 从零用户现在至少需要安装 Docker Desktop，并在项目目录里运行一条 Compose 命令。预构建镜像已经把本地 build 从默认路径里拿掉，但还不是“一键安装”。
 
 再往后可以补安装脚本或桌面打包，但要先保证镜像发布和升级路径稳定。桌面打包会增加维护成本，而且代码执行沙箱仍然要认真处理。
+
+## 统一版本开发预览
+
+新版本地首页采用共享的今日/题库/练习/设置界面，原版保留在`/legacy.html`（`/index.html`也继续可用）。本地Python/C++/Java仍调用已安装工具链；网站和免部署插件目前提供Python。
+
+学习文件默认`data/unified/`，通过`ACMCODER_UNIFIED_DATA_DIR`可指定。原`data/memory/`题面首次迁移会保留原文件并在`legacy-originals/`保留副本；原浏览器语言草稿从学习键导入，不删除旧键。文件写入采用恢复journal、fsync与原子替换，关闭浏览器后仍保留。备份包含统一记录，凭据和原始文件副本不混入学习备份。
+
+本地设置的账号连接使用设备码，在网站批准后可以关闭网站，账号副本在独立namespace。凭据默认在用户`~/.local/share/acmcoder/credentials/`，可用`ACMCODER_CREDENTIAL_DIR`改为独立目录；文件0600，不应纳入源码同步或备份。匿名与账号副本仅在主动合并时汇合。
+
+Compose新增`data/unified:/app/data/unified`和`credentials:/app/credentials`两个独立卷，保留原memory/recommendation卷。GitHub上的旧`latest`镜像尚未更新，正式新镜像在统一版本发布阶段提供；当前验证镜像为本地`acmcoder-app:unified-preview`。升级前应备份原数据，不能用测试卷替换用户卷。
+
+独立验证入口`http://127.0.0.1:43118/workspace.html`由WSL tmux `acmcoder-unified-preview`运行，临时测试数据目录`/tmp/acmcoder-unified-local-preview`，用于验证并会清理。正式43117服务更新需要按项目指南重启后验收，不以测试入口代替旧数据迁移验收。

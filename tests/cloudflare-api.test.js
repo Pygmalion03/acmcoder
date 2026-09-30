@@ -29,7 +29,7 @@ test('practice history and old plans survive new activity and remain fully expor
 
 function fixture() {
   const sqlite = new DatabaseSync(':memory:');
-  for (const file of ['0001_initial.sql','0002_restore_entries.sql','0003_unified_records.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
+  for (const file of ['0001_initial.sql','0002_restore_entries.sql','0003_unified_records.sql','0004_device_auth.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
   const db = {
     prepare(sql) {
       return {
@@ -61,8 +61,19 @@ function fixture() {
     const response = await onRequest({ request, env: { DB: db, ...extraEnv } });
     return { status: response.status, data: await response.json() };
   }
-  return { call, sqlite };
+  return { call, sqlite, db };
 }
+
+test('anonymous public import reads official sources, rejects foreign origins and stops at read quota',async()=>{
+  const {db,sqlite}=fixture(),prior=globalThis.fetch;let upstream=0;
+  globalThis.fetch=async()=>{upstream++;return Response.json({data:{question:{title:'Two Sum',translatedTitle:'两数之和',content:'<p>公开题面</p><pre>Input: 1 2\nOutput: 3</pre>'}}});};
+  const request=(requestOrigin=origin)=>new Request(`${origin}/api/import/fetch`,{method:'POST',headers:{origin:requestOrigin,'content-type':'application/json','cf-connecting-ip':'test-import-ip'},body:JSON.stringify({url:'https://leetcode.cn/problems/two-sum/'})});
+  try{
+    assert.equal((await onRequest({request:request('https://evil.example'),env:{DB:db}})).status,403);assert.equal(upstream,0);
+    const result=await onRequest({request:request(),env:{DB:db}});assert.equal(result.status,200);assert.match((await result.json()).statement,/公开题面/);const calls=upstream;
+    sqlite.prepare('UPDATE device_start_limits SET count=20').run();assert.equal((await onRequest({request:request(),env:{DB:db}})).status,429);assert.equal(upstream,calls);
+  }finally{globalThis.fetch=prior;}
+});
 
 test('versioned record API migrates once and prevents legacy clients from overwriting new records', async () => {
   const { call } = fixture();

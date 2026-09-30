@@ -5,3 +5,12 @@ node_modules/
 data/memory/
 coverage/
 *.log
+credentials/
+data/unified/
+.wrangler/
+.superpowers/
+.serena/
+.playwright-cli/
+.env*
+**/.dev.vars*
+dist/

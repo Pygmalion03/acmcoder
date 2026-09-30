@@ -466,6 +466,16 @@ async function route({ request, env }) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/^\/api\//, '').split('/').filter(Boolean);
     const method = request.method;
+    if(method==='POST'&&path.join('/')==='import/fetch'){
+      assertOrigin(request);
+      const time=now(),bucket=await sha256(`import:${request.headers.get('cf-connecting-ip')||'unknown'}:${Math.floor(time/3600)}`);
+      const result=await db.batch([
+        db.prepare('DELETE FROM device_start_limits WHERE expires_at<=?').bind(time),
+        db.prepare('INSERT INTO device_start_limits(bucket,count,expires_at) VALUES (?,1,?) ON CONFLICT(bucket) DO UPDATE SET count=count+1 WHERE count<20').bind(bucket,time+3600)
+      ]);
+      if(!result[1].meta.changes)return json({error:'公开题面读取过于频繁，请稍后重试；也可使用插件导入或手动粘贴。'},429);
+      return fetchText(request);
+    }
     const deviceAuth=createDeviceAuth(db,{origin:url.origin,extensionIds:String(env.EXTENSION_IDS||'').split(',').map(id=>id.trim())});
     if(path[0]==='devices'){
       try{

@@ -9,3 +9,6 @@ data/recommendation/*
 !data/recommendation/default-catalog.json
 .playwright-mcp/
 .worktrees/
+
+/credentials/
+/data/unified/

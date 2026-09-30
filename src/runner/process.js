@@ -12,6 +12,7 @@ export function runProcess(command, args, options = {}) {
       cwd: options.cwd,
       windowsHide: true,
       stdio: ["pipe", "pipe", "pipe"],
+      signal: options.signal,
     });
 
     const stdoutChunks = [];
@@ -47,7 +48,8 @@ export function runProcess(command, args, options = {}) {
       clearTimeout(timer);
       resolve(buildResult({
         stderr: error.message,
-        failedToStart: true,
+        failedToStart: error.name !== 'AbortError',
+        cancelled: error.name === 'AbortError',
       }));
     });
 

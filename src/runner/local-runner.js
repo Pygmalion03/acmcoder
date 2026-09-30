@@ -16,6 +16,7 @@ export const localRunner = {
       cwd: options.hostWorkdir,
       stdin: options.stdin,
       timeoutMs: options.timeoutMs,
+      signal: options.signal,
     });
   },
 };
