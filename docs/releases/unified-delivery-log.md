@@ -123,3 +123,4 @@
 - 新增四项回归先缺模块失败，修正后导题/源解析/问答相关13项通过。真实本地Chrome输入“导入 LeetCode 二分查找”→实际LeetCode题面/样例→自填ACM输入→保存→原生Python输出4、样例通过；再次查找显示已保存，程序未被覆盖。真实不存在slug返回无题目，候选仍未验证。截图`/tmp/acmcoder-natural-import-accepted.png`。
 - A2真实模型找未知题/原创仍等用户Key；上述目录检索不消耗模型请求。网站Cloudflare原题读取此前受阻，本地成功不代替网站抓取验收。当前A2批次等待构建/公开部署，不能标整个A2完成。
 - 收束A1/A2批次后完整`npm test` **325/325通过**，日志`/tmp/acmcoder-ai-import-milestone.log`；三客户端构建通过。不存在原题真实点击导入被明确阻止，输入保留；本地二分查找验收题已归档保留程序，不覆盖用户题目。正式43117未重启，仍待旧数据实机升级。
+- 源码`e06eba5`已推送，同commit隔离构建的公开部署`b6b31c83-7338-4023-9b45-6ff9f0d7702f`成功。真实公开Chrome自然语言匹配二分查找并展示候选通过；选择候选后Cloudflare抓取cn/com仍失败，正确保留链接和题名、未显示虚构题面。截图`/tmp/acmcoder-public-{problem-finder,source-limitation}.png`。保留另一个AI设置页等待用户配置，未刷新丢失用户可能填写的内容。真实模型及插件AI实装仍待完成。
