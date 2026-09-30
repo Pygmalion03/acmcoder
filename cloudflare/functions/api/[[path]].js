@@ -3,6 +3,7 @@ import { backupManifest, backupPage, restoreOne, restorePreview } from '../../li
 import { catalogFor, normalizeCatalog, normalizePreferences, preferencesFor, readSettings, patchSetting, rankedRecommendations, recommendationId, validRecommendationId } from '../../lib/recommendations.js';
 import { createRecordRepository } from '../../lib/records.js';
 import { createSyncRepository } from '../../lib/sync.js';
+import { createDeviceAuth, DeviceAuthError } from '../../lib/device-auth.js';
 
 const SESSION_SECONDS = 14 * 24 * 3600;
 const MAX_BODY = 80000;
@@ -50,6 +51,8 @@ async function body(request, maxBody = MAX_BODY) {
   try { return JSON.parse(new TextDecoder().decode(bytes)); } catch { throw new InputError('JSON 格式无效。'); }
 }
 async function currentUser(request, db) {
+  const bearer = request.headers.get('authorization');
+  if (bearer) return createDeviceAuth(db).authenticate(bearer.startsWith('Bearer ') ? bearer.slice(7) : '');
   const token = cookie(request, '__Host-acm_session');
   if (!/^[0-9a-f]{64}$/.test(token)) return null;
   const tokenHash = await sha256(token);
@@ -463,6 +466,27 @@ async function route({ request, env }) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/^\/api\//, '').split('/').filter(Boolean);
     const method = request.method;
+    const deviceAuth=createDeviceAuth(db,{origin:url.origin,extensionIds:String(env.EXTENSION_IDS||'').split(',').map(id=>id.trim())});
+    if(path[0]==='devices'){
+      try{
+        if(method==='POST'&&['start','token','refresh'].includes(path[1])){
+          const data=await body(request,4000);
+          if(path[1]==='start')return json(await deviceAuth.start(data,request.headers.get('cf-connecting-ip')||'unknown'));
+          return json(await deviceAuth[path[1]](data));
+        }
+        const user=await requireUser(request,db);
+        if(user.deviceId){
+          if(method==='POST'&&path[1]==='revoke')return json(await deviceAuth.revoke(user.id,user.deviceId));
+          return json({error:'设备令牌仅能撤销自身授权。'},403);
+        }
+        if(method==='GET'&&path[1]==='request')return json(await deviceAuth.info(url.searchParams.get('code')));
+        if(method==='GET'&&path.length===1)return json({devices:await deviceAuth.list(user.id)});
+        assertOrigin(request);
+        if(method==='POST'&&path[1]==='approve')return json(await deviceAuth.approve((await body(request,4000)).userCode,user.id));
+        if(method==='POST'&&path[1]==='revoke')return json(await deviceAuth.revoke(user.id,(await body(request,4000)).deviceId));
+        return json({error:'设备接口不存在。'},404);
+      }catch(error){if(error instanceof DeviceAuthError)return json({code:error.code,error:error.code},error.status);throw error;}
+    }
     if (method === 'GET' && path.join('/') === 'auth/github/start') return authStart(request, env);
     if (method === 'GET' && path.join('/') === 'auth/github/callback') return authCallback(request, env, db);
     if (method === 'GET' && path.join('/') === 'auth/session') {
@@ -471,9 +495,10 @@ async function route({ request, env }) {
     }
     if (method === 'POST' && path.join('/') === 'auth/logout') return logout(request, db);
     const user = await requireUser(request, db);
+    if(user.deviceId&&!['records','sync'].includes(path[0]))return json({error:'设备令牌只能用于练习同步。'},403);
     const expectedUser = request.headers.get('x-acm-expected-user');
     if (expectedUser && expectedUser !== user.id) return json({ error: '账号已在其他标签页切换；当前草稿仍保留在本机。', code: 'account_changed' }, 409);
-    if (!['GET', 'HEAD'].includes(method)) assertOrigin(request);
+    if (!user.deviceId&&!['GET', 'HEAD'].includes(method)) assertOrigin(request);
     if (['records','sync'].includes(path[0])) {
       const limits = {};
       if (env.RECORD_USER_BYTES) limits.userBytes = Number(env.RECORD_USER_BYTES);

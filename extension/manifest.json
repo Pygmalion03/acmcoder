@@ -8,6 +8,7 @@
     "scripting",
     "sidePanel",
     "storage",
+    "identity",
     "tabs"
   ],
   "host_permissions": [

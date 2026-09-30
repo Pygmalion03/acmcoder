@@ -10,6 +10,10 @@ async function main(){
   const frame=document.createElement('iframe');
   frame.hidden=true;frame.setAttribute('sandbox','allow-scripts');frame.title='隔离 Python 运行环境';document.body.append(frame);
   const session=await fetch('/api/auth/session').then(r=>r.ok?r.json():null).catch(()=>null);
+  const pendingConnection=sessionStorage.getItem('acmcoder-device-return');
+  if(session?.authenticated&&/^\/connect\.html\?code=[A-F0-9]{10}$/.test(pendingConnection||'')){
+    sessionStorage.removeItem('acmcoder-device-return');location.replace(pendingConnection);return;
+  }
   const nonce=new URLSearchParams(location.hash.slice(1)).get('handoff');
   const user=!nonce&&session?.authenticated?session.user:null;
   const namespace=user?`account:${user.id}`:'guest';
@@ -18,7 +22,8 @@ async function main(){
   const runner=createBrowserRunner({frame});
   let engine,workspace,timer;
   const statusText=()=>({saved:'已同步到云端',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'同步已暂停，请重新连接账号',error:'同步暂未完成；本机内容已保留',idle:'已保存到此设备'}[engine?.getStatus().state]||'已保存到此设备');
-  const account={user,loginAvailable:!!session?.loginAvailable,statusText,async sync(){await engine.syncNow();},async mergeGuest(){
+  async function deviceCall(path,data){const response=await fetch(`/api/devices${path}`,{method:data?'POST':'GET',headers:data?{'content-type':'application/json'}:{},...(data?{body:JSON.stringify(data)}:{})});const result=await response.json();if(!response.ok)throw new Error(result.error||'设备管理暂不可用。');return result;}
+  const account={devices:async()=>(await deviceCall('')).devices,revoke:deviceId=>deviceCall('/revoke',{deviceId}),user,loginAvailable:!!session?.loginAvailable,statusText,async sync(){await engine.syncNow();},async mergeGuest(){
     const guest=createBrowserStore({namespace:'guest'});const result=await store.restoreBackup(await guest.exportBackup());
     // Incoming restore conflicts remain available after refresh.
     await store.setMeta('guest-merge-conflicts',result.conflicts);await engine.syncNow();return result;

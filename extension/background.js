@@ -1,5 +1,7 @@
 import {installHandoff} from './handoff.js';
+import {installDeviceAuth} from './auth.js';
 installHandoff();
+installDeviceAuth();
 const SIDE_PANEL_PATH = "workspace.html";
 const LEETCODE_CN_ORIGIN = "https://leetcode.cn";
 const LOCAL_BASE = "http://127.0.0.1:43117";
