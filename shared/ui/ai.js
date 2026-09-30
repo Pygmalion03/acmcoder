@@ -4,7 +4,7 @@ const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
 export async function createAIPanel({store,adapter}){
  const vault=createCredentialVault({name:`acmcoder-ai-vault-v1:${store.namespace}`}),client=createAIClient({store,credentials:vault,transport:adapter.transport});
  let provider=(await store.getRecord({kind:'settings',id:'ai-provider'}))?.payload||{baseUrl:'https://api.openai.com/v1',model:'',allowLoopback:false};
- let panel=null,current=null;
+ let panel=null,current=null,finding=null;
  const pending=new Map();
  async function mount(container,{problemId,language,context}={}){
   panel=container;current=problemId?{problemId,language,context}:null;
@@ -24,7 +24,7 @@ export async function createAIPanel({store,adapter}){
     }catch(error){status(error.message);}finally{target.disabled=false;}
    };
    $('#ai-unlock').onclick=async()=>{try{await vault.unlock($('#ai-password').value);$('#ai-password').value='';update();status('已解锁。');}catch(error){status(error.message);}};
-   $('#ai-clear').onclick=()=>{client.cancelAll();vault.clear();$('#ai-key').value='';$('#ai-password').value='';update();status('密钥已清除。');};
+   $('#ai-clear').onclick=()=>{client.cancelAll();finding?.abort();vault.clear();$('#ai-key').value='';$('#ai-password').value='';update();status('密钥已清除。');};
    $('#ai-test').onclick=async()=>{const target=$('#ai-test');target.disabled=true;const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);try{const key=vault.get(provider.baseUrl);if(!key)throw new Error('请先保存或解锁密钥。');await adapter.transport({provider,key,messages:[{role:'user',content:'Reply OK.'}],signal:controller.signal});status('连接成功，模型已返回文本。');}catch(error){status(error.message);}finally{clearTimeout(timeout);target.disabled=false;}};
    return;
   }
@@ -46,5 +46,10 @@ export async function createAIPanel({store,adapter}){
    pending.delete(id);if(panel===container&&current===captured)await mount(container,captured);
   };
  }
- return {mount,destroy:()=>client.cancelAll()};
+ return {mount,async findProblems(text,{original}){
+  const key=vault.get(provider.baseUrl);if(!key)throw new Error('请先到设置中配置或解锁 API 密钥。');
+  finding?.abort();const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),60000);finding=controller;
+  try{const result=await adapter.transport({provider,key,signal:controller.signal,messages:[{role:'system',content:original?'用户明确要求原创。只返回 JSON {"candidates":[{"title":"题名","sourceKind":"ai-original","statement":"完整 ACM 题面及输入输出格式","cases":[{"stdin":"样例输入","expected":"样例输出"}]}]}。不得声称来自 LeetCode。':'匹配 LeetCode 题目，只返回 JSON {"candidates":[{"title":"题名","sourceUrl":"https://leetcode.cn/problems/slug/"}]}，最多五项。不编造已抓取或已验证，不输出题面。没有把握返回空 candidates。'},{role:'user',content:text}]});return result.message;}
+  finally{clearTimeout(timeout);if(finding===controller)finding=null;}
+ },destroy:()=>{client.cancelAll();finding?.abort();}};
 }

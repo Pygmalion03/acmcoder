@@ -1,6 +1,7 @@
 import {templates} from '../practice.js';
 import {normalizeProblem} from '../import.js';
 import {createAIPanel} from './ai.js';
+import {resolveProblemRequest,verifyProblemCandidate} from '../ai-import.js';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const example={kind:'problem',id:'sum',payload:{title:'两个整数相加',statement:'读取两个整数，输出它们的和。\n\n输入：一行两个整数，以空格分隔。\n输出：两个整数的和。',sourceKind:'builtin',tags:['入门','标准输入输出'],rawSamples:['输入：3 5\n输出：8'],cases:[{stdin:'3 5\n',expected:'8\n'}],archivedAt:null}};
@@ -8,7 +9,8 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   const ai=client.ai?await createAIPanel({store,adapter:client.ai}):null;
   const languages=client.languages||['python'];let language=languages[0];
   let view='today',selected='sum',filter='mine',query='',draft=null,runId=null,noticeTimer=null,navigation=0;
-  let problems=[],settings={theme:'light',timezone:'Asia/Shanghai',count:3},output='',errorOutput='';
+  let problems=[],settings={theme:'light',timezone:'Asia/Shanghai',count:3},output='',errorOutput='',importKind='manual',importCases=[],candidates=[];
+  let findText=await store.getMeta('problem-request')||'';
   let last=await store.getMeta('location');
   const savedSettings=await store.getRecord({kind:'settings',id:'preferences'});
   if(savedSettings)settings={...settings,...savedSettings.payload};
@@ -31,9 +33,19 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   const day=(date=clock())=>new Intl.DateTimeFormat('en-CA',{timeZone:settings.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
   function tomorrow(){const [y,m,d]=day().split('-').map(Number);return new Date(Date.UTC(y,m-1,d+1)).toISOString().slice(0,10);}
   root.innerHTML=`<header class="glass"><div class="brand"><b>✦</b>ACMCoder</div><nav aria-label="工作区">${['today','library','practice'].map((name,i)=>button(`nav-${name}`,['☀ 今日','▤ 题库','⌘ 练习'][i])).join('')}</nav><div class="head-actions">${button('theme','◐','quiet')}${button('nav-settings','设置与数据','quiet')}</div></header><main id="content"></main><div id="notice" class="status-message" role="status" hidden></div>
-    <dialog id="import-dialog"><div class="dialog-title"><h2>导入题目</h2>${button('close-import','✕','quiet')}</div><p class="muted">保留题面和原始样例，ACM 输入由你自行调整。</p><label>原题链接<input id="import-url" type="url" placeholder="https://leetcode.cn/problems/…/"></label>${button('fetch-import','读取公开题面','quiet')}<label>题目名称<input id="import-title" maxlength="160" placeholder="例如：两数之和"></label><label>题面<textarea id="import-statement" placeholder="粘贴题面，或从原题链接读取"></textarea></label><label>原始样例<textarea id="import-samples" placeholder="保留原平台样例，不自动转换函数参数"></textarea></label><p id="import-note" class="muted" role="status"></p><footer>${button('close-import','取消','quiet')}${button('save-import','导入并开始练习','primary')}</footer></dialog>
+    <dialog id="import-dialog"><div class="dialog-title"><h2>导入题目</h2>${button('close-import','✕','quiet')}</div><p class="muted">保留题面和原始样例，ACM 输入由你自行调整。</p><label>原题链接<input id="import-url" type="url" placeholder="https://leetcode.cn/problems/…/"></label>${button('fetch-import','读取公开题面','quiet')}<label>题目名称<input id="import-title" maxlength="160" placeholder="例如：两数之和"></label><label>题面<textarea id="import-statement" placeholder="粘贴题面，或从原题链接读取"></textarea></label><label>原始样例<textarea id="import-samples" placeholder="保留原平台样例，不自动转换函数参数"></textarea></label><label>ACM 样例输入（可选）<textarea id="import-stdin"></textarea></label><label>ACM 样例期望输出（可选）<textarea id="import-expected"></textarea></label><p id="import-note" class="muted" role="status"></p><footer>${button('close-import','取消','quiet')}${button('save-import','导入并开始练习','primary')}</footer></dialog>
     <dialog id="delete-dialog"><h2>彻底删除这道题？</h2><p>本机的题面、草稿、重写记录与复习安排将一并删除。此操作无法撤销；需要保留时请先导出备份。</p><footer>${button('cancel-delete','取消')}${button('confirm-delete','彻底删除','danger')}</footer></dialog>`;
   async function persistLocation(){await store.setMeta('location',{view,problemId:selected,language});}
+  async function fetchSource(url){
+    if(client.fetchProblem)return client.fetchProblem(url);
+    const response=await fetch('/api/import/fetch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url})});const result=await response.json();if(!response.ok)throw new Error(result.error||'原题读取失败。');return result;
+  }
+  function fillImport(candidate){
+    importKind=candidate.sourceKind||'manual';importCases=candidate.cases||[];$('import-url').value=candidate.sourceUrl||'';$('import-title').value=candidate.title||'';$('import-statement').value=candidate.statement||'';$('import-samples').value=(candidate.rawSamples?.length?candidate.rawSamples:importCases.map(c=>`输入：${c.stdin}\n输出：${c.expected}`)).join('\n\n');
+    $('import-stdin').value=candidate.cases?.[0]?.stdin||'';$('import-expected').value=candidate.cases?.[0]?.expected||'';
+    $('import-note').textContent=candidate.warning?`${candidate.warning}；可用插件捕获原题，或在这里粘贴题面和样例。`:importKind==='ai-original'?'AI 原创：样例由模型生成，请自行检查。':importKind==='verified-source'?'已读取原题题面和样例，请确认后导入。':'原题链接尚未验证，请读取原题或粘贴题面。';
+    $('import-dialog').showModal();
+  }
   async function saveEditor(){
     if(!draft||!$('code'))return;
     const current={...draft,code:$('code').value,stdin:$('stdin').value,expected:$('expected').value};
@@ -64,7 +76,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   function library(){
     if(filter==='recommend')return `<div class="hero"><div><div class="eyebrow">DISCOVER YOUR NEXT CHALLENGE</div><h1 class="gradient">下一题，从这里开始。</h1><p class="muted">来自已有高频题目录，导入时读取真实题面。</p></div>${button('open-import','＋ 导入题目','primary')}</div><div class="toolbar"><div class="tabs">${button('filter-mine','我的题库')}<button data-action="filter-recommend" aria-pressed="true">推荐题目</button>${button('filter-archive','已归档')}</div><input id="search" class="search" placeholder="搜索题目或标签" aria-label="搜索题目" value="${escape(query)}"></div><div class="rows glass">${catalog.filter(p=>(p.title+' '+p.tags.join(' ')).includes(query)).map(p=>`<article class="row"><div class="row-title"><h3>${escape(p.title)}</h3><div class="muted">${escape(p.tags.join(' · '))}</div></div><span class="tag">${{easy:'简单',medium:'中等',hard:'困难'}[p.difficulty]||''}</span>${button('recommend-import','导入练习 →','',p.leetcodeSlug)}</article>`).join('')||'<div class="empty">没有匹配的推荐题。</div>'}</div>`;
     const items=problems.filter(p=>filter==='archive'?!!p.payload.archivedAt:!p.payload.archivedAt).filter(p=>(p.payload.title+' '+p.payload.tags?.join(' ')).toLowerCase().includes(query.toLowerCase()));
-    return `<div class="hero"><div><div class="eyebrow">YOUR PROBLEM LIBRARY</div><h1 class="gradient">让每一道题，都有下文。</h1><p class="muted">收集、练习、重写。你的积累都留在这里。</p></div>${button('open-import','＋ 导入题目','primary')}</div><div class="toolbar"><div class="tabs"><button data-action="filter-mine" aria-pressed="${filter==='mine'}">我的题库</button><button data-action="filter-recommend" aria-pressed="false">推荐题目</button><button data-action="filter-archive" aria-pressed="${filter==='archive'}">已归档</button></div><input id="search" class="search" placeholder="搜索题目或标签" aria-label="搜索题目" value="${escape(query)}"></div><div class="rows glass">${items.map(p=>`<article class="row"><div class="row-title"><h3>${escape(p.payload.title)}</h3><div class="muted">${escape(p.payload.tags?.join(' · ')||'ACM 完整程序练习')}</div></div><span class="tag">${p.payload.sourceKind==='builtin'?'内置示例':p.payload.sourceUrl?'外部来源':'手动导入'}</span><div class="row-actions">${filter==='archive'?button('restore','恢复','',p.id)+button('delete','彻底删除','danger',p.id):button('practice','练习 →','',p.id)+button('archive','归档','quiet',p.id)}</div></article>`).join('')||'<div class="empty">这里还没有题目。</div>'}</div>`;
+    return `<div class="hero"><div><div class="eyebrow">YOUR PROBLEM LIBRARY</div><h1 class="gradient">让每一道题，都有下文。</h1><p class="muted">收集、练习、重写。你的积累都留在这里。</p></div>${button('open-import','＋ 导入题目','primary')}</div><div class="toolbar"><div class="tabs"><button data-action="filter-mine" aria-pressed="${filter==='mine'}">我的题库</button><button data-action="filter-recommend" aria-pressed="false">推荐题目</button><button data-action="filter-archive" aria-pressed="${filter==='archive'}">已归档</button></div><input id="search" class="search" placeholder="搜索题目或标签" aria-label="搜索题目" value="${escape(query)}"></div><div class="rows glass">${items.map(p=>`<article class="row"><div class="row-title"><h3>${escape(p.payload.title)}</h3><div class="muted">${escape(p.payload.tags?.join(' · ')||'ACM 完整程序练习')}</div></div><span class="tag">${p.payload.sourceKind==='builtin'?'内置示例':p.payload.sourceKind==='ai-original'?'AI 原创':p.payload.sourceKind==='verified-source'?'已读取原题':p.payload.sourceUrl?'外部来源':'手动导入'}</span><div class="row-actions">${filter==='archive'?button('restore','恢复','',p.id)+button('delete','彻底删除','danger',p.id):button('practice','练习 →','',p.id)+button('archive','归档','quiet',p.id)}</div></article>`).join('')||'<div class="empty">这里还没有题目。</div>'}</div>`;
   }
   async function practice(){
     const p=problem();
@@ -76,6 +88,9 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   async function render(){
     root.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.action===`nav-${view}`?'page':'false'));
     $('content').innerHTML=view==='today'?await today():view==='library'?library():view==='practice'?await practice():settingsPage();
+    if(view==='library'){
+      const finder=document.createElement('section');finder.className='glass ai-panel';finder.innerHTML=`<h3>想练哪道题？</h3><label>找题描述<input id="problem-request" maxlength="2000" value="${escape(findText)}" placeholder="例如：导入 LeetCode 二分查找，或生成一道原创求和题"></label><div class="actions">${button('find-problems','查找题目','primary')}</div><p id="finder-status" role="status" class="muted">优先找已有题目和目录；AI 建议在读取原题前保持未验证。</p><div id="finder-candidates"></div>`;$('content').querySelector('.hero').after(finder);
+    }
     if(ai&&['settings','practice'].includes(view)){
       if(view==='settings')$('content').querySelector('.settings>section:last-child').remove();
       const panel=document.createElement('section');panel.className='glass ai-panel';$('content').append(panel);
@@ -150,19 +165,32 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       if(action==='practice')return await navigate('practice',id);
       if(action==='theme'){settings.theme=settings.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=settings.theme;await store.putRecord({kind:'settings',id:'preferences',payload:settings});if(view==='settings')await render();}
       if(action.startsWith('filter-')){filter=action.slice(7);await render();}
-      if(action==='open-import'){$('import-note').textContent='';$('import-dialog').showModal();}
-      if(action==='recommend-import'){const item=catalog.find(p=>p.leetcodeSlug===id);$('import-url').value=item.leetcodeUrl;$('import-title').value=item.title;$('import-statement').value='';$('import-samples').value='';$('import-note').textContent='点击“读取公开题面”，或粘贴原题题面与样例。';$('import-dialog').showModal();}
+      if(action==='open-import'){importKind='manual';importCases=[];$('import-note').textContent='';$('import-dialog').showModal();}
+      if(action==='recommend-import'){importKind='unverified-link';importCases=[];$('import-stdin').value='';$('import-expected').value='';const item=catalog.find(p=>p.leetcodeSlug===id);$('import-url').value=item.leetcodeUrl;$('import-title').value=item.title;$('import-statement').value='';$('import-samples').value='';$('import-note').textContent='点击“读取公开题面”，或粘贴原题题面与样例。';$('import-dialog').showModal();}
       if(action==='close-import')$('import-dialog').close();
+      if(action==='find-problems'){
+        const finderEpoch=navigation;target.disabled=true;$('finder-status').textContent='正在查找…';findText=$('problem-request').value;
+        try{await store.setMeta('problem-request',findText);const result=await resolveProblemRequest({text:findText,catalog,problems,aiClient:ai?ai.findProblems:undefined});candidates=result.candidates;
+          if(view!=='library'||navigation!==finderEpoch||!$('finder-candidates'))return;
+          $('finder-status').textContent=candidates.length?'选择一项查看题面和样例。':'没有找到候选；可换个描述、填写原题链接，或从插件捕获。';
+          $('finder-candidates').innerHTML=candidates.map((c,i)=>`<div class="setting-row"><span><strong>${escape(c.title)}</strong><small>${c.existingId?'已保存，保留现有代码':c.sourceKind==='ai-original'?'AI 原创 · 模型生成样例':'未验证 · '+escape(c.sourceUrl||'仅有题名')}</small></span>${button('candidate-preview',c.existingId?'继续练习':'预览导入','',String(i))}</div>`).join('');
+        }catch(error){if($('finder-status'))$('finder-status').textContent=error.message;}finally{target.disabled=false;}
+      }
+      if(action==='candidate-preview'){
+        const candidate=candidates[Number(id)];if(!candidate)throw new Error('候选已过期，请重新查找。');
+        if(candidate.existingId)return await navigate('practice',candidate.existingId);
+        target.disabled=true;try{fillImport(await verifyProblemCandidate(candidate,{fetch:fetchSource}));}finally{target.disabled=false;}
+      }
       if(action==='fetch-import'){
         $('import-note').textContent='正在读取公开题面…';
-        if(client.fetchProblem){const data=await client.fetchProblem($('import-url').value);$('import-title').value=data.title||'';$('import-statement').value=data.statement||'';$('import-samples').value=(data.rawSamples||[]).join('\n\n');$('import-note').textContent='题面与原始样例已读取，请确认后导入。';return;}
-        const response=await fetch('/api/import/fetch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:$('import-url').value})});
-        const data=await response.json();
-        if(!response.ok){$('import-note').textContent=response.status===401?'当前公开抓取需要原网站账号；可以直接粘贴题面和样例，填写内容会保留。':data.error;return;}
-        $('import-title').value=data.title||'';$('import-statement').value=data.statement||'';$('import-note').textContent='题面已读取，请检查样例后导入。';
+        const candidate=await verifyProblemCandidate({title:$('import-title').value,sourceUrl:$('import-url').value,sourceKind:'unverified-link'},{fetch:fetchSource});
+        if(candidate.warning){$('import-note').textContent=`${candidate.warning}；可从插件捕获或粘贴题面和样例，填写内容会保留。`;return;}
+        importKind='verified-source';importCases=candidate.cases||[];$('import-title').value=candidate.title;$('import-statement').value=candidate.statement;$('import-samples').value=(candidate.rawSamples||[]).join('\n\n');$('import-note').textContent='已读取真实题面与原始样例，请确认后导入。';
       }
       if(action==='save-import'){
-        const payload=normalizeProblem({title:$('import-title').value,statement:$('import-statement').value,sourceUrl:$('import-url').value.trim(),sourceKind:'manual',rawSamples:$('import-samples').value?[$('import-samples').value]:[]});
+        if(importKind==='unverified-link'&&!$('import-statement').value.trim())throw new Error('原题尚未读取；请粘贴真实题面，或使用插件捕获。');
+        if(importKind==='ai-original'&&$('import-url').value.trim())throw new Error('AI 原创题不能冒充原平台来源。');
+        const payload=normalizeProblem({title:$('import-title').value,statement:$('import-statement').value,sourceUrl:$('import-url').value.trim(),sourceKind:importKind==='unverified-link'?'manual':importKind,rawSamples:$('import-samples').value?[$('import-samples').value]:[],cases:$('import-stdin').value||$('import-expected').value?[{stdin:$('import-stdin').value,expected:$('import-expected').value},...importCases.slice(1)]:[]});
         const duplicate=payload.sourceUrl&&problems.find(p=>p.payload.sourceUrl===payload.sourceUrl);
         if(duplicate){$('import-dialog').close();await navigate('practice',duplicate.id);toast('这道题已在题库中，已保留现有代码。');return;}
         const nextId=crypto.randomUUID();await store.putRecord({kind:'problem',id:nextId,payload});$('import-dialog').close();await navigate('practice',nextId);
@@ -185,6 +213,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
     }catch(error){if($('import-dialog').open)$('import-note').textContent=error.message;else toast(error.message);}
   });
   root.addEventListener('input',event=>{
+    if(event.target.id==='problem-request'){findText=event.target.value;store.setMeta('problem-request',findText).catch(error=>toast(error.message));}
     if(['code','stdin','expected'].includes(event.target.id))saveEditor().catch(error=>toast(error.message));
     if(event.target.id==='search'){query=event.target.value;const position=event.target.selectionStart;$('content').innerHTML=library();$('search').focus();$('search').setSelectionRange(position,position);}
   });
