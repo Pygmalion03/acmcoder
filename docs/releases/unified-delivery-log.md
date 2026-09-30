@@ -143,3 +143,8 @@
 - Docker改为锁文件安装并构建统一静态目录，服务优先加载同一构建产物。镜像smoke新增版本、统一UI、草稿写读/备份检查；隔离新卷执行，不对用户运行数据做测试写入。
 - 镜像发布工作流先运行完整稳定验收，再发布固定版本/源码标签并保存digest；显式禁用metadata-action的自动latest。单独候选流程只生成Actions artifact，不发布网站/镜像或更改稳定渠道。实际双架构和GHCR发布保持待完成。
 - 更新升级、数据/隐私、真实功能对照、依赖许可、插件安装和候选说明；仓库许可继续等用户选择，未擅自创建LICENSE。原有未提交Cloudflare文件和旧计划不纳入本批。相关检查首次35/35、工作流修改后12/12通过；两个YAML文件由Ruby Psych解析通过。当前尚未声明本批完整全量或公开部署通过。
+- 本批源码`12b5217562981e93f232b2307995dcee630bd1a6`已推送。同commit的Git archive在WSL隔离目录构建全部客户端，完整测试 **333/333通过**，日志`/tmp/acmcoder-r1-full-tests.log`。候选一致性与打包通过；正式检查按预期拒绝RC、未选许可证、双真实账号、真实AI/原创导题和旧安装升级。没有创建发行tag或启动GHCR发布。
+- Mac生成包目录`dist/releases/4.0.0-rc.1/`：插件ZIP 5,565,955字节，SHA256 `49eb639661c6802bb28b6079449878f2d59d84af618aade82384162a798fe792`；源码tar.gz 674,591字节，SHA256 `825bf4eb8d044251f4aa83af10c6b9fe1bef9344fe34c536cffd89a8e98c3198`。再次打包ZIP摘要一致；源码Git pax header对应同commit。发行清单关联实际网站和本地Docker镜像，不冒称GHCR已发布或arm64已验证。
+- 同commit的Docker app `acmcoder-app:unified-rc1-12b5217`在独立新卷、read-only/cap-drop/no-new-privileges环境运行；统一UI、version.json、草稿API/备份、Python/C++/Java真实执行全部通过。删除测试容器后使用同一卷重建，读取原草稿stdin和代码仍一致。Linux amd64本地image ID `sha256:a16ea66601acc64146db4b24edcb73fafcca96d64c1b7d203152a4ddae0f2388`；这是本地镜像标识，不是GHCR registry digest。日志`/tmp/acmcoder-r1-docker-build.log`。
+- Pages预览部署`1ef23ae8-c608-4610-bb53-e51be5ac9f7c` success，同commit固定网址`https://1ef23ae8.acmcoder-unified-preview.pages.dev`；公开域名version.json与客户端一致。真实Chrome设置页显示`4.0.0-rc.1 · 候选版 · 12b5217 · python`，原GitHub账号与已同步状态保留；未刷新等待用户配置API的旧标签页。本批无数据库迁移，旧固定部署仍保留。
+- 额外旧卷演练：实际`ghcr.io/pygmalion03/acmcoder-app:v3.0.4`在隔离卷通过API捕获中文题目、原生Python运行AC并导出旧记录，然后同卷切换候选镜像。新版题面/样例迁移、原文件和旧接口AC次数保留通过；**新版progress记录为0，旧AC次数尚未迁入新记录**。这是实际发现的待修正项，不能将此演练标为完整升级验收。没有读写用户稳定服务数据或真实密钥，正式43117服务未重启。

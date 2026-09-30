@@ -9,6 +9,6 @@
     "two-real-accounts": {"status":"blocked","evidence":"Only one real GitHub account tested; synthetic account isolation is not this acceptance."},
     "ai-real-three-clients": {"status":"blocked","evidence":"Provider Key must be configured by user; only controlled compatibility service accepted."},
     "ai-original-import": {"status":"blocked","evidence":"Source/catalog path accepted; a real model original problem still pending."},
-    "old-install-upgrade": {"status":"blocked","evidence":"Old browser migration accepted; real stable WSL service upgrade requires user sudo restart."}
+    "old-install-upgrade": {"status":"blocked","evidence":"Real v3.0.4 image fixture upgraded in the same isolated volume; questions/samples and legacy AC count retained, but AC count not yet migrated into unified progress. User stable WSL upgrade also still needs sudo restart."}
   }
 }
