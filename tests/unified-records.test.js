@@ -51,6 +51,8 @@ test('deleted ids cannot be resurrected and immutable attempts cannot be overwri
   assert.equal(resurrection.applied.length, 0);
   assert.equal(resurrection.conflicts[0].current.deleted, true);
   assert.equal((await repo.get({ userId: 'a', kind: 'problem', id: 'sum' })).payload, null);
+  assert.equal((await repo.get({ userId:'a',kind:'attempt',id:'before' })).deleted,true);
+  await assert.rejects(repo.apply({userId:'a',mutation:draft('new-draft','python','resurrect child')}),/PROBLEM_NOT_FOUND/);
 });
 
 test('legacy migration resumes without duplicates and preserves old code', async () => {

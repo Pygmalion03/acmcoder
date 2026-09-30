@@ -1,0 +1,15 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const target=process.argv[2] || 'site';
+if(!['site','extension','local-web'].includes(target)) throw new Error('Unknown client target');
+const source={site:'cloudflare/public',extension:'extension','local-web':'web'}[target];
+const destination=path.join(root,'dist',target);
+await fs.rm(destination,{recursive:true,force:true});
+await fs.mkdir(destination,{recursive:true});
+await fs.cp(path.join(root,source),destination,{recursive:true});
+await fs.cp(path.join(root,'shared'),path.join(destination,'shared'),{recursive:true});
+const {version}=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8'));
+await fs.writeFile(path.join(destination,'version.json'),JSON.stringify({version,protocolVersion:1,features:{python:true,unifiedWorkspace:'preview'}},null,2)+'\n');
+console.log(`Built ${target} ${version} -> ${destination}`);

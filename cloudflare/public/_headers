@@ -7,6 +7,12 @@
 /app.js
   X-Content-Type-Options: nosniff
 
+/workspace.html
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'
+
 /styles.css
   X-Content-Type-Options: nosniff
 

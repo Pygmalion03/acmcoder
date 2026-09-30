@@ -31,7 +31,7 @@ export function createRecordRepository(db, { limits = {} } = {}) {
     const conflict = async () => ({ applied:[], conflicts:[{ mutationId:m.mutationId,current:await get({userId,kind:m.kind,id:m.id}) }], cursor:await cursor(userId) });
     if ((previous?.revision || 0) !== m.baseRevision || previous?.deleted || (m.op === 'delete' && !previous)) return conflict();
     if (m.op === 'put' && previous && ['attempt','run'].includes(m.kind)) throw new Error('IMMUTABLE_RECORD');
-    if (m.op === 'put' && m.problemId && !['sum','free'].includes(m.problemId)) {
+    if (m.op === 'put' && m.problemId) {
       const parent = await raw(userId,'problem',m.problemId);
       if (!parent || parent.deleted) throw new Error('PROBLEM_NOT_FOUND');
     }
@@ -57,6 +57,13 @@ export function createRecordRepository(db, { limits = {} } = {}) {
         .bind(userId,m.kind,m.id,deleted ? previous.problem_id : m.problemId || null,deleted ? previous.language : m.language || null,revision,Date.now(),payload,deleted ? 1 : 0,bytes,m.baseRevision,userId,m.kind,m.id,m.baseRevision,m.baseRevision),
       db.prepare(`UPDATE record_mutations SET applied=changes(),result_json=json_set(result_json,'$.cursor',(SELECT COALESCE(MAX(seq),0) FROM record_changes WHERE user_id=?)) WHERE user_id=? AND mutation_id=?`).bind(userId,userId,m.mutationId)
     ];
+    if(deleted&&m.kind==='problem'){
+      // Keep child tombstones too; old devices may replay children independently.
+      statements.push(
+        db.prepare('UPDATE unified_records SET payload_json=NULL,deleted=1,revision=revision+1,updated_at=? WHERE user_id=? AND problem_id=? AND deleted=0').bind(Date.now(),userId,m.id),
+        db.prepare(`UPDATE record_mutations SET result_json=json_set(result_json,'$.cursor',(SELECT COALESCE(MAX(seq),0) FROM record_changes WHERE user_id=?)) WHERE user_id=? AND mutation_id=?`).bind(userId,userId,m.mutationId)
+      );
+    }
     try { await db.batch(statements); }
     catch (error) {
       const saved = await replay(userId,m);

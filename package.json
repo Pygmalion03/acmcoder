@@ -9,8 +9,12 @@
   },
   "scripts": {
     "test": "node --test",
+    "build:site": "node scripts/build-clients.mjs site",
     "start": "node src/server/server.js",
     "cli": "node bin/acmcoder.js"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.5"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createBrowserRunner } from '../shared/runner.js';
+
+test('runner accepts only its sandbox and active id, and cancel allows another run', async () => {
+  const listeners=new Set();
+  const sent=[];
+  const frame={src:'',contentWindow:{postMessage:message=>sent.push(message)}};
+  const host={addEventListener:(_,fn)=>listeners.add(fn),removeEventListener:(_,fn)=>listeners.delete(fn)};
+  const runner=createBrowserRunner({frame,host});
+  const events=[];
+  const first=runner.run({id:'one',language:'python',code:'print(1)',stdin:''},event=>events.push(event));
+  const nonce=frame.src.split('#')[1];
+  const deliver=(data,source=frame.contentWindow)=>listeners.forEach(fn=>fn({source,origin:'null',data:{...data,nonce}}));
+  deliver({kind:'ready'});
+  assert.equal(sent.at(-1).code,'print(1)');
+  deliver({kind:'stdout',id:'one',text:'bad'},{});
+  deliver({kind:'stdout',id:'other',text:'bad'});
+  assert.equal(events.some(e=>e.text==='bad'),false);
+  runner.cancel('one'); await first;
+  const second=runner.run({id:'two',language:'python',code:'print(2)',stdin:''},event=>events.push(event));
+  deliver({kind:'stdout',id:'one',text:'old'});
+  deliver({kind:'stdout',id:'two',text:'2\n'});
+  deliver({kind:'complete',id:'two'});
+  await second;
+  assert.equal(events.some(e=>e.text==='old'),false);
+  assert.equal(events.find(e=>e.type==='stdout').text,'2\n');
+  assert.equal(JSON.stringify(sent).includes('expected'),false);
+  runner.destroy();
+});
