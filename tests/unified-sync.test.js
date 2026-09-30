@@ -104,3 +104,13 @@ test('pause cancels retry and quota failures retain work without automatic retri
  const engine=createSyncEngine({store:a.store,accountId:'a',transport:{...a.transport,pull:async()=>{throw new TypeError('offline');}},...timers});await engine.syncNow();assert.equal(scheduled.length,1);engine.pause();assert.equal(scheduled.length,0);assert.equal(engine.getStatus().state,'paused');
  const quota=createSyncEngine({store:a.store,accountId:'a',transport:{...a.transport,push:async()=>({applied:[],conflicts:[],errors:[{code:'CAPACITY_REACHED'}]})},...timers});await quota.syncNow();assert.equal(quota.getStatus().state,'error');assert.equal(scheduled.length,0);assert.ok(await a.store.syncPendingCount());
 });
+
+test('conflict copies keep the canonical AI conversation ID readable after cloud sync',async()=>{
+ const {device}=setup(),a=device(),b=device();await a.store.putRecord(problem);await a.store.saveDraft(draft);
+ await a.store.putRecord({kind:'conversation',id:'sum--python',problemId:'sum',language:'python',payload:{messages:[{role:'user',content:'保留对话'}]}});
+ await a.engine.syncNow();await b.engine.syncNow();
+ await a.store.saveDraft({...draft,code:'cloud'});await b.store.saveDraft({...draft,code:'local'});await a.engine.syncNow();await b.engine.syncNow();
+ const [conflict]=await b.store.syncConflicts(),copy=await b.store.syncCopyConflict(conflict.key);
+ const id=`${copy.problemId}--python`;assert.equal((await b.store.getRecord({kind:'conversation',id}))?.payload.messages[0].content,'保留对话');
+ await b.engine.syncNow();await a.engine.syncNow();assert.equal((await a.store.getRecord({kind:'conversation',id}))?.problemId,copy.problemId);
+});

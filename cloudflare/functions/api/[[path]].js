@@ -1,7 +1,7 @@
 import { InputError, normalizeProblem, problemFromRow, validateSourceUrl } from '../../lib/problem.js';
 import { backupManifest, backupPage, restoreOne, restorePreview } from '../../lib/backup.js';
 import { catalogFor, normalizeCatalog, normalizePreferences, preferencesFor, readSettings, patchSetting, rankedRecommendations, recommendationId, validRecommendationId } from '../../lib/recommendations.js';
-import { createRecordRepository } from '../../lib/records.js';
+import { createRecordRepository, DEFAULT_RECORD_LIMITS } from '../../lib/records.js';
 import { createSyncRepository } from '../../lib/sync.js';
 import { createDeviceAuth, DeviceAuthError } from '../../lib/device-auth.js';
 import {relayAI} from '../../lib/ai-relay.js';
@@ -265,7 +265,7 @@ async function exportData(db, userId) {
 }
 async function deleteAccount(request, db, userId) {
   const data = await body(request);
-  if (data.confirm !== 'DELETE_MY_ACCOUNT') throw new InputError('请明确确认删除账户数据。');
+  if (data.confirmation !== 'DELETE' && data.confirm !== 'DELETE_MY_ACCOUNT') throw new InputError('请明确确认删除账户数据。');
   await db.batch([
     db.prepare('DELETE FROM users WHERE id = ?').bind(userId),
     db.prepare('DELETE FROM user_data_revisions WHERE user_id = ?').bind(userId)
@@ -510,6 +510,12 @@ async function route({ request, env }) {
     const expectedUser = request.headers.get('x-acm-expected-user');
     if (expectedUser && expectedUser !== user.id) return json({ error: '账号已在其他标签页切换；当前草稿仍保留在本机。', code: 'account_changed' }, 409);
     if (!user.deviceId&&!['GET', 'HEAD'].includes(method)) assertOrigin(request);
+    if(method==='GET'&&path.join('/')==='account/usage'){
+      const usage=await db.prepare('SELECT bytes,problems FROM record_usage WHERE user_id=?').bind(user.id).first()||{bytes:0,problems:0};
+      const userBytes=Number(env.RECORD_USER_BYTES||DEFAULT_RECORD_LIMITS.userBytes);
+      if(!Number.isSafeInteger(userBytes)||userBytes<1)throw new Error('INVALID_LIMIT');
+      return json({usage,limits:{userBytes,problems:DEFAULT_RECORD_LIMITS.problems}});
+    }
     if(path.join('/')==='ai/chat'&&method==='POST'){
       const data=await body(request,120000);await reserveAiRequest(db,user.id);
       const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),60000);

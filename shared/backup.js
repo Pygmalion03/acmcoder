@@ -5,7 +5,13 @@ export function withoutCredentials(value){
   return Object.fromEntries(Object.entries(value).filter(([key])=>!/^(api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|password|secret|cookie)$/i.test(key)).map(([key,item])=>[key,withoutCredentials(item)]));
 }
 export function normalizeBackup(input){
-  if(input?.version===3&&Array.isArray(input.records))return {...input,records:input.records.map(validateRecord)};
+  if(input?.version===3&&Array.isArray(input.records)){
+    const pendingRestores=(input.pendingRestores||[]).map(entry=>{
+      if(typeof entry.id!=='string'||!Array.isArray(entry.backup?.records)||!Array.isArray(entry.conflicts))throw new Error('备份恢复冲突无效。');
+      return {id:entry.id,createdAt:entry.createdAt,conflicts:entry.conflicts.map(c=>({kind:c.kind,id:c.id,reason:c.reason})),backup:{version:3,records:entry.backup.records.map(validateRecord)}};
+    });
+    return {...input,records:input.records.map(validateRecord),pendingRestores};
+  }
   if(![1,2].includes(input?.schemaVersion))throw new Error('不支持的备份版本。');
   for(const key of ['problems','drafts','submissions','progress','plans'])if(!Array.isArray(input[key]))throw new Error(`备份缺少 ${key}。`);
   const records=[];

@@ -1,3 +1,4 @@
+import {copyProblemRecords} from './copy-problem.js';
 import {validateRecord,recordBytes} from './records.js';
 const NONCE=/^[0-9a-f]{32}$/;
 export const HANDOFF_ORIGINS=['https://acmcoder.pygmalion.top','https://acmcoder-unified-preview.pages.dev'];
@@ -34,12 +35,6 @@ export async function prepareHandoffImport({store,records}){
   const conflicts=incoming.filter(r=>existing.some(e=>e.kind===r.kind&&e.id===r.id&&JSON.stringify(e.payload)!==JSON.stringify(r.payload)));
   const deleted=await store.getMeta(`deleted:${parent.id}`);
   if(!conflicts.length&&!deleted)return {records:incoming,copy:false,problemId:parent.id,conflicts:0};
-  const problemId=crypto.randomUUID(),ids=new Map(incoming.filter(r=>r.kind!=='problem'&&r.kind!=='draft').map(r=>[r.id,crypto.randomUUID()]));
-  const mapped=incoming.map(r=>{
-    const next=structuredClone(r);next.revision=0;
-    if(r.kind==='problem'){next.id=problemId;next.payload.title=`${r.payload.title.slice(0,150)} · 接续副本`;}
-    else{next.problemId=problemId;next.id=r.kind==='draft'?`${problemId}--${r.language}`:ids.get(r.id);if(next.payload.previousAttemptId)next.payload.previousAttemptId=ids.get(next.payload.previousAttemptId);}
-    return next;
-  });
+  const copied=copyProblemRecords(incoming,{problemId:parent.id,titleSuffix:' · 接续副本'}),problemId=copied.problemId,mapped=copied.records;
   return {records:mapped,copy:true,problemId,conflicts:conflicts.length};
 }

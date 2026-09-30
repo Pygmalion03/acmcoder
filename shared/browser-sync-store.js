@@ -1,3 +1,4 @@
+import {copyProblemRecords} from './copy-problem.js';
 import {validateRecord} from './records.js';
 const value=request=>new Promise((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
 const key=r=>`${r.kind}:${r.id}`;
@@ -94,14 +95,9 @@ export function createBrowserSyncAdapter({transaction,read,enqueue}){
       for(const e of related)if(e.conflict&&!e.conflict.local.deleted)group.set(key(e.local),e.conflict.local);
       const original=group.get(`problem:${problemId}`);
       if(!original)throw new Error('原题面无法恢复，请导出双方内容后手动导入。');
-      const newId=crypto.randomUUID(),ids=new Map([...group.values()].filter(r=>!['problem','draft'].includes(r.kind)).map(r=>[r.id,crypto.randomUUID()]));
+      const copied=copyProblemRecords([...group.values()],{problemId,titleSuffix:' · 冲突副本'}),newId=copied.problemId;
       const changes=new Map();
-      for(const r of group.values()){
-        const next=structuredClone(r);next.revision=0;next.syncEpoch=0;next.updatedAt=Date.now();
-        if(r.kind==='problem'){next.id=newId;next.payload.title=`${r.payload.title.slice(0,150)} · 冲突副本`;next.payload.archivedAt=null;}
-        else{next.problemId=newId;next.id=r.kind==='draft'?`${newId}--${r.language}`:ids.get(r.id);if(next.payload.previousAttemptId){const mapped=ids.get(next.payload.previousAttemptId);if(!mapped)throw new Error('重写历史不完整，请先导出冲突。');next.payload.previousAttemptId=mapped;}}
-        const validated=validateRecord(next);writeRemote(s,validated);changes.set(key(validated),validated);
-      }
+      for(const validated of copied.records){writeRemote(s,validated);changes.set(key(validated),validated);}
       // Copy and acceptance of the original cloud versions commit together.
       const deletedParent=related.some(e=>e.local.kind==='problem'&&(e.base?.deleted||e.conflict?.remote?.deleted));
       for(const e of related)if(e.conflict||deletedParent){

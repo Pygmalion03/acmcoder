@@ -34,3 +34,37 @@ test('invalid linked snapshots cannot partially restore and plans survive export
   await assert.rejects(other.restoreBackup({version:3,records:[{kind:'problem',id:'one',payload:{title:'One'}},{kind:'draft',id:'one--python',problemId:'one',language:'python',payload:{code:'x',stdin:'',expected:'',mode:'rewrite',previousAttemptId:'missing'}}]}),/缺失.*快照/);
   assert.equal((await other.listRecords()).length,0);
 });
+
+test('restore conflicts persist through reopen and export, and copy restores history without overwriting originals',async()=>{
+ const indexedDB=new IDBFactory(),namespace=crypto.randomUUID();let store=createBrowserStore({namespace,indexedDB,storage:null});
+ await store.putRecord({kind:'problem',id:'one',payload:{title:'One'}});await store.saveDraft({problemId:'one',language:'python',code:'original',stdin:'',expected:''});
+ const backup={version:3,records:[{kind:'problem',id:'one',payload:{title:'Restored'}},{kind:'attempt',id:'before',problemId:'one',language:'python',payload:{code:'old',stdin:'',expected:'',reason:'before-rewrite',createdAt:1}},{kind:'draft',id:'one--python',problemId:'one',language:'python',payload:{code:'incoming',stdin:'input',expected:'',mode:'rewrite',previousAttemptId:'before'}},{kind:'conversation',id:'one--python',problemId:'one',language:'python',payload:{messages:[{role:'user',content:'restored chat'}]}}]};
+ const result=await store.restoreBackup(backup);assert.equal(result.conflicts.length,2);
+ store=createBrowserStore({namespace,indexedDB,storage:null});const pending=await store.getMeta('backup:pending');assert.equal(pending.length,1);
+ const exported=await store.exportBackup();assert.equal(exported.pendingRestores[0].backup.records.find(r=>r.kind==='draft').payload.code,'incoming');
+ const other=create();await other.restoreBackup(exported);assert.equal((await other.getMeta('backup:pending')).length,1);
+ const copied=await store.backupCopyConflict(pending[0].id),id=copied.problemIds[0];assert.notEqual(id,'one');
+ const draft=await store.getDraft({problemId:id,language:'python'});assert.equal(draft.code,'incoming');assert.equal(draft.stdin,'input');
+ assert.equal((await store.listAttempts({problemId:id})).items.find(r=>r.id===draft.previousAttemptId).code,'old');
+ assert.equal((await store.getRecord({kind:'conversation',id:`${id}--python`})).payload.messages[0].content,'restored chat');
+ assert.equal((await store.getDraft({problemId:'one',language:'python'})).code,'original');assert.equal((await store.getMeta('backup:pending')).length,0);
+ await assert.rejects(store.backupCopyConflict(pending[0].id),/已处理/);
+});
+
+test('a deleted backup restores to a new ID without resurrecting the original',async()=>{
+ const store=create();await store.putRecord({kind:'problem',id:'one',payload:{title:'One'}});await store.deleteProblem('one',{confirmed:true});
+ await store.restoreBackup({version:3,records:[{kind:'problem',id:'one',payload:{title:'Old'}}]});
+ const [pending]=await store.getMeta('backup:pending'),copy=await store.backupCopyConflict(pending.id);assert.equal(await store.getRecord({kind:'problem',id:'one'}),null);assert.equal((await store.getRecord({kind:'problem',id:copy.problemIds[0]})).payload.title,'Old · 恢复副本');
+});
+
+test('a conflicting immutable snapshot does not attach an incoming draft to the wrong history',async()=>{
+ const store=create();await store.putRecord({kind:'problem',id:'one',payload:{title:'One'}});
+ const snapshot={kind:'attempt',id:'before',problemId:'one',language:'python',payload:{code:'local history',stdin:'',expected:'',reason:'before-rewrite',createdAt:1}};
+ // Attempts live in their own table, restored through the backup interface.
+ await store.restoreBackup({version:3,records:[{kind:'problem',id:'one',payload:{title:'One'}},snapshot]});
+ const incoming={...snapshot,payload:{...snapshot.payload,code:'incoming history'}};
+ const result=await store.restoreBackup({version:3,records:[{kind:'problem',id:'one',payload:{title:'One'}},incoming,{kind:'draft',id:'one--python',problemId:'one',language:'python',payload:{code:'rewrite',stdin:'',expected:'',mode:'rewrite',previousAttemptId:'before'}}]});
+ assert.equal(await store.getDraft({problemId:'one',language:'python'}),null);assert.ok(result.conflicts.some(c=>c.kind==='draft'));
+ const pending=(await store.getMeta('backup:pending')).at(-1),copy=await store.backupCopyConflict(pending.id),id=copy.problemIds[0];
+ const draft=await store.getDraft({problemId:id,language:'python'});assert.equal((await store.listAttempts({problemId:id})).items.find(r=>r.id===draft.previousAttemptId).code,'incoming history');
+});
