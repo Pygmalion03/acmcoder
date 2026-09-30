@@ -86,3 +86,12 @@
 - 经用户要求，使用其已登录Chrome中的GitHub新建页创建专用OAuth应用`ACMCoder Unified Preview`（应用设置`https://github.com/settings/applications/3894485`）。主页为预览站，回调精确为`https://acmcoder-unified-preview.pages.dev/api/auth/github/callback`，未启用通配回调或GitHub device flow；GitHub显示创建成功。本站自己的设备授权仍走既有独立协议。
 - 已通过Cloudflare连接将该应用公开Client ID写入独立预览项目Production的`GITHUB_CLIENT_ID`，核对原EXTENSION_IDS/NODE_VERSION/PUBLIC_ORIGIN仍在，生产正式站未修改。
 - GitHub停在生成新Client Secret按钮，Cloudflare Production已准备好名为`GITHUB_CLIENT_SECRET`、类型为密钥的空白输入项，等待用户自行生成、粘贴并保存。依据用户AGENTS中禁止读取/复制真实凭据的规则，未生成、读取或复制该Secret。此项保存前不部署、不声称真实OAuth登录通过；保存后由当前会话完成部署与真实登录联调。
+
+## 2026-10-01 — 网站真实 GitHub OAuth 验收通过
+
+- 用户自行保存Secret后，仅查询配置项存在性与类型，确认`GITHUB_CLIENT_SECRET`为`secret_text`，未读取或打印Secret值。使用此前已验证、源码固定于`2e418ba`的同一部署产物重新绑定环境，部署`5f0168d1-f7a8-4f13-8904-a4231f8434c6`成功，预览站默认入口已切换；正式站及生产正式D1未修改。
+- 真实用户Chrome进入网站设置→GitHub登录→GitHub明确显示`Public data only`→用户已有GitHub会话完成授权→站点回调成功，显示`已连接 Pygmalion03`与`已同步到云端`。这是首次真实GitHub OAuth证据，代替先前仅临时会话验证的登录缺项；未访问凭据、Cookie或其他账号资料。
+- 新建独立验收题`OAuth 验收：求和（2026-10-01）`，Python输入13 29输出42，实际样例通过。重写中刷新恢复新代码，结束后原代码和重写完成代码可对照。真实预览D1按该题精确查询确认problem、draft（revision 5）、run及两个attempt均已落库，输入保留。
+- 退出账号后切回guest，匿名题库不含账号验收题；再次真实OAuth登录恢复同一账号，题库中验收题仍在，显示已同步。验收题随后归档，保留两份历史，未覆盖已有题目或彻底删除任何学习记录。
+- 自动化曾在已到达目标前超时（GitHub回调及首次Python加载）或遇到刷新导致的旧节点失效，随后以当前页面与实际结果确认成功；不是网站失败，也未通过读Cookie或造会话绕过登录。未修改应用源码，因此复用已有相关测试，不重复全量测试或构建。截图`/tmp/acmcoder-oauth-accepted.png`。
+- 验收范围为预览站真实单账号登录、退出/重登、学习记录云端写入和guest隔离；两真实账号、独立设备真实账号接续、本地旧数据正式升级、AI与统一正式发布仍按原计划待完成，不能据此宣布W6/S1/S2/S3整阶段全部通过。
