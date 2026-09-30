@@ -1,6 +1,6 @@
 {
   "name": "acmcoder",
-  "version": "3.0.4",
+  "version": "4.0.0-rc.1",
   "private": true,
   "description": "Local-first LeetCode-based ACM practice runner",
   "type": "module",
@@ -11,7 +11,10 @@
     "test": "node --test",
     "build:site": "node scripts/build-clients.mjs site",
     "start": "node src/server/server.js",
-    "cli": "node bin/acmcoder.js"
+    "cli": "node bin/acmcoder.js",
+    "build:clients": "node scripts/build-clients.mjs all",
+    "check:release": "node scripts/check-release.mjs",
+    "pack:release": "node scripts/package-release.mjs"
   },
   "devDependencies": {
     "fake-indexeddb": "6.2.5",

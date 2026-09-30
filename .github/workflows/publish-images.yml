@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version_tag:
-        description: Optional additional image tag to publish.
+        description: Optional product tag; must match v plus package.json version.
         required: false
         default: ""
   push:
@@ -17,10 +17,13 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
+  ACMCODER_BUILD_COMMIT: ${{ github.sha }}
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -36,13 +39,24 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Build unified clients and require stable acceptance
+        env:
+          ACMCODER_RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version_tag }}
+        run: |
+          npm run build:clients
+          npm run check:release
+
+      - name: Read accepted product version
+        id: version
+        run: node -e 'process.stdout.write("version=" + require("./package.json").version + "\n")' >> "$GITHUB_OUTPUT"
+
       - name: Build app image for smoke test
-        run: docker build --file Dockerfile.app --tag acmcoder-app:verify .
+        run: docker build --build-arg "ACMCODER_BUILD_COMMIT=$ACMCODER_BUILD_COMMIT" --file Dockerfile.app --tag acmcoder-app:verify .
 
       - name: Start hardened app container
         run: |
-          mkdir -p .ci-data/memory .ci-data/recommendation
-          chmod 0777 .ci-data/memory .ci-data/recommendation
+          mkdir -p .ci-data/memory .ci-data/recommendation .ci-data/unified .ci-data/credentials
+          chmod 0777 .ci-data/memory .ci-data/recommendation .ci-data/unified .ci-data/credentials
           docker run --detach \
             --name acmcoder-app-verify \
             --read-only \
@@ -54,6 +68,8 @@ jobs:
             --tmpfs /tmp:rw,exec,nosuid,nodev,size=512m \
             --volume "$PWD/.ci-data/memory:/app/data/memory" \
             --volume "$PWD/.ci-data/recommendation:/app/data/recommendation" \
+            --volume "$PWD/.ci-data/unified:/app/data/unified" \
+            --volume "$PWD/.ci-data/credentials:/app/credentials" \
             --publish 127.0.0.1:43117:43117 \
             acmcoder-app:verify
 
@@ -101,21 +117,39 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/acmcoder-${{ matrix.name }}
+          flavor: latest=false
           tags: |
-            type=ref,event=branch
-            type=ref,event=tag
+            type=raw,value=v${{ needs.verify.outputs.version }}
             type=sha,format=short,prefix=sha-
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' }}
-            type=raw,value=${{ github.event.inputs.version_tag || 'manual' }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag != '' }}
 
       - name: Build and publish image
+        id: image
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: ACMCODER_BUILD_COMMIT=${{ github.sha }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Record immutable image digest
+        env:
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          IMAGE_NAME: ${{ matrix.name }}
+          PRODUCT_VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          mkdir -p image-manifests
+          node -e 'const fs=require("node:fs"); fs.writeFileSync("image-manifests/"+process.env.IMAGE_NAME+".json", JSON.stringify({name:process.env.IMAGE_NAME,version:process.env.PRODUCT_VERSION,commit:process.env.ACMCODER_BUILD_COMMIT,digest:process.env.IMAGE_DIGEST},null,2)+"\n")'
+
+      - name: Upload image evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-${{ matrix.name }}-${{ github.sha }}
+          path: image-manifests/
+
+  # latest is deliberately promoted separately only after both images, website,
+  # ZIP and source artifacts have been associated and accepted as one release.

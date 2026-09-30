@@ -16,9 +16,12 @@ RUN ln -sf /usr/bin/python3 /usr/local/bin/python
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --omit=dev --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts
 
 COPY . .
+
+ARG ACMCODER_BUILD_COMMIT=unknown
+RUN ACMCODER_BUILD_COMMIT=$ACMCODER_BUILD_COMMIT node scripts/build-clients.mjs local-web
 
 RUN mkdir -p /app/bundled-data/recommendation \
   && cp /app/data/recommendation/default-catalog.json /app/bundled-data/recommendation/default-catalog.json

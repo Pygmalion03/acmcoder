@@ -1,95 +1,31 @@
-# 浏览器插件使用说明
+# 浏览器插件：独立ACM侧栏
 
-浏览器插件是 ACMCoder 面向 LeetCode 日常练习的主要入口之一。用户不用把题目复制到本地页面：在 LeetCode 题目页点击 ACMCoder 扩展图标，侧栏会读取当前题目，提供 ACM 模板、自测输入、运行结果和本地记忆。
+浏览器插件是 ACMCoder 面向 LeetCode 日常练习的主要入口之一。统一候选版 4.0.0-rc.1 自带Python，网站、本地服务和登录都不是基本练习的前置条件。Java/C++在本地版继续可用，插件内尚未交付。
 
-当前插件先走手动加载，还没有把 Edge Add-ons 或 Chrome Web Store 当成安装入口。下载仓库源码或源码 ZIP 并解压后，插件目录是：
+## 安装与读取题目
 
-```text
-extension/
-```
+1. 下载生成的扩展ZIP并解压到固定目录，或执行 `npm ci --ignore-scripts`、`node scripts/build-clients.mjs extension`。
+2. Edge打开 `edge://extensions/`，Chrome打开 `chrome://extensions/`。
+3. 启用 `Developer mode`，点击 `Load unpacked`，选择生成目录 `dist/extension/` 或ZIP中manifest.json所在目录。不要直接选择源码 `extension/`。
+4. 打开LeetCode cn/com题目页，点击ACMCoder图标，再点击读取当前题目。题面与原始样例会保存；ACM标准输入由你自行调整。
+5. 编写完整程序，运行自测。样例通过不代表原平台隐藏测试AC。
 
-## 加载方式
+## 保存与重写
 
-1. 先启动 ACMCoder 服务。插件本身不包含 Web 服务和运行环境，必须连到本地 ACMCoder。只有 Docker 的普通用户推荐运行：
+普通代码、stdin和期望输出自动保存。关闭侧栏、切换页面后回来仍在。重新手撕先保存原快照，普通退出保留未完成重写；只有显式放弃才恢复原草稿。结束后可对照历史。
 
-```bash
-docker compose -f docker-compose.prebuilt.yml up -d
-```
+题库、今日安排、归档与恢复、完整备份与冲突另存共用网站规则，默认每日可安排1至5道题。卸载或清除插件数据前导出备份；商店目前未上架，ZIP渠道需手动更新固定目录并重新加载。
 
-本地 Node.js 用户可以运行：
+## 网站接续与同步
 
-```bash
-npm start
-```
+练习页“在网站继续”只传选中题目，目标网页显示预览，确认后进入匿名空间。网站“在插件继续”反向接续；网站关闭后插件仍可离线运行。接续5分钟有效、只能消费一次，不把正文放进URL。
 
-2. Edge 用户打开 `edge://extensions/`；Chrome 用户打开 `chrome://extensions/`。
-3. 打开页面右上角的 `Developer mode` / 开发者模式。
-4. 点击 `Load unpacked` / 加载已解压的扩展程序。
-5. 选择项目里解压后的 `extension/` 目录，不要选择 zip 文件本身。
-6. 打开 LeetCode 题目页，例如 `https://leetcode.cn/problems/reverse-linked-list/`。
-7. 点击 ACMCoder 扩展图标，浏览器会直接打开 ACMCoder 侧栏。
+需要跨设备时在设置主动连接GitHub账号，网站确认设备后插件取得独立同步授权，网站标签页无需常开。默认会话连接，可自选最长30天保持连接；网站可撤销设备，草稿保留。开发安装的扩展ID必须登记到部署，商店固定ID尚未配置；未登记的包可匿名练习和同浏览器接续。
 
-刚重新加载过扩展时，第一次读取题目可能遇到 `Could not establish connection. Receiving end does not exist.`。当前版本会自动注入 content script 并重试；如果仍失败，刷新一次 LeetCode 题目页再读。
+## 自带API
 
-侧栏现在按浏览器窗口启用，不再绑定到单个 LeetCode tab。点击扩展图标会直接打开侧栏，切换页面或 tab 时侧栏保持打开；只有用户手动关闭侧栏时才会收起。
+设置API地址、模型和Key；插件只为用户选定的HTTPS origin请求可选权限。默认不授予全网访问。Key默认当前页面内存，可自选口令加密本机保存，刷新需解锁；不进学习备份或同步。真实提供商和插件权限实装仍待验收，不把兼容代码存在当作模型已验证。
 
-## 使用顺序
+## 原版兼容
 
-日常使用按这个顺序最稳：
-
-1. 保持本地服务运行，Docker app 用户确认页面运行模式显示为 `内置环境`。
-2. 打开任意 LeetCode 题目页。
-3. 点击 ACMCoder 扩展图标打开侧栏。
-4. 选择语言，按 ACM 输入输出补代码。
-5. 填自测输入和可选预期输出，点击 `Run`。
-6. 需要管理记忆题目、导出/导入数据或练内置种子题时，再打开 `http://127.0.0.1:43117`。
-
-## 当前侧栏
-
-侧栏不再展示整段题面。题目描述、约束和示例直接看左侧 LeetCode 页面；插件侧栏只保留练习需要的右侧工作区：
-
-- 读取当前题目，并提取 `slug`、标题、难度、标签、题面正文和第一个样例。标题和标签优先从 LeetCode CN GraphQL 的 `translatedTitle`、`topicTags.translatedName` 读取。
-- 记忆模式开启后，读取成功会自动写入本地记忆文件。
-- 语言选择：Python、Java、C++17。
-- 代码区：基础高亮、Tab 缩进、括号/引号补齐、回车缩进、选中括号时显示对应括号。
-- 自测输入：`stdin` 和可选的预期输出。
-- 本地运行：侧栏先从 `/api/session` 获取临时令牌，再携带 `X-ACMCoder-Token` 调用 `POST http://127.0.0.1:43117/api/run`。用户可选择本机/内置环境或 Docker runner，页面展示 `stdout`、`stderr` 和 AC/WA/RE/CE 等状态。Docker runner 缺少本地镜像时会自动构建 `acmcoder-runner:local`，除非设置了 `ACMCODER_DOCKER_AUTO_BUILD=0`。
-- 缓存：侧栏关闭或切页后，最近题目、代码、输入和预期输出会尽量恢复。
-
-保存后，本地 ACMCoder Web 页面会轮询 `/api/memory/current` 并自动加载最新题目。
-
-## 本地记忆文件
-
-源码启动时默认追加写入：
-
-```text
-data/memory/pages.jsonl
-```
-
-最近一次读取会同步写入：
-
-```text
-data/memory/current.json
-```
-
-`data/memory/` 已加入 `.gitignore`，这是本机用户数据，不应该提交。
-
-## LLM API Key
-
-侧栏里的 `LLM API Key` 会通过本地 ACMCoder 服务保存到 `data/memory/settings.json`。这个目录已被 git 忽略；Key 不参与判题，也不会覆盖代码。用户只有在主动请求模型建议时，本地服务才会把题目、代码和提问发给所配置的 OpenAI-compatible 模型接口。
-
-## 技术边界
-
-浏览器插件不能直接写 `E:\Projects\acmcoder\data\memory\pages.jsonl`。浏览器扩展被沙箱限制，不能任意写用户文件系统。
-
-当前方案：
-
-```text
-Browser side panel
-  -> content script 读取 LeetCode 页面和 GraphQL 题目信息
-  -> POST http://127.0.0.1:43117/api/memory/pages
-  -> Node 本地服务写入 data/memory/pages.jsonl 和 current.json
-  -> ACMCoder Web 轮询 /api/memory/current 并自动加载
-```
-
-这比让插件直接碰文件系统更可控，也方便后续接入 LLM 或本地索引。
+设置中的原版入口可连接本地稳定服务，使用已有Java/C++/Python和旧功能。源码稳定版3.0.4插件的本地连接模式与新版独立Python不同，升级时先保存原数据。运行隔离、许可证和实际验收见 [离线运行说明](extension-runtime.md)，数据边界见 [隐私](data-and-privacy.md)。

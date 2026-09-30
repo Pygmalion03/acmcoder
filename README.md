@@ -1,15 +1,27 @@
 # ACMCoder
 
-ACMCoder 是一个面向 LeetCode 侧栏练习的本地 ACM 练习器：代码、自测输入、运行结果、AC 记录和个人题库都在本机处理，加入练习的题目也可以在 Web 工作台查看完整题面。
+ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地/Docker版共用题库、今日安排、自动保存、重新手撕和长期历史；代码由你编写，自测只代表当前样例通过。
 
-当前稳定版为 `v3.0.4`。
+当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.1`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。候选版尚未完成真实AI、双账号和旧安装升级等验收，不能视为完整正式发布。
 
-它有两个主要入口：
+- **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python；登录GitHub可跨设备同步。
+- **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python，不需要本地服务或网站打开。商店未上架。
+- **本地 / Docker**：保留Python、C++、Java工具链运行和离线数据。候选源码构建后使用相同共享界面。
 
-- **浏览器插件侧栏**：日常使用的重点入口。在 LeetCode 题目页点击 ACMCoder 扩展图标，侧栏读取当前题目并提供代码区、自测输入和运行结果。
-- **本地 Web 页面**：打开 `http://127.0.0.1:43117`，管理个人题库和推荐题库、生成每日计划，并使用内置编程环境练习。
+版本、真实能力和限制见 [功能矩阵](docs/releases/unified-feature-matrix.md)。升级前请先阅读 [升级与恢复](docs/upgrade.md)；API Key去向、长期记录与账号删除见 [数据与隐私](docs/data-and-privacy.md)。
 
-## 推荐安装方式
+## 构建统一候选版
+
+```sh
+npm ci --ignore-scripts
+npm run build:clients
+node scripts/check-release.mjs --candidate
+npm start
+```
+
+浏览器插件安装目录为 `dist/extension/`。源码 `extension/` 缺少生成的共享文件和Python运行资源，不能直接安装新版。发行包由 `node scripts/package-release.mjs --candidate` 生成；在无Git的运行镜像中需提供固定源码归档和源commit。正式发行检查未通过前不生成稳定tag或更新镜像latest。
+
+## 稳定3.0.4的Docker安装
 
 普通用户优先使用 Docker app。只需要 Docker Desktop，不需要在本机另装 Node.js、Java、C++ 或 Python。
 
@@ -43,25 +55,11 @@ docker compose -f docker-compose.prebuilt.yml down
 
 ## 安装浏览器插件
 
-统一版开发预览已经支持免本地部署的离线 Python，使用生成目录 `dist/extension/`，不能直接加载新版源码目录。构建、安装和当前能力见 [离线插件说明](docs/extension-runtime.md)。下文为稳定版 v3.0.4 的本地插件安装方式。
+下载候选发行ZIP或先构建 `dist/extension/`，解压到固定目录。Edge打开 `edge://extensions/`；Chrome打开 `chrome://extensions/`，启用 `Developer mode` / 开发者模式，点击 `Load unpacked` / 加载已解压的扩展程序，选择含manifest.json的目录。
 
-插件目前先走手动加载，还没有发布到 Edge Add-ons 或 Chrome Web Store。插件目录是源码里的：
+打开LeetCode题目页，点击ACMCoder图标，在浏览器插件侧栏读取当前题目，即可直接编写ACM程序和标准输入；默认Python可断网运行。关闭网站和本地服务不会影响插件练习。旧本地侧栏从设置进入，仍可连接稳定版服务。
 
-```text
-extension/
-```
-
-加载步骤：
-
-1. 先确认 ACMCoder 服务已经启动，`http://127.0.0.1:43117` 可以打开。
-2. Edge 打开 `edge://extensions/`；Chrome 打开 `chrome://extensions/`。
-3. 打开 `Developer mode` / 开发者模式。
-4. 点击 `Load unpacked` / 加载已解压的扩展程序。
-5. 选择解压目录或仓库目录里的 `extension/` 文件夹，不要选择 ZIP 文件本身。
-6. 打开 LeetCode 题目页，例如 `https://leetcode.cn/problems/reverse-linked-list/`。
-7. 点击浏览器工具栏里的 ACMCoder 扩展图标，侧栏会打开并读取当前题目。
-
-侧栏保留练习需要的内容：语言选择、初始模板、代码区、自测输入、可选预期输出、运行结果、AC 次数、本地记忆和可选模型建议。完整插件说明见 [`docs/edge-extension.md`](docs/edge-extension.md)。
+同一安装目录升级并重新加载，先导出备份再操作。不要卸载旧插件或更换解压路径导致身份变化而丢失旧存储。完整说明见 [插件使用](docs/edge-extension.md) 和 [升级](docs/upgrade.md)。
 
 ## 另一台设备怎么更新
 

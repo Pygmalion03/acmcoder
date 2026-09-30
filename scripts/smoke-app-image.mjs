@@ -39,6 +39,17 @@ const problems = await fetchJson("/api/problems");
 assert.ok(problems.problems.some((problem) => problem.slug === "reverse-linked-list"), "bundled seed problems are missing");
 
 const { token } = await fetchJson("/api/session");
+const metadata=await fetchJson('/version.json');
+assert.equal(metadata.target,'local-web');
+if(process.env.ACMCODER_BUILD_COMMIT)assert.equal(metadata.commit,process.env.ACMCODER_BUILD_COMMIT);
+assert.deepEqual(metadata.languages,['python','cpp','java']);
+assert.match(await fetch(baseUrl).then(r=>r.text()),/workspace\.js/);
+const rpc=(method,args)=>fetchJson('/api/unified/store',{method:'POST',headers:{'content-type':'application/json','x-acmcoder-token':token},body:JSON.stringify({namespace:'local-guest',method,args})}).then(body=>body.result);
+const id='image-smoke-problem';
+await rpc('putRecord',[{kind:'problem',id,payload:{title:'容器持久化自测',statement:'读取两个整数并输出和。'}}]);
+await rpc('saveDraft',[{problemId:id,language:'python',code:'print(sum(map(int,input().split())))',stdin:'10 32\n',expected:'42\n',mode:'normal'}]);
+assert.equal((await rpc('getDraft',[{problemId:id,language:'python'}])).stdin,'10 32\n');
+assert.ok((await rpc('exportBackup',[])).records.some(record=>record.kind==='draft'&&record.problemId===id));
 const cases = [
   {
     language: "java",
@@ -71,4 +82,4 @@ for (const testCase of cases) {
   assert.equal(body.result.status, "AC", `${testCase.language} smoke failed: ${JSON.stringify(body.result)}`);
 }
 
-console.log("ACMCoder app image smoke test passed for Java, C++, and Python.");
+console.log("ACMCoder app image smoke passed: unified UI, source version, durable draft API, Java, C++, Python.");

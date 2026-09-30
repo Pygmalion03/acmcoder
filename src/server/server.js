@@ -288,16 +288,18 @@ async function buildDailyPlannerInputs({ recommendationCatalogFile, plannerProfi
 }
 
 async function serveStatic(requestUrl, response) {
+  let builtRoot=null;
+  try{await fs.access(path.join(projectRoot,'dist/local-web/version.json'));builtRoot=path.join(projectRoot,'dist/local-web');}catch{}
   if(requestUrl.pathname.startsWith('/shared/')){
-    const root=path.join(projectRoot,'shared'),file=path.resolve(root,requestUrl.pathname.slice(8));
+    const root=builtRoot?path.join(builtRoot,'shared'):path.join(projectRoot,'shared'),file=path.resolve(root,requestUrl.pathname.slice(8));
     if(!file.startsWith(root+path.sep)){sendJson(response,403,{error:'Forbidden'});return;}
     try{const bytes=await fs.readFile(file);response.writeHead(200,{'content-type':contentTypes[path.extname(file)]||'application/octet-stream'});response.end(bytes);}catch{sendJson(response,404,{error:'Not found'});}return;
   }
-  const requestedPath = requestUrl.pathname === "/" ? "/workspace.html" : requestUrl.pathname==='/legacy.html'?'/index.html':requestUrl.pathname;
-  const webRoot = path.join(projectRoot, "web");
+  const requestedPath = builtRoot?(requestUrl.pathname==='/'?'/index.html':requestUrl.pathname):requestUrl.pathname === "/" ? "/workspace.html" : requestUrl.pathname==='/legacy.html'?'/index.html':requestUrl.pathname;
+  const webRoot = builtRoot||path.join(projectRoot, "web");
   const filePath = path.normalize(path.join(webRoot, requestedPath));
 
-  if (!filePath.startsWith(webRoot)) {
+  if (!filePath.startsWith(webRoot+path.sep)) {
     sendJson(response, 403, { error: "Forbidden" });
     return;
   }

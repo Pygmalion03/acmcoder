@@ -1,14 +1,16 @@
 import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
+import {extensionVersion} from "../scripts/release-version.mjs";
 
 test("package and CLI use acmcoder naming", () => {
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
   const manifest = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
 
   assert.equal(pkg.name, "acmcoder");
-  assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
-  assert.equal(manifest.version, pkg.version);
+  assert.match(pkg.version, /^\d+\.\d+\.\d+(?:-rc\.\d+)?$/);
+  assert.equal(manifest.version, extensionVersion(pkg.version));
+  assert.equal(manifest.version_name,pkg.version);
   assert.equal(pkg.bin.acmcoder, "./bin/acmcoder.js");
   assert.equal(pkg.scripts.cli, "node bin/acmcoder.js");
   assert.ok(fs.existsSync("bin/acmcoder.js"));
@@ -35,10 +37,9 @@ test("documentation points users to the acmcoder repo and packages", () => {
   assert.match(readme, /github\.com\/Pygmalion03\/acmcoder\.git/);
   assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-app:latest/);
   assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-runner:latest/);
-  assert.ok(readme.includes(`当前稳定版为 \`v${version}\``));
-  assert.ok(readme.includes(`ghcr.io/pygmalion03/acmcoder-app:v${version}`));
-  assert.ok(readme.includes(`ghcr.io/pygmalion03/acmcoder-runner:v${version}`));
+  assert.ok(readme.includes(`统一候选版为 \`v${version}\``));
   assert.ok(deployment.includes(`ghcr.io/pygmalion03/acmcoder-app:v${version}`));
+  assert.ok(deployment.includes(`ghcr.io/pygmalion03/acmcoder-runner:v${version}`));
   const releaseNotes = fs.readFileSync(`docs/releases/v${version}.md`, "utf8");
   assert.ok(releaseNotes.includes(`ACMCoder v${version}`));
   assert.match(readme, /源码分支[^\n]*`v3`/);

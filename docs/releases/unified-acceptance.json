@@ -1,0 +1,14 @@
+{
+  "scope": "Original 18-task unified product roadmap; this file does not replace the delivery log or final requirement audit.",
+  "checks": {
+    "anonymous-site": {"status":"passed","evidence":"unified-delivery-log.md: public HTTPS Python, import, persistence and rewrite"},
+    "offline-extension": {"status":"passed","evidence":"unified-delivery-log.md: E1/E2 real installed Chrome for Testing, network blocked"},
+    "local-docker": {"status":"passed","evidence":"unified-delivery-log.md: S3 isolated Docker new volume, three languages and recreation"},
+    "durable-history": {"status":"passed","evidence":"unified-delivery-log.md: history, backup and recovery milestone 5416774"},
+    "sync-conflict-delete": {"status":"passed","evidence":"unified-delivery-log.md: independent real GitHub local/web conflict copying; SQLite deletion coverage"},
+    "two-real-accounts": {"status":"blocked","evidence":"Only one real GitHub account tested; synthetic account isolation is not this acceptance."},
+    "ai-real-three-clients": {"status":"blocked","evidence":"Provider Key must be configured by user; only controlled compatibility service accepted."},
+    "ai-original-import": {"status":"blocked","evidence":"Source/catalog path accepted; a real model original problem still pending."},
+    "old-install-upgrade": {"status":"blocked","evidence":"Old browser migration accepted; real stable WSL service upgrade requires user sudo restart."}
+  }
+}
