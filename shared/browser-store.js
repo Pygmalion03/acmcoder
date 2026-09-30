@@ -1,43 +1,62 @@
 import { normalizeDraft, draftId, snapshot } from './practice.js';
 import { validateRecord } from './records.js';
 import { normalizeBackup } from './backup.js';
+import {createBrowserSyncAdapter,toSyncRecord} from './browser-sync-store.js';
 
 const requestValue = request => new Promise((resolve,reject) => {
   request.onsuccess = () => resolve(request.result);
   request.onerror = () => reject(request.error);
 });
 
-export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,storage = globalThis.localStorage}) {
+export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,storage = globalThis.localStorage,sync = false}) {
   if (typeof namespace !== 'string' || !namespace) throw new Error('INVALID_NAMESPACE');
   const journalKey = `acmcoder-v3-recovery:${namespace}`;
   let state = {state:'saved'};
   let queue = Promise.resolve();
   let pending = new Map();
+  const listeners=new Set();
   const database = new Promise((resolve,reject) => {
     if (!indexedDB) { reject(new Error('此浏览器无法保存数据。')); return; }
-    const open = indexedDB.open(`acmcoder-v3:${namespace}`,1);
+    const open = indexedDB.open(`acmcoder-v3:${namespace}`,2);
     open.onupgradeneeded = () => {
       const db = open.result;
+      if(!db.objectStoreNames.contains('drafts')){
       db.createObjectStore('drafts',{keyPath:'id'});
       db.createObjectStore('attempts',{keyPath:'id'});
       db.createObjectStore('records',{keyPath:['kind','id']});
       db.createObjectStore('meta');
+      }
+      if(!db.objectStoreNames.contains('sync'))db.createObjectStore('sync');
     };
     open.onsuccess = () => { open.result.onversionchange = () => open.result.close(); resolve(open.result); };
     open.onerror = () => reject(open.error);
     open.onblocked = () => { state={state:'error',error:'请关闭其他旧版页面后重试。'}; };
   });
-  async function transaction(names,mode,work) {
+  async function transaction(names,mode,work,tracking=true) {
     const db = await database;
-    const tx = db.transaction(names,mode);
+    const tracked=sync&&tracking&&mode==='readwrite';
+    const tx = db.transaction(tracked?[...new Set([...names,'sync'])]:names,mode);
+    const changes=new Map();
+    const raw=name=>tx.objectStore(name);
+    const access=name=>{
+      const table=raw(name);
+      if(!tracked||!['records','drafts','attempts'].includes(name))return table;
+      return new Proxy(table,{get(target,property){
+        if(['put','add'].includes(property))return row=>{const record=toSyncRecord(name,row);changes.set(`${record.kind}:${record.id}`,record);return target[property](row);};
+        if(property==='delete')return id=>{const kind=name==='records'?id[0]:name==='drafts'?'draft':'attempt';const rid=name==='records'?id[1]:id;changes.set(`${kind}:${rid}`,{kind,id:rid,deleted:true,payload:null,updatedAt:Date.now()});return target.delete(id);};
+        const item=target[property];return typeof item==='function'?item.bind(target):item;
+      }});
+    };
     const done = new Promise((resolve,reject) => {
       tx.oncomplete = resolve;
       tx.onabort = () => reject(tx.error || new Error('保存事务已取消。'));
       tx.onerror = () => {};
     });
     try {
-      const result = await work(name=>tx.objectStore(name));
+      const result = await work(access);
+      if(tracked)await syncAdapter.track(raw,changes);
       await done;
+      if(changes.size)for(const listener of listeners)listener();
       return result;
     } catch(error) {
       try { tx.abort(); } catch { /* transaction already ended */ }
@@ -45,6 +64,7 @@ export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,s
       throw error;
     }
   }
+  const syncAdapter=createBrowserSyncAdapter({transaction,read,enqueue});
   function writeJournal() {
     if (pending.size) storage?.setItem(journalKey,JSON.stringify([...pending.values()]));
     else storage?.removeItem(journalKey);
@@ -112,7 +132,8 @@ export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,s
     }));
   }
   return {
-    namespace,getDraft,saveDraft,
+    namespace,getDraft,saveDraft,...syncAdapter.api,
+    subscribe:listener=>{listeners.add(listener);return ()=>listeners.delete(listener);},
     startRewrite:({template,...key})=>changeRewrite(key,'start',template),
     discardRewrite:key=>changeRewrite(key,'discard'),
     finishRewrite:key=>changeRewrite(key,'finish'),

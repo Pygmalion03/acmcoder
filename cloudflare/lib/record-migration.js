@@ -29,7 +29,7 @@ export async function migrateLegacyRecords(db,repo,{userId,cursor=null,limit=25}
   let imported = 0;
   for (const row of rows) {
     const sourceId = row.source_key;
-    const targetId = kind === 'problem' ? row.id : `legacy-${kind}-${await hashId(sourceId)}`;
+    const targetId = kind === 'problem' ? row.id : kind === 'draft' ? `${row.problem_id}--python` : `legacy-${kind}-${await hashId(sourceId)}`;
     if (row.problem_id && !await repo.get({userId,kind:'problem',id:row.problem_id})) {
       const builtIn = ['sum','free'].includes(row.problem_id);
       await repo.apply({userId,mutation:{mutationId:`legacy-parent-${await hashId(row.problem_id)}`,kind:'problem',id:row.problem_id,op:'put',baseRevision:0,payload:{title:row.problem_id === 'sum' ? '两个整数相加' : row.problem_id === 'free' ? '自由练习' : '已移除题目（历史恢复）',statement:'',sourceKind:builtIn ? 'builtin' : 'legacy',archivedAt:builtIn ? null : 1}}});

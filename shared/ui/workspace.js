@@ -11,11 +11,11 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clock
   if(savedSettings)settings={...settings,...savedSettings.payload};
   document.documentElement.dataset.theme=settings.theme;
   if(!await store.getMeta('initialized')){
-    await store.putRecord(example);
+    if(!await store.getRecord({kind:'problem',id:'sum'})&&!await store.getMeta('deleted:sum'))await store.putRecord(example);
     const old=globalThis.localStorage?.getItem('acmcoder-free-draft-v1:sum');
     let values={code:'a, b = map(int, input().split())\nprint(a + b)\n',stdin:'3 5\n',expected:'8\n'};
     try{if(old)values={...values,...JSON.parse(old)};}catch{/* retain original legacy key */}
-    if(!await store.getDraft({problemId:'sum',language:'python'}))await store.saveDraft({problemId:'sum',language:'python',...values,mode:'normal'});
+    if(!await store.getMeta('deleted:sum')&&!await store.getDraft({problemId:'sum',language:'python'}))await store.saveDraft({problemId:'sum',language:'python',...values,mode:'normal'});
     await store.setMeta('initialized',true);
   }
   async function refresh(){problems=await store.listRecords({kind:'problem'});}
@@ -69,7 +69,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clock
     if(!draft)draft=await store.saveDraft({problemId:selected,language:'python',code:templates.python,stdin:p.payload.cases?.[0]?.stdin||'',expected:p.payload.cases?.[0]?.expected||'',mode:'normal'});
     return `<div class="practice-heading"><div><span class="eyebrow">当前练习 · ACM</span><h2>${escape(p.payload.title)}</h2></div><span id="save-status" class="save-state">已保存到此设备</span></div><div class="workspace"><section class="glass"><div class="panel-head"><strong>题目</strong><span class="tag">完整程序</span></div><div class="statement-body">${escape(p.payload.statement||'暂无题面，请参考原题链接。')}${p.payload.sourceUrl?`<a class="source-url" href="${escape(p.payload.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看原题 ↗</a>`:''}${p.payload.rawSamples?.length?`<h3>原始样例</h3><pre>${escape(p.payload.rawSamples.join('\n\n'))}</pre>`:''}<p class="muted">在右侧编写完整程序，自行处理标准输入输出。</p></div></section><section class="glass editor-panel"><div class="panel-head"><strong>Python</strong><div class="editor-tools">${button('history','历史对照','quiet')}${button('rewrite','↻ 重新手撕','quiet')}</div></div>${draft.mode==='rewrite'?`<div class="rewrite-note"><span>原代码已保留，先独立完成这次重写。</span>${button('discard','放弃本次重写','quiet')}${button('finish','结束并对照','')}</div>`:''}<textarea id="code" class="code-editor" aria-label="代码" spellcheck="false" autocapitalize="off">${escape(draft.code)}</textarea><div class="editor-footer"><span class="muted">浏览器内运行 · 最长 5 秒</span><div>${button('stop','停止','quiet')}${button('run','▷ 运行自测','primary')}</div></div><div class="test-grid"><label>标准输入 stdin<textarea id="stdin" spellcheck="false">${escape(draft.stdin)}</textarea></label><label>期望输出（可留空）<textarea id="expected" spellcheck="false">${escape(draft.expected)}</textarea></label></div><div id="result" class="result"><span id="result-label">运行后在这里查看结果</span><pre id="stdout"></pre><pre id="stderr"></pre></div></section></div><div id="comparison"></div><div class="section-heading">${button('review','明天再练','quiet')}<span class="muted">样例通过仅代表当前自测，不代表原平台隐藏测试 AC。</span></div>`;
   }
-  function settingsPage(){return `<div class="settings"><div class="hero"><div><span class="eyebrow">YOUR WORKSPACE</span><h1 class="gradient">设置与数据</h1><p class="muted">你写下的内容，由你保留。</p></div></div><section class="glass"><h3>本机数据</h3><p class="muted">当前保存在此浏览器。清除网站数据会移除未备份的内容。</p><div class="setting-row"><div><strong>完整备份</strong><small>包括题目、草稿、重写记录和复习安排</small></div>${button('export','导出备份')}</div><div class="setting-row"><div><strong>恢复备份</strong><small>合并导入，已有冲突不会被覆盖</small></div><label><input id="backup-file" type="file" accept="application/json,.json"></label></div></section><section class="glass"><h3>练习偏好</h3><div class="setting-row"><label for="timezone">日期与复习时区</label><select id="timezone">${['Asia/Shanghai','Asia/Tokyo','Europe/London','America/New_York','America/Los_Angeles'].map(z=>`<option ${z===settings.timezone?'selected':''}>${z}</option>`).join('')}</select></div><div class="setting-row"><span>界面主题</span>${button('theme',settings.theme==='dark'?'切换浅色':'切换深色')}</div></section><section class="glass"><h3>账号与 AI</h3><p class="muted">新版工作区目前保存到此设备。跨端同步和自带 API 正在接入；已有账号可继续使用原网站。</p><a href="/">打开原网站 ↗</a></section></div>`;}
+  function settingsPage(){return `<div class="settings"><div class="hero"><div><span class="eyebrow">YOUR WORKSPACE</span><h1 class="gradient">设置与数据</h1><p class="muted">你写下的内容，由你保留。</p></div></div><section class="glass"><h3>本机数据</h3><p class="muted">当前保存在此浏览器。清除网站数据会移除未备份的内容。</p><div class="setting-row"><div><strong>完整备份</strong><small>包括题目、草稿、重写记录和复习安排</small></div>${button('export','导出备份')}</div><div class="setting-row"><div><strong>恢复备份</strong><small>合并导入，已有冲突不会被覆盖</small></div><label><input id="backup-file" type="file" accept="application/json,.json"></label></div></section><section class="glass"><h3>练习偏好</h3><div class="setting-row"><label for="timezone">日期与复习时区</label><select id="timezone">${['Asia/Shanghai','Asia/Tokyo','Europe/London','America/New_York','America/Los_Angeles'].map(z=>`<option ${z===settings.timezone?'selected':''}>${z}</option>`).join('')}</select></div><div class="setting-row"><span>界面主题</span>${button('theme',settings.theme==='dark'?'切换浅色':'切换深色')}</div></section><section class="glass"><h3>账号与同步</h3>${account?.user?`<p>已连接 ${escape(account.user.login)} · 本机独立保存账号副本</p><p id="sync-status" class="muted">${escape(account.statusText())}</p><div class="actions">${button('sync','立即同步')}${button('conflicts','查看冲突')}${button('merge-guest','合并此设备的匿名练习')}${button('logout','退出账号')}</div><p class="muted">合并只在你点击后进行；冲突内容保留双方，可单独导出。</p>`:`<p class="muted">匿名练习保存在当前浏览器。登录后可以跨设备接续；登录不会自动上传匿名内容。</p>${account?.loginAvailable?'<a href="/api/auth/github/start">使用 GitHub 连接账号 ↗</a>':'<p class="muted">此预览站尚未配置 GitHub 登录；匿名练习可正常使用。</p>'}`}</section><section class="glass"><h3>AI</h3><p class="muted">自带 API 正在接入。</p><a href="/legacy.html">打开原版界面 ↗</a></section></div>`;}
   async function render(){
     root.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.action===`nav-${view}`?'page':'false'));
     $('content').innerHTML=view==='today'?await today():view==='library'?library():view==='practice'?await practice():settingsPage();
@@ -100,11 +100,27 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clock
       }
     });
   }
+  async function showConflicts(){
+    let dialog=$('conflicts-dialog');
+    if(!dialog){dialog=document.createElement('dialog');dialog.id='conflicts-dialog';root.append(dialog);}
+    const conflicts=await store.syncConflicts();
+    dialog.innerHTML=`<div class="dialog-title"><h2>同步冲突 · 保留双方</h2>${button('close-conflicts','关闭')}</div><p>在选择之前，两个版本都会保留。云端彻底删除的内容只能导出后以新题保存。</p>${conflicts.map(c=>`<section><h3>${escape(c.local.kind)} · ${escape(c.local.id)}</h3><div class="compare"><pre>${escape(c.local.payload?.code??JSON.stringify(c.local.payload,null,2))}</pre><pre>${escape(c.remote?.deleted?'云端已彻底删除':c.remote?.payload?.code??JSON.stringify(c.remote?.payload,null,2))}</pre></div><div class="actions">${c.remote?.deleted?'':button('keep-local','保留本地','',c.key)}${button('keep-cloud','保留云端','',c.key)}${button('export-conflict','导出双方内容','',c.key)}</div></section>`).join('')||'<p>当前没有冲突。</p>'}`;
+    if(!dialog.open)dialog.showModal();
+  }
   let deleting=null;
   root.addEventListener('click',async event=>{
     const target=event.target.closest('[data-action]');if(!target)return;
     const action=target.dataset.action,id=target.dataset.id;
     try{
+      if(action==='sync'){await account.sync();await refresh();await render();}
+      if(action==='merge-guest'){const result=await account.mergeGuest();toast(`合并 ${result.imported} 条，保留冲突 ${result.conflicts.length} 条。`);await refresh();await render();}
+      if(action==='logout')await account.logout();
+      if(action==='conflicts')await showConflicts();
+      if(action==='close-conflicts')$('conflicts-dialog').close();
+      if(action==='keep-local'||action==='keep-cloud'){await store.syncResolve(id,action==='keep-local'?'local':'cloud');await account.sync();await showConflicts();}
+      if(action==='export-conflict'){
+        const item=(await store.syncConflicts()).find(c=>c.key===id);const url=URL.createObjectURL(new Blob([JSON.stringify(item,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='acmcoder-conflict.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      }
       if(action.startsWith('nav-'))return await navigate(action.slice(4));
       if(action==='practice')return await navigate('practice',id);
       if(action==='theme'){settings.theme=settings.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=settings.theme;await store.putRecord({kind:'settings',id:'preferences',payload:settings});if(view==='settings')await render();}
@@ -157,5 +173,5 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clock
   const leaving=()=>{if(view==='practice')saveEditor().catch(()=>{});};
   window.addEventListener('pagehide',leaving);
   await render();
-  return {navigate,destroy(){window.removeEventListener('pagehide',leaving);runner.destroy?.();}};
+  return {navigate,async refreshFromCloud(){await refresh();await render();},destroy(){window.removeEventListener('pagehide',leaving);runner.destroy?.();}};
 }

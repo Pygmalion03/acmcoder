@@ -2,6 +2,7 @@ import { InputError, normalizeProblem, problemFromRow, validateSourceUrl } from 
 import { backupManifest, backupPage, restoreOne, restorePreview } from '../../lib/backup.js';
 import { catalogFor, normalizeCatalog, normalizePreferences, preferencesFor, readSettings, patchSetting, rankedRecommendations, recommendationId, validRecommendationId } from '../../lib/recommendations.js';
 import { createRecordRepository } from '../../lib/records.js';
+import { createSyncRepository } from '../../lib/sync.js';
 
 const SESSION_SECONDS = 14 * 24 * 3600;
 const MAX_BODY = 80000;
@@ -93,8 +94,6 @@ async function authCallback(request, env, db) {
   if (!Number.isSafeInteger(github.id) || typeof github.login !== 'string') throw new InputError('GitHub 用户信息无效。', 502);
   const time = now();
   const githubId = String(github.id);
-  const invitedIds = new Set(String(env.INVITED_GITHUB_IDS || '').split(',').map(x => x.trim()).filter(Boolean));
-  if (!invitedIds.has(githubId)) throw new InputError('当前仅受邀用户可登录。', 403);
   const prior = await db.prepare('SELECT id FROM users WHERE github_id = ?').bind(githubId).first();
   await db.prepare('INSERT INTO users (id, github_id, login, avatar_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(github_id) DO UPDATE SET login = excluded.login, avatar_url = excluded.avatar_url, updated_at = excluded.updated_at').bind(prior?.id || crypto.randomUUID(), githubId, github.login.slice(0, 100), String(github.avatar_url || '').slice(0, 500), time, time).run();
   const actualUser = await db.prepare('SELECT id FROM users WHERE github_id = ?').bind(githubId).first();
@@ -468,19 +467,31 @@ async function route({ request, env }) {
     if (method === 'GET' && path.join('/') === 'auth/github/callback') return authCallback(request, env, db);
     if (method === 'GET' && path.join('/') === 'auth/session') {
       const user = await currentUser(request, db);
-      return json({ authenticated: !!user, user: user ? { id: user.id, login: user.login, avatarUrl: user.avatar_url } : null });
+      return json({ loginAvailable:!!(env.GITHUB_CLIENT_ID&&env.GITHUB_CLIENT_SECRET&&env.PUBLIC_ORIGIN===url.origin), authenticated: !!user, user: user ? { id: user.id, login: user.login, avatarUrl: user.avatar_url } : null });
     }
     if (method === 'POST' && path.join('/') === 'auth/logout') return logout(request, db);
     const user = await requireUser(request, db);
     const expectedUser = request.headers.get('x-acm-expected-user');
     if (expectedUser && expectedUser !== user.id) return json({ error: '账号已在其他标签页切换；当前草稿仍保留在本机。', code: 'account_changed' }, 409);
     if (!['GET', 'HEAD'].includes(method)) assertOrigin(request);
-    if (path[0] === 'records') {
+    if (['records','sync'].includes(path[0])) {
       const limits = {};
       if (env.RECORD_USER_BYTES) limits.userBytes = Number(env.RECORD_USER_BYTES);
       if (env.RECORD_GLOBAL_BYTES) limits.globalBytes = Number(env.RECORD_GLOBAL_BYTES);
       const repo = createRecordRepository(db,{limits});
       try {
+        if(path[0]==='sync'){
+          const state=await db.prepare('SELECT completed FROM record_migrations WHERE user_id=?').bind(user.id).first();
+          if(!state?.completed)return json({code:'MIGRATION_REQUIRED',error:'请先完成旧数据迁移。'},409);
+          const sync=createSyncRepository(db,repo);
+          if(method==='GET'&&path[1]==='pull')return json(await sync.pull({userId:user.id,cursor:Number(url.searchParams.get('cursor')||0),limit:Number(url.searchParams.get('limit')||50)}));
+          if(method==='POST'&&path[1]==='push'){
+            const data=await body(request,1200*1024);
+            if(data.protocolVersion!==1)return json({code:'UPGRADE_REQUIRED',error:'请更新客户端，本机内容已保留。'},409);
+            return json(await sync.push({userId:user.id,mutations:data.mutations}));
+          }
+          return json({error:'同步接口不存在。'},404);
+        }
         if (method === 'GET' && path.length === 1) return json(await repo.list({userId:user.id,kind:url.searchParams.get('kind') || undefined,cursor:url.searchParams.get('cursor'),limit:Number(url.searchParams.get('limit') || 50)}));
         if (method === 'GET' && path.length === 3) return json({record:await repo.get({userId:user.id,kind:path[1],id:path[2]})});
         if (method === 'POST') {

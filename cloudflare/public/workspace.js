@@ -2,14 +2,36 @@ import {createBrowserStore} from '/shared/browser-store.js';
 import {createBrowserRunner} from '/shared/runner.js';
 import {mountWorkspace} from '/shared/ui/workspace.js';
 import {migrateBrowserDrafts} from '/shared/legacy-browser.js';
+import {createSyncEngine,createSyncTransport} from '/shared/sync.js';
 
-const frame=document.createElement('iframe');
-frame.hidden=true;frame.setAttribute('sandbox','allow-scripts');frame.title='隔离 Python 运行环境';
-document.body.append(frame);
-const store=createBrowserStore({namespace:'guest'});
-await migrateBrowserDrafts({store,namespace:'guest'});
-const runner=createBrowserRunner({frame});
-const catalog=await fetch('/shared/catalog.json').then(r=>r.ok?r.json():{entries:[]}).catch(()=>({entries:[]}));
-mountWorkspace(document.getElementById('app'),{store,runner,catalog:catalog.entries}).catch(error=>{
-  const message=document.createElement('p');message.textContent=`工作区暂时无法打开：${error.message}。原有数据不会被删除。`;document.getElementById('app').append(message);
-});
+async function main(){
+  const frame=document.createElement('iframe');
+  frame.hidden=true;frame.setAttribute('sandbox','allow-scripts');frame.title='隔离 Python 运行环境';document.body.append(frame);
+  const session=await fetch('/api/auth/session').then(r=>r.ok?r.json():null).catch(()=>null);
+  const user=session?.authenticated?session.user:null;
+  const namespace=user?`account:${user.id}`:'guest';
+  const store=createBrowserStore({namespace,sync:!!user});
+  await migrateBrowserDrafts({store,namespace});
+  const runner=createBrowserRunner({frame});
+  let engine,workspace,timer;
+  const statusText=()=>({saved:'已同步到云端',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'同步已暂停，请重新连接账号',error:'同步暂未完成；本机内容已保留',idle:'已保存到此设备'}[engine?.getStatus().state]||'已保存到此设备');
+  const account={user,loginAvailable:!!session?.loginAvailable,statusText,async sync(){await engine.syncNow();},async mergeGuest(){
+    const guest=createBrowserStore({namespace:'guest'});const result=await store.restoreBackup(await guest.exportBackup());
+    // Incoming restore conflicts remain available after refresh.
+    await store.setMeta('guest-merge-conflicts',result.conflicts);await engine.syncNow();return result;
+  },async logout(){
+    clearTimeout(timer);engine.pause();await store.flush();
+    const response=await fetch('/api/auth/logout',{method:'POST'});if(!response.ok)throw new Error('退出未完成，请重试。');location.reload();
+  }};
+  if(user){
+    engine=createSyncEngine({store,accountId:user.id,transport:createSyncTransport({accountId:user.id}),onStatus(){const el=document.getElementById('sync-status');if(el)el.textContent=statusText();}});
+    await engine.syncNow();
+    store.subscribe(()=>{clearTimeout(timer);timer=setTimeout(()=>engine.syncNow(),1500);});
+    window.addEventListener('online',()=>engine.syncNow());
+    // Refresh between visits, not while the user is entering code.
+    window.addEventListener('focus',async()=>{await engine.syncNow();if(!['code','stdin','expected'].includes(document.activeElement?.id))await workspace?.refreshFromCloud();});
+  }
+  const catalog=await fetch('/shared/catalog.json').then(r=>r.ok?r.json():{entries:[]}).catch(()=>({entries:[]}));
+  workspace=await mountWorkspace(document.getElementById('app'),{store,runner,account,catalog:catalog.entries});
+}
+main().catch(error=>{const message=document.createElement('p');message.textContent=`工作区暂时无法打开：${error.message}。原有数据不会被删除。`;document.getElementById('app').append(message);});

@@ -5,7 +5,7 @@ export const draftId = ({ problemId, language }) => `${problemId}--${language}`;
 export function normalizeDraft(input) {
   const record = validateRecord({ kind:'draft', id:input.id || draftId(input), problemId:input.problemId, language:input.language,
     payload:{ code:input.code,stdin:input.stdin,expected:input.expected,mode:input.mode || 'normal',previousAttemptId:input.previousAttemptId ?? null } });
-  return { ...record.payload, id:record.id,problemId:record.problemId,language:record.language,updatedAt:Date.now() };
+  return { ...record.payload, id:record.id,problemId:record.problemId,language:record.language,updatedAt:Date.now(),syncEpoch:input.syncEpoch||0 };
 }
 export function snapshot(draft, reason) {
   return { ...draft,id:crypto.randomUUID(),reason,createdAt:Date.now() };
