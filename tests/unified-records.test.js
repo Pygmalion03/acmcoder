@@ -117,3 +117,45 @@ test('legacy runs beyond the daily allowance migrate completely without charging
   await repo.apply({userId:'a',mutation:run('new-run')});
   await assert.rejects(repo.apply({userId:'a',mutation:run('over-allowance')}),/DAILY_RUN_LIMIT/);
 });
+
+test('retained pre-quota SQL writers count new runs and roll back every part of an over-limit transaction',async()=>{
+ const {db,sqlite}=createTestDatabase();
+ sqlite.prepare('INSERT INTO record_daily_runs(user_id,day,count) VALUES(?,date(\'now\'),99)').run('a');
+ sqlite.prepare('INSERT INTO record_usage(user_id,bytes) VALUES(?,0)').run('a');
+ const write=id=>db.batch([
+  db.prepare('INSERT INTO record_mutations(user_id,mutation_id,fingerprint,result_json) VALUES(?,?,?,?)').bind('a',id,'fixture-'+id,'{}'),
+  db.prepare('UPDATE record_usage SET bytes=bytes+1024 WHERE user_id=?').bind('a'),
+  db.prepare('UPDATE record_totals SET bytes=bytes+1024 WHERE id=1').bind(),
+  db.prepare(`INSERT INTO unified_records(user_id,kind,id,problem_id,language,revision,updated_at,payload_json,deleted,bytes)
+    VALUES(?,'run',?,'sum','python',1,?,'{"stdout":"42"}',0,512)
+    ON CONFLICT(user_id,kind,id) DO UPDATE SET revision=excluded.revision`).bind('a',id,Date.now()),
+  db.prepare('UPDATE record_mutations SET applied=changes() WHERE user_id=? AND mutation_id=?').bind('a',id),
+ ]);
+ await write('last-slot');assert.equal(sqlite.prepare('SELECT count FROM record_daily_runs').get().count,100);
+ const baseline={bytes:sqlite.prepare('SELECT bytes FROM record_usage').get().bytes,global:sqlite.prepare('SELECT bytes FROM record_totals').get().bytes,changes:sqlite.prepare('SELECT COUNT(*) n FROM record_changes').get().n};
+ await assert.rejects(write('legacy-run-forged-prefix'),/capacity_available: DAILY_RUN_LIMIT/);
+ assert.equal(sqlite.prepare('SELECT bytes FROM record_usage').get().bytes,baseline.bytes);
+ assert.equal(sqlite.prepare('SELECT bytes FROM record_totals').get().bytes,baseline.global);
+ assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM record_changes').get().n,baseline.changes);
+ assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM record_mutations WHERE mutation_id=?').get('legacy-run-forged-prefix').n,0);
+ assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM unified_records WHERE kind=?').get('run').n,1);
+ assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM record_run_reservations').get().n,0);
+});
+
+test('rc2 reservation SQL without the new record column charges once and leaves no reusable reservation',async()=>{
+ const {db,sqlite}=createTestDatabase();
+ const write=id=>db.batch([
+  db.prepare('INSERT INTO record_mutations(user_id,mutation_id,fingerprint,result_json) VALUES(?,?,?,?)').bind('a',id,id,'{}'),
+  db.prepare('INSERT INTO record_daily_runs(user_id,day,count) VALUES(?,date(\'now\'),1) ON CONFLICT(user_id,day) DO UPDATE SET count=count+1 WHERE count<100').bind('a'),
+  db.prepare('UPDATE record_mutations SET run_quota_ok=changes() WHERE user_id=? AND mutation_id=?').bind('a',id),
+  db.prepare('INSERT INTO unified_records(user_id,kind,id,revision,updated_at,payload_json,bytes) VALUES(?,\'run\',?,1,?,\'{}\',256)').bind('a',id,Date.now()),
+  db.prepare('UPDATE record_mutations SET applied=changes() WHERE user_id=? AND mutation_id=?').bind('a',id),
+ ]);
+ await write('rc2-first');await write('rc2-second');
+ assert.equal(sqlite.prepare('SELECT count FROM record_daily_runs').get().count,2);
+ assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM record_run_reservations').get().n,0);
+ sqlite.prepare('UPDATE record_daily_runs SET count=100').run();
+ await assert.rejects(write('rc2-blocked'),/daily_run_available/);
+ assert.equal(sqlite.prepare('SELECT count FROM record_daily_runs').get().count,100);
+ assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM record_run_reservations').get().n,0);
+});

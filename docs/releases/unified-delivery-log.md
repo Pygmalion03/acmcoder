@@ -178,3 +178,11 @@
 - 本地镜像 `acmcoder-app:unified-rc2-041e198`，实际ID `sha256:9ea9ef65b32ca720f1bd854994e19bb05460b8b286b8017d010f7e5d7333dc74`，只验证linux/amd64，没有冒称已发布多架构GHCR digest。第一次临时验收命令漏掉/tmp的exec导致C++ EACCES；修正为已有CI同样的 `rw,exec,nosuid,nodev`，复用原测试卷后，统一界面、版本、持久草稿、Python/C++/Java实际运行全部通过，无源码/镜像重建。容器 `acmcoder-rc2-smoke-041e198`，远端回环36434；构建日志 `/tmp/acmcoder-rc2-docker-build.log`。
 - Mac发行目录 `dist/releases/4.0.0-rc.2`：插件ZIP 5,566,463字节，SHA256 `806887b3088e06469902a79ca09854d8076a061bde7c4931684f1c3ba27d2f4e`；源码tar.gz 688,029字节，SHA256 `f8039dd789c260bc1d9d9e86416178b4ab70aeadfa729aa60852fa7ea501dc9f`。manifest已关联实际部署和本地镜像，正式GHCR/商店/稳定Release仍标未发布。此前rc.1包与最初回退快照继续保留。
 - 后续仍需兼容性与最终发布审计，包括保留的旧固定部署写接口是否同样受新增额度约束；本轮真实边界验收针对新的公开预览接口。真实AI三端/原创导题、双真实账号、用户现有安装实机升级、浏览器Java/C++有界验证及许可证/商店身份等仍未完成；本批候选准备不构成18任务全部交付。
+
+## rc.3 — 保留旧部署的日额度兼容修复
+
+- 真实固定旧部署1ef23ae8（12b5217）在计数已100的临时合成账号下仍接受新run，计数未变；新公开rc.2同请求返回429。确认旧部署绕过额度后，新增0006数据库触发器，识别rc.2已经预留的事务，旧写入由数据库计数，内部历史迁移通过独立字段标记。公开参数与ID不构成豁免。
+- 补充旧SQL、rc.2旧SQL兼容及事务回退检查；相关50/50、完整351/351通过，日志`/tmp/acmcoder-legacy-quota-guard-tests.log`、`/tmp/acmcoder-legacy-quota-guard-full.log`。版本资料更新后的最小检查和打包结果待后续补记。
+- 预览D1原聚合为1账号、13条记录，迁移前书签`0000001c-00000000-000050f6-6b2429f386bd7b7eed8c38c9d92781b6`。REST query两次因触发器解析失败，均核对完整回退；官方import的临时R2上传被连接器域名限制拒绝，CLI没有非交互授权，均未改变数据库。改用临时Worker的D1原子batch，绑定仅为预览D1 `0324388b-a210-4af8-ab6c-6e403ccba1a2`，公共workers.dev与预览入口关闭，定时执行一次后核对新增字段、表和三个触发器。该Worker `acmcoder-preview-migrate-0006-20261001`的定时任务和脚本随后删除成功。正式D1/网站未修改。
+- 真实旧固定部署99→100次上传成功，第101次返回429/CAPACITY_REACHED；当前rc.2返回429/DAILY_RUN_LIMIT。另一个临时账号在同一真实预览库通过rc.2上传100条、重试不重复扣额、草稿可保存、100条完整分页及删除不退额度，预留标记为0。只生成自己测试会话并传入其hash，不读取真实Cookie或Key。精确清理本轮三个测试账号后，聚合仍为1账号、13条记录，测试账号与预留标记为0；这些测试不替代两个真实GitHub账号验收。
+- rc.3候选版本资料已准备，旧rc.1/rc.2及最初回退快照保留。浏览器语言初查：binji/wasm-clang真实Chrome编译含vector/string/map/sort的新程序，链接缺`__lttf2`，中文源码编码警告；另一套Clang22候选仍待探针。CheerpJ社区许可的自托管/再分发限制及Doppio的独立JCL发行产物已核对，但Java实测尚未完成。本条不把语言调查算作L1完成。

@@ -55,11 +55,11 @@ export function createRecordRepository(db, { limits = {}, clock = () => Date.now
       db.prepare('UPDATE record_mutations SET capacity_ok=changes() WHERE user_id=? AND mutation_id=?').bind(userId,m.mutationId),
       db.prepare('UPDATE record_totals SET bytes=bytes+? WHERE id=1 AND bytes+?<=?').bind(delta,delta,limits.globalBytes),
       db.prepare('UPDATE record_mutations SET capacity_ok=changes() WHERE user_id=? AND mutation_id=?').bind(userId,m.mutationId),
-      db.prepare(`INSERT INTO unified_records(user_id,kind,id,problem_id,language,revision,updated_at,payload_json,deleted,bytes)
-        SELECT ?,?,?,?,?,?,?,?,?,? WHERE (?=0 OR EXISTS(SELECT 1 FROM unified_records WHERE user_id=? AND kind=? AND id=? AND revision=? AND deleted=0)) AND (? IS NULL OR EXISTS(SELECT 1 FROM unified_records WHERE user_id=? AND kind='problem' AND id=? AND deleted=0))
+      db.prepare(`INSERT INTO unified_records(user_id,kind,id,problem_id,language,revision,updated_at,payload_json,deleted,bytes,legacy_import)
+        SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE (?=0 OR EXISTS(SELECT 1 FROM unified_records WHERE user_id=? AND kind=? AND id=? AND revision=? AND deleted=0)) AND (? IS NULL OR EXISTS(SELECT 1 FROM unified_records WHERE user_id=? AND kind='problem' AND id=? AND deleted=0))
         ON CONFLICT(user_id,kind,id) DO UPDATE SET problem_id=excluded.problem_id,language=excluded.language,revision=excluded.revision,updated_at=excluded.updated_at,payload_json=excluded.payload_json,deleted=excluded.deleted,bytes=excluded.bytes
         WHERE unified_records.revision=? AND unified_records.deleted=0`)
-        .bind(userId,m.kind,m.id,deleted ? previous.problem_id : m.problemId || null,deleted ? previous.language : m.language || null,revision,now,payload,deleted ? 1 : 0,bytes,m.baseRevision,userId,m.kind,m.id,m.baseRevision,deleted?null:m.problemId||null,userId,m.problemId||null,m.baseRevision),
+        .bind(userId,m.kind,m.id,deleted ? previous.problem_id : m.problemId || null,deleted ? previous.language : m.language || null,revision,now,payload,deleted ? 1 : 0,bytes,legacyImport?1:0,m.baseRevision,userId,m.kind,m.id,m.baseRevision,deleted?null:m.problemId||null,userId,m.problemId||null,m.baseRevision),
       db.prepare(`UPDATE record_mutations SET applied=changes(),result_json=json_set(result_json,'$.cursor',(SELECT COALESCE(MAX(seq),0) FROM record_changes WHERE user_id=?)) WHERE user_id=? AND mutation_id=?`).bind(userId,userId,m.mutationId)
     ];
     if(deleted&&m.kind==='problem'){
@@ -73,7 +73,7 @@ export function createRecordRepository(db, { limits = {}, clock = () => Date.now
     catch (error) {
       const saved = await replay(userId,m);
       if (saved) { if (saved.fingerprint !== fingerprint) throw new Error('MUTATION_REUSED'); return JSON.parse(saved.result_json); }
-      if (/daily_run_available/.test(error.message)) {
+      if (/daily_run_available|DAILY_RUN_LIMIT/.test(error.message)) {
         const quota = new Error('DAILY_RUN_LIMIT');
         quota.retryAt = Date.parse(`${day}T00:00:00Z`) + 86400000;
         throw quota;

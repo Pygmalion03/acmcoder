@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 
-export function createTestDatabase(migrations = ['0001_initial.sql', '0002_restore_entries.sql', '0003_unified_records.sql', '0005_daily_run_quota.sql']) {
+export function createTestDatabase(migrations = ['0001_initial.sql', '0002_restore_entries.sql', '0003_unified_records.sql', '0005_daily_run_quota.sql','0006_legacy_run_quota_guard.sql']) {
   const sqlite = new DatabaseSync(':memory:');
   for (const file of migrations) sqlite.exec(readFileSync(new URL(`../../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
   let pending = Promise.resolve();

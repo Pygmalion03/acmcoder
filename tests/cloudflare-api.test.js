@@ -43,7 +43,7 @@ test('practice history and old plans survive new activity and remain fully expor
 
 function fixture() {
   const sqlite = new DatabaseSync(':memory:');
-  for (const file of ['0001_initial.sql','0002_restore_entries.sql','0003_unified_records.sql','0004_device_auth.sql','0005_daily_run_quota.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
+  for (const file of ['0001_initial.sql','0002_restore_entries.sql','0003_unified_records.sql','0004_device_auth.sql','0005_daily_run_quota.sql','0006_legacy_run_quota_guard.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
   const db = {
     prepare(sql) {
       return {
