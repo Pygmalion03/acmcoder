@@ -2,7 +2,7 @@ import { InputError, normalizeProblem, problemFromRow } from './problem.js';
 import { validRecommendationId } from './recommendations.js';
 
 export const BACKUP_KINDS = ['problems', 'drafts', 'submissions', 'progress', 'plans', 'settings'];
-const MAX = { problems: 200, drafts: 202, submissions: 100, progress: 202, plans: 155, settings: 1 };
+const MAX = { problems: 200, drafts: 202, submissions: Infinity, progress: 202, plans: Infinity, settings: 1 };
 const MAX_ITEM_BYTES = 1800 * 1024;
 const ID = /^[a-zA-Z0-9_-]{1,80}$/;
 const BATCH = /^[0-9a-f]{64}$/;
@@ -84,7 +84,7 @@ export async function backupManifest(db, userId) {
 }
 export async function backupPage(db, userId, kind, offset, limit, revision) {
   if (!BACKUP_KINDS.includes(kind)) throw new InputError('备份类别无效。');
-  int(offset, '分页位置', 0, 1000); int(limit, '分页大小', 1, kind === 'problems' ? 2 : 5);
+  int(offset, '分页位置', 0, Number.MAX_SAFE_INTEGER); int(limit, '分页大小', 1, kind === 'problems' ? 2 : 5);
   int(revision, '备份版本');
   const before = (await db.prepare('SELECT revision FROM user_data_revisions WHERE user_id = ?').bind(userId).first())?.revision || 0;
   if (before !== revision) throw new InputError('导出时数据发生变化，请重试。', 409);

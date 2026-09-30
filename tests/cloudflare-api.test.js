@@ -7,9 +7,29 @@ import { onRequest } from '../cloudflare/functions/api/[[path]].js';
 
 const origin = 'https://acmcoder.example';
 
+test('practice history and old plans survive new activity and remain fully exportable', async () => {
+  const { call, sqlite } = fixture();
+  for (let i = 0; i < 105; i++) sqlite.prepare('INSERT INTO submissions (id,user_id,problem_id,status,code,stdout,stderr,created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(`old-${i}`, 'a', 'sum', 'self_pass', `print(${i})`, String(i), '', 100 + i);
+  sqlite.prepare('INSERT INTO daily_plans (user_id,day,problem_id,completed) VALUES (?,?,?,?)').run('a', '2020-01-01', 'sum', 0);
+  const saved = await call('a', 'submissions', 'POST', { problemId: 'sum', status: 'self_pass', code: 'print(8)', stdout: '8', stderr: '' });
+  assert.equal(saved.status, 201);
+  assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM submissions WHERE user_id=?').get('a').n, 106);
+  assert.equal((await call('a', 'plans/today', 'PUT', { plan: [{ problemId: 'sum', completed: false }] })).status, 200);
+  assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM daily_plans WHERE day=?').get('2020-01-01').n, 1);
+  const exported = await call('a', 'export');
+  assert.equal(exported.data.submissions.length, 106);
+  assert.ok(exported.data.plans.some(plan => plan.day === '2020-01-01'));
+  const first = await call('a', 'submissions');
+  assert.equal(first.data.submissions.length, 100);
+  assert.ok(first.data.nextCursor);
+  const second = await call('a', `submissions?cursor=${encodeURIComponent(first.data.nextCursor)}`);
+  assert.equal(second.data.submissions.length, 6);
+  assert.equal(new Set([...first.data.submissions, ...second.data.submissions].map(row => row.id)).size, 106);
+});
+
 function fixture() {
   const sqlite = new DatabaseSync(':memory:');
-  sqlite.exec(readFileSync(new URL('../cloudflare/migrations/0001_initial.sql', import.meta.url), 'utf8'));
+  for (const file of ['0001_initial.sql','0002_restore_entries.sql','0003_unified_records.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
   const db = {
     prepare(sql) {
       return {
@@ -23,22 +43,46 @@ function fixture() {
         }
       };
     },
-    async batch(statements) { return Promise.all(statements.map(statement => statement.run())); }
+    async batch(statements) {
+      sqlite.exec('BEGIN');
+      try { const results=[]; for (const statement of statements) results.push(await statement.run()); sqlite.exec('COMMIT'); return results; }
+      catch(error) { sqlite.exec('ROLLBACK'); throw error; }
+    }
   };
   for (const [id, token] of [['a', 'a'.repeat(64)], ['b', 'b'.repeat(64)]]) {
     sqlite.prepare('INSERT INTO users (id, github_id, login, created_at, updated_at) VALUES (?, ?, ?, 1, 1)').run(id, id, id);
     sqlite.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, 9999999999, 1)').run(createHash('sha256').update(token).digest('hex'), id);
   }
-  async function call(user, path, method = 'GET', data, requestOrigin = origin) {
+  async function call(user, path, method = 'GET', data, requestOrigin = origin, extraEnv = {}) {
     const headers = { cookie: `__Host-acm_session=${user.repeat(64)}` };
     if (data !== undefined) headers['content-type'] = 'application/json';
     if (method !== 'GET') headers.origin = requestOrigin;
     const request = new Request(`${origin}/api/${path}`, { method, headers, body: data === undefined ? undefined : JSON.stringify(data) });
-    const response = await onRequest({ request, env: { DB: db } });
+    const response = await onRequest({ request, env: { DB: db, ...extraEnv } });
     return { status: response.status, data: await response.json() };
   }
   return { call, sqlite };
 }
+
+test('versioned record API migrates once and prevents legacy clients from overwriting new records', async () => {
+  const { call } = fixture();
+  await call('a','drafts/sum','PUT',{code:'old',stdin:'',expected:'',baseVersion:null});
+  let cursor=null;
+  do {
+    const response=await call('a','records/migrate','POST',{protocolVersion:1,cursor});
+    assert.equal(response.status,200);
+    cursor=response.data.nextCursor;
+  } while(cursor);
+  const records=await call('a','records?kind=draft');
+  assert.equal(records.data.items[0].payload.code,'old');
+  assert.equal((await call('b','records?kind=draft')).data.items.length,0);
+  assert.equal((await call('a','drafts/sum','PUT',{code:'stale',stdin:'',expected:'',baseVersion:1})).status,409);
+  const original=records.data.items[0];
+  const updated=await call('a','records','POST',{protocolVersion:1,mutation:{mutationId:'updated',kind:'draft',id:original.id,problemId:'sum',language:'python',baseRevision:original.revision,op:'put',payload:{...original.payload,code:'new'}}});
+  assert.equal(updated.status,200);
+  assert.equal(updated.data.applied[0].revision,2);
+  assert.equal((await call('a','records?kind=draft')).data.items[0].payload.code,'new');
+});
 
 test('private problems, drafts, export and plans stay with their owner', async () => {
   const { call } = fixture();
@@ -133,4 +177,54 @@ test('imported recommendations use the same settings row and reject invented pla
   assert.equal((await call('a', 'recommendations/catalog')).data.entries[0].title, '自选题');
   assert.equal((await call('a', 'recommendations/preferences')).data.preferences.dailyCount, 1);
   assert.equal((await call('b', 'recommendations/catalog')).data.entries.length, 30);
+});
+
+test('AI help is owner bound, free-binding only and rate limited before inference', async () => {
+  const { call } = fixture();
+  const created = await call('a', 'problems', 'POST', { title: 'Private', statement: 'Private statement' });
+  const id = created.data.problem.id;
+  const request = { problemId: id, question: '哪里错了？', code: 'print(1)', stdin: '1', expected: '2', stdout: '1', stderr: '', result: '当前样例未通过', history: [] };
+  assert.equal((await call('a', 'ai/help', 'POST', request)).status, 503);
+  assert.equal((await call('b', 'ai/help', 'POST', request, origin, { AI: { run: async () => ({ response: 'never' }) } })).status, 404);
+  const calls = [];
+  const AI = { run: async (model, options) => { calls.push({ model, options }); return { response: '检查输出与期望值。' }; } };
+  const answered = await call('a', 'ai/help', 'POST', request, origin, { AI });
+  assert.equal(answered.status, 200);
+  assert.equal(answered.data.answer, '检查输出与期望值。');
+  assert.equal(calls[0].model, '@cf/qwen/qwen2.5-coder-32b-instruct');
+  assert.match(calls[0].options.messages[1].content, /Private statement/);
+  assert.equal((await call('a', 'ai/help', 'POST', request, origin, { AI })).status, 429);
+  assert.equal(calls.length, 1);
+});
+
+test('batch delete removes only selected owned problems', async () => {
+  const { call } = fixture();
+  const one = (await call('a', 'problems', 'POST', { title: 'One' })).data.problem.id;
+  const two = (await call('a', 'problems', 'POST', { title: 'Two' })).data.problem.id;
+  const other = (await call('b', 'problems', 'POST', { title: 'Other' })).data.problem.id;
+  assert.equal((await call('a', 'problems/batch-delete', 'POST', { ids: [one, other] })).status, 404);
+  assert.equal((await call('a', 'problems')).data.problems.length, 2);
+  assert.equal((await call('a', 'problems/batch-delete', 'POST', { ids: [one, two] })).data.deleted, 2);
+  assert.equal((await call('a', 'problems')).data.problems.length, 0);
+  assert.equal((await call('b', 'problems')).data.problems.length, 1);
+});
+
+test('public LeetCode fetch uses only official endpoints and reports failures as JSON', async () => {
+  const { call } = fixture();
+  const originalFetch = globalThis.fetch;
+  const urls = [];
+  globalThis.fetch = async url => {
+    urls.push(url);
+    return url.startsWith('https://leetcode.cn/') ? new Response('', { status: 403 }) : Response.json({ data: { question: { title: 'Two Sum', content: '<p>Find pair.</p>' } } });
+  };
+  try {
+    const fetched = await call('a', 'import/fetch', 'POST', { url: 'https://leetcode.cn/problems/two-sum/' });
+    assert.equal(fetched.status, 200);
+    assert.equal(fetched.data.statement, 'Find pair.');
+    assert.deepEqual(urls, ['https://leetcode.cn/graphql/', 'https://leetcode.com/graphql/']);
+    globalThis.fetch = async () => new Response('', { status: 403 });
+    const failed = await call('a', 'import/fetch', 'POST', { url: 'https://leetcode.cn/problems/two-sum/' });
+    assert.equal(failed.status, 422);
+    assert.match(failed.data.error, /HTTP 403/);
+  } finally { globalThis.fetch = originalFetch; }
 });

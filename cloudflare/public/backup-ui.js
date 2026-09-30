@@ -47,7 +47,7 @@ function parseBackup(data) {
       result.settings = data.schemaVersion === 1 ? [data.settings || {}] : data.settings;
     } else result[kind] = data[kind];
     if (!Array.isArray(result[kind])) throw new Error(`${backupLabels[kind]}数据缺失或不是数组。`);
-    if (result[kind].length > { problems: 200, drafts: 202, submissions: 100, progress: 202, plans: 155, settings: 1 }[kind]) throw new Error(`${backupLabels[kind]}超过本站数量上限。`);
+    if (result[kind].length > { problems: 200, drafts: 202, submissions: Infinity, progress: 202, plans: Infinity, settings: 1 }[kind]) throw new Error(`${backupLabels[kind]}超过本站数量上限。`);
   }
   return result;
 }

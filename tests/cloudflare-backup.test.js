@@ -7,9 +7,24 @@ import { onRequest } from '../cloudflare/functions/api/[[path]].js';
 
 const origin = 'https://acmcoder.example';
 const batchId = 'a'.repeat(64);
+
+test('backup pages and restores do not truncate long-lived history at legacy limits', async () => {
+  const { sqlite,call,restore } = fixture();
+  for (let i=0;i<1006;i++) sqlite.prepare('INSERT INTO submissions(id,user_id,problem_id,status,code,stdout,stderr,created_at) VALUES(?,?,?,?,?,?,?,?)').run(`history-${String(i).padStart(4,'0')}`,'a','sum','self_pass','old','','',i+1);
+  const manifest = (await call('a','backup/manifest')).data;
+  assert.equal(manifest.counts.submissions,1006);
+  const page = await call('a',`backup/submissions?offset=1001&limit=5&revision=${manifest.revision}`);
+  assert.equal(page.status,200);
+  assert.equal(page.data.items.length,5);
+  for (let i=0;i<101;i++) {
+    const result = await restore('b','submissions',{id:`record-${i}`,problemId:'sum',status:'self_pass',code:'saved',stdout:'',stderr:'',createdAt:i+1});
+    assert.equal(result.data.outcome,'created');
+  }
+  assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM submissions WHERE user_id=?').get('b').n,101);
+});
 function fixture() {
   const sqlite = new DatabaseSync(':memory:');
-  for (const file of ['0001_initial.sql', '0002_restore_entries.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
+  for (const file of ['0001_initial.sql', '0002_restore_entries.sql', '0003_unified_records.sql']) sqlite.exec(readFileSync(new URL(`../cloudflare/migrations/${file}`, import.meta.url), 'utf8'));
   const db = {
     prepare(sql) {
       return { bind(...params) {
