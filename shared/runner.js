@@ -1,4 +1,4 @@
-export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=globalThis.window}) {
+export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=globalThis.window,initData={},loadingMessage='Python 加载超时，请检查网络后重试。'}) {
   let ready=false,active=null,loadingTimer=null,runTimer=null;
   const nonce=crypto.randomUUID();
   const send=data=>frame.contentWindow?.postMessage({...data,nonce},'*');
@@ -11,7 +11,7 @@ export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=
   function dispatch() {
     if (!active || !ready || active.sent) return;
     active.sent=true;
-    send({kind:'run',id:active.id,code:active.code,stdin:active.stdin});
+    send({...initData,kind:'run',id:active.id,code:active.code,stdin:active.stdin});
   }
   function onMessage(event) {
     if (event.source !== frame.contentWindow || event.origin !== 'null' || event.data?.nonce !== nonce) return;
@@ -37,7 +37,7 @@ export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=
       const result=new Promise(resolve=>{
         active={id,code,stdin,onEvent,resolve,sent:false};
         emit({kind:'loading'});
-        loadingTimer=setTimeout(()=>finish({kind:'error',text:'Python 加载超时，请检查网络后重试。'}),30000);
+        loadingTimer=setTimeout(()=>finish({kind:'error',text:loadingMessage}),30000);
         abort=()=>cancel(id);
         if(signal?.aborted) abort();
         else {signal?.addEventListener('abort',abort,{once:true});dispatch();}

@@ -3,7 +3,7 @@ import {normalizeProblem} from '../import.js';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const example={kind:'problem',id:'sum',payload:{title:'两个整数相加',statement:'读取两个整数，输出它们的和。\n\n输入：一行两个整数，以空格分隔。\n输出：两个整数的和。',sourceKind:'builtin',tags:['入门','标准输入输出'],rawSamples:['输入：3 5\n输出：8'],cases:[{stdin:'3 5\n',expected:'8\n'}],archivedAt:null}};
-export async function mountWorkspace(root,{store,runner,account,catalog=[],clock=()=>new Date()}) {
+export async function mountWorkspace(root,{store,runner,account,catalog=[],client={},clock=()=>new Date()}) {
   let view='today',selected='sum',filter='mine',query='',draft=null,runId=null,noticeTimer=null,navigation=0;
   let problems=[],settings={theme:'light',timezone:'Asia/Shanghai',count:3},output='',errorOutput='';
   let last=await store.getMeta('location');
@@ -67,25 +67,31 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clock
     const p=problem();
     draft=await store.getDraft({problemId:selected,language:'python'});
     if(!draft)draft=await store.saveDraft({problemId:selected,language:'python',code:templates.python,stdin:p.payload.cases?.[0]?.stdin||'',expected:p.payload.cases?.[0]?.expected||'',mode:'normal'});
-    return `<div class="practice-heading"><div><span class="eyebrow">当前练习 · ACM</span><h2>${escape(p.payload.title)}</h2></div><span id="save-status" class="save-state">已保存到此设备</span></div><div class="workspace"><section class="glass"><div class="panel-head"><strong>题目</strong><span class="tag">完整程序</span></div><div class="statement-body">${escape(p.payload.statement||'暂无题面，请参考原题链接。')}${p.payload.sourceUrl?`<a class="source-url" href="${escape(p.payload.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看原题 ↗</a>`:''}${p.payload.rawSamples?.length?`<h3>原始样例</h3><pre>${escape(p.payload.rawSamples.join('\n\n'))}</pre>`:''}<p class="muted">在右侧编写完整程序，自行处理标准输入输出。</p></div></section><section class="glass editor-panel"><div class="panel-head"><strong>Python</strong><div class="editor-tools">${button('history','历史对照','quiet')}${button('rewrite','↻ 重新手撕','quiet')}</div></div>${draft.mode==='rewrite'?`<div class="rewrite-note"><span>原代码已保留，先独立完成这次重写。</span>${button('discard','放弃本次重写','quiet')}${button('finish','结束并对照','')}</div>`:''}<textarea id="code" class="code-editor" aria-label="代码" spellcheck="false" autocapitalize="off">${escape(draft.code)}</textarea><div class="editor-footer"><span class="muted">浏览器内运行 · 最长 5 秒</span><div>${button('stop','停止','quiet')}${button('run','▷ 运行自测','primary')}</div></div><div class="test-grid"><label>标准输入 stdin<textarea id="stdin" spellcheck="false">${escape(draft.stdin)}</textarea></label><label>期望输出（可留空）<textarea id="expected" spellcheck="false">${escape(draft.expected)}</textarea></label></div><div id="result" class="result"><span id="result-label">运行后在这里查看结果</span><pre id="stdout"></pre><pre id="stderr"></pre></div></section></div><div id="comparison"></div><div class="section-heading">${button('review','明天再练','quiet')}<span class="muted">样例通过仅代表当前自测，不代表原平台隐藏测试 AC。</span></div>`;
+    return `<div class="practice-heading"><div><span class="eyebrow">当前练习 · ACM</span><h2>${escape(p.payload.title)}</h2></div><span id="save-status" class="save-state">已保存到此设备</span></div><div class="workspace"><section class="glass"><div class="panel-head"><strong>题目</strong><span class="tag">完整程序</span></div><div class="statement-body">${escape(p.payload.statement||'暂无题面，请参考原题链接。')}${p.payload.sourceUrl?`<a class="source-url" href="${escape(p.payload.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看原题 ↗</a>`:''}${p.payload.rawSamples?.length?`<h3>原始样例</h3><pre>${escape(p.payload.rawSamples.join('\n\n'))}</pre>`:''}<p class="muted">在右侧编写完整程序，自行处理标准输入输出。</p></div></section><section class="glass editor-panel"><div class="panel-head"><strong>Python</strong><div class="editor-tools">${button('history','历史对照','quiet')}${button('rewrite','↻ 重新手撕','quiet')}</div></div>${draft.mode==='rewrite'?`<div class="rewrite-note"><span>原代码已保留，先独立完成这次重写。</span>${button('discard','放弃本次重写','quiet')}${button('finish','结束并对照','')}</div>`:''}<textarea id="code" class="code-editor" aria-label="代码" spellcheck="false" autocapitalize="off">${escape(draft.code)}</textarea><div class="editor-footer"><span class="muted">${escape(client.description||'浏览器内运行 · 最长 5 秒')}</span><div>${button('stop','停止','quiet')}${button('run','▷ 运行自测','primary')}</div></div><div class="test-grid"><label>标准输入 stdin<textarea id="stdin" spellcheck="false">${escape(draft.stdin)}</textarea></label><label>期望输出（可留空）<textarea id="expected" spellcheck="false">${escape(draft.expected)}</textarea></label></div><div id="result" class="result"><span id="result-label">运行后在这里查看结果</span><pre id="stdout"></pre><pre id="stderr"></pre></div></section></div><div id="comparison"></div><div class="section-heading">${button('review','明天再练','quiet')}<span class="muted">样例通过仅代表当前自测，不代表原平台隐藏测试 AC。</span></div>`;
   }
-  function settingsPage(){return `<div class="settings"><div class="hero"><div><span class="eyebrow">YOUR WORKSPACE</span><h1 class="gradient">设置与数据</h1><p class="muted">你写下的内容，由你保留。</p></div></div><section class="glass"><h3>本机数据</h3><p class="muted">当前保存在此浏览器。清除网站数据会移除未备份的内容。</p><div class="setting-row"><div><strong>完整备份</strong><small>包括题目、草稿、重写记录和复习安排</small></div>${button('export','导出备份')}</div><div class="setting-row"><div><strong>恢复备份</strong><small>合并导入，已有冲突不会被覆盖</small></div><label><input id="backup-file" type="file" accept="application/json,.json"></label></div></section><section class="glass"><h3>练习偏好</h3><div class="setting-row"><label for="timezone">日期与复习时区</label><select id="timezone">${['Asia/Shanghai','Asia/Tokyo','Europe/London','America/New_York','America/Los_Angeles'].map(z=>`<option ${z===settings.timezone?'selected':''}>${z}</option>`).join('')}</select></div><div class="setting-row"><span>界面主题</span>${button('theme',settings.theme==='dark'?'切换浅色':'切换深色')}</div></section><section class="glass"><h3>账号与同步</h3>${account?.user?`<p>已连接 ${escape(account.user.login)} · 本机独立保存账号副本</p><p id="sync-status" class="muted">${escape(account.statusText())}</p><div class="actions">${button('sync','立即同步')}${button('conflicts','查看冲突')}${button('merge-guest','合并此设备的匿名练习')}${button('logout','退出账号')}</div><p class="muted">合并只在你点击后进行；冲突内容保留双方，可单独导出。</p>`:`<p class="muted">匿名练习保存在当前浏览器。登录后可以跨设备接续；登录不会自动上传匿名内容。</p>${account?.loginAvailable?'<a href="/api/auth/github/start">使用 GitHub 连接账号 ↗</a>':'<p class="muted">此预览站尚未配置 GitHub 登录；匿名练习可正常使用。</p>'}`}</section><section class="glass"><h3>AI</h3><p class="muted">自带 API 正在接入。</p><a href="/legacy.html">打开原版界面 ↗</a></section></div>`;}
+  function settingsPage(){return `<div class="settings"><div class="hero"><div><span class="eyebrow">YOUR WORKSPACE</span><h1 class="gradient">设置与数据</h1><p class="muted">你写下的内容，由你保留。</p></div></div><section class="glass"><h3>本机数据</h3><p class="muted">${escape(client.storage||'当前保存在此浏览器。清除网站数据会移除未备份的内容。')}</p><div class="setting-row"><div><strong>完整备份</strong><small>包括题目、草稿、重写记录和复习安排</small></div>${button('export','导出备份')}</div><div class="setting-row"><div><strong>恢复备份</strong><small>合并导入，已有冲突不会被覆盖</small></div><label><input id="backup-file" type="file" accept="application/json,.json"></label></div></section><section class="glass"><h3>练习偏好</h3><div class="setting-row"><label for="timezone">日期与复习时区</label><select id="timezone">${['Asia/Shanghai','Asia/Tokyo','Europe/London','America/New_York','America/Los_Angeles'].map(z=>`<option ${z===settings.timezone?'selected':''}>${z}</option>`).join('')}</select></div><div class="setting-row"><span>界面主题</span>${button('theme',settings.theme==='dark'?'切换浅色':'切换深色')}</div></section><section class="glass"><h3>账号与同步</h3>${account?.user?`<p>已连接 ${escape(account.user.login)} · 本机独立保存账号副本</p><p id="sync-status" class="muted">${escape(account.statusText())}</p><div class="actions">${button('sync','立即同步')}${button('conflicts','查看冲突')}${button('merge-guest','合并此设备的匿名练习')}${button('logout','退出账号')}</div><p class="muted">合并只在你点击后进行；冲突内容保留双方，可单独导出。</p>`:`<p class="muted">匿名练习保存在当前浏览器。登录后可以跨设备接续；登录不会自动上传匿名内容。</p>${account?.loginAvailable?'<a href="/api/auth/github/start">使用 GitHub 连接账号 ↗</a>':'<p class="muted">账号连接尚未配置；匿名练习可正常使用。</p>'}`}</section><section class="glass"><h3>AI</h3><p class="muted">自带 API 正在接入。</p><a href="${escape(client.legacyUrl||'/legacy.html')}">打开原版界面 ↗</a></section></div>`;}
   async function render(){
     root.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.action===`nav-${view}`?'page':'false'));
     $('content').innerHTML=view==='today'?await today():view==='library'?library():view==='practice'?await practice():settingsPage();
     if(view==='practice'){$('code').addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();const el=event.target;el.setRangeText('    ',el.selectionStart,el.selectionEnd,'end');saveEditor().catch(e=>toast(e.message));}});}
   }
-  async function compare(){
-    const attempts=(await store.listAttempts({problemId:selected,language:'python',limit:100})).items;
-    const previous=attempts.find(a=>a.id===draft.previousAttemptId)||attempts.find(a=>a.reason==='before-rewrite');
+  let history=[];let historyCursor=null;
+  async function compare(attemptId,older=false){
+    if(!older&&!attemptId){const page=await store.listAttempts({problemId:selected,language:'python',limit:50});history=page.items;historyCursor=page.nextCursor;}
+    else if(older&&historyCursor){const page=await store.listAttempts({problemId:selected,language:'python',cursor:historyCursor,limit:50});history.push(...page.items);historyCursor=page.nextCursor;}
+    const attempts=history;
+    const previous=attempts.find(a=>a.id===(attemptId||draft.previousAttemptId))||attempts.find(a=>a.reason==='before-rewrite')||attempts[0];
     if(!previous){toast('尚未开始过重写；点击“重新手撕”会先保留当前代码。');return;}
-    $('comparison').innerHTML=`<div class="compare"><section class="glass"><div class="panel-head"><strong>上次代码 · 已保留</strong></div><pre>${escape(previous.code)}</pre></section><section class="glass"><div class="panel-head"><strong>本次代码</strong></div><pre>${escape(draft.code)}</pre></section></div>`;
+    $('comparison').innerHTML=`<div class="section-heading"><label>历史版本 <select id="history-version">${attempts.map(a=>`<option value="${escape(a.id)}" ${a.id===previous.id?'selected':''}>${escape(new Date(a.createdAt).toLocaleString())} · ${a.reason==='before-rewrite'?'重写前':a.reason==='completed-rewrite'?'重写完成':'导入记录'}</option>`).join('')}</select></label>${historyCursor?button('more-history','更早记录','quiet'):''}</div><div class="compare"><section class="glass"><div class="panel-head"><strong>上次代码 · 已保留</strong></div><pre>${escape(previous.code)}</pre></section><section class="glass"><div class="panel-head"><strong>本次代码</strong></div><pre>${escape(draft.code)}</pre></section></div>`;
     $('comparison').scrollIntoView({block:'nearest'});
   }
   async function run(){
     await saveEditor();const captured={...draft};output='';errorOutput='';$('stdout').textContent='';$('stderr').textContent='';$('result').dataset.state='';
     const id=crypto.randomUUID();runId=id;
-    await runner.run({id,language:'python',code:captured.code,stdin:captured.stdin},event=>{
+    let runOutput='',runError='';
+    const result=await runner.run({id,language:'python',code:captured.code,stdin:captured.stdin},event=>{
+      if(event.type==='stdout')runOutput+=event.text;
+      if(event.type==='stderr')runError+=event.text;
       if(runId!==id||view!=='practice'||selected!==captured.problemId)return;
       if(event.type==='loading')$('result-label').textContent='正在加载 Python…';
       if(event.type==='running')$('result-label').textContent='正在运行…';
@@ -99,6 +105,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clock
         $('result').dataset.state=!event.outputLimited&&captured.expected!==''&&matches?'success':'';
       }
     });
+    if(!await store.getMeta(`deleted:${captured.problemId}`))await store.putRecord({kind:'run',id,problemId:captured.problemId,language:captured.language,payload:{code:captured.code,stdin:captured.stdin,expected:captured.expected,stdout:runOutput,stderr:runError,error:result.text||'',status:result.cancelled?'cancelled':result.kind==='error'?'error':result.outputLimited?'output_limit':captured.expected&&runOutput.replace(/\r\n/g,'\n').trimEnd()===captured.expected.replace(/\r\n/g,'\n').trimEnd()?'self_pass':'complete',createdAt:Date.now()}});
   }
   async function showConflicts(){
     let dialog=$('conflicts-dialog');
@@ -130,6 +137,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clock
       if(action==='close-import')$('import-dialog').close();
       if(action==='fetch-import'){
         $('import-note').textContent='正在读取公开题面…';
+        if(client.fetchProblem){const data=await client.fetchProblem($('import-url').value);$('import-title').value=data.title||'';$('import-statement').value=data.statement||'';$('import-samples').value=(data.rawSamples||[]).join('\n\n');$('import-note').textContent='题面与原始样例已读取，请确认后导入。';return;}
         const response=await fetch('/api/import/fetch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:$('import-url').value})});
         const data=await response.json();
         if(!response.ok){$('import-note').textContent=response.status===401?'当前公开抓取需要原网站账号；可以直接粘贴题面和样例，填写内容会保留。':data.error;return;}
@@ -147,6 +155,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clock
       if(action==='finish'){await saveEditor();draft=await store.finishRewrite({problemId:selected,language:'python'});await render();await compare();}
       if(action==='discard'){draft=await store.discardRewrite({problemId:selected,language:'python'});await render();toast('已放弃本次重写，原记录仍保留。');}
       if(action==='history'){await saveEditor();await compare();}
+      if(action==='more-history')await compare($('history-version')?.value,true);
       if(action==='archive'){await store.archiveProblem(id);await refresh();await render();toast('已归档，记录完整保留。');}
       if(action==='restore'){await store.restoreProblem(id);await refresh();await render();}
       if(action==='delete'){deleting=id;$('delete-dialog').showModal();}
@@ -163,8 +172,10 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clock
   });
   root.addEventListener('change',async event=>{
     try{
+      if(event.target.id==='history-version')await compare(event.target.value);
       if(event.target.id==='daily-count'||event.target.id==='timezone'){
-        if(event.target.id==='daily-count')settings.count=Number(event.target.value);else settings.timezone=event.target.value;
+        if(event.target.id==='history-version')await compare(event.target.value);
+      if(event.target.id==='daily-count')settings.count=Number(event.target.value);else settings.timezone=event.target.value;
         await store.putRecord({kind:'settings',id:'preferences',payload:settings});await render();
       }
       if(event.target.id==='backup-file'&&event.target.files[0]){const result=await store.restoreBackup(JSON.parse(await event.target.files[0].text()),{mode:'merge'});await refresh();toast(`恢复 ${result.imported} 条，已有 ${result.skipped} 条，冲突 ${result.conflicts.length} 条（未覆盖）。`);}

@@ -2,8 +2,14 @@
   "manifest_version": 3,
   "name": "ACMCoder",
   "version": "3.0.4",
-  "description": "Capture LeetCode problem text into the local ACMCoder memory store.",
-  "permissions": ["activeTab", "scripting", "sidePanel", "storage", "tabs"],
+  "description": "LeetCode ACM practice with offline Python, durable drafts and rewrite history.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "storage",
+    "tabs"
+  ],
   "host_permissions": [
     "https://leetcode.cn/*",
     "https://leetcode.com/*",
@@ -16,13 +22,27 @@
     "default_title": "ACMCoder"
   },
   "side_panel": {
-    "default_path": "sidebar.html"
+    "default_path": "workspace.html"
   },
   "content_scripts": [
     {
-      "matches": ["https://leetcode.cn/problems/*", "https://leetcode.com/problems/*"],
-      "js": ["content-script.js"],
+      "matches": [
+        "https://leetcode.cn/problems/*",
+        "https://leetcode.com/problems/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "sandbox": {
+    "pages": [
+      "runner/index.html"
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; frame-src 'self';",
+    "sandbox": "sandbox allow-scripts; default-src 'none'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src blob:; connect-src 'none'; object-src 'none';"
+  }
 }

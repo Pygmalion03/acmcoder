@@ -217,6 +217,7 @@
     const response = await fetch(`${origin}/graphql/`, {
       method: "POST",
       credentials: "include",
+      signal: AbortSignal.timeout(10000),
       headers: {
         "content-type": "application/json",
       },
@@ -260,6 +261,7 @@
   }
 
   async function captureLeetCodeProblem() {
+    const capturedUrl = location.href;
     const slug = getSlug();
     let question = null;
     try {
@@ -274,9 +276,10 @@
     const tags = normalizeTags(question);
     const difficulty = normalizeDifficulty(question?.difficulty || getDifficulty());
 
+    if(location.href!==capturedUrl||getSlug()!==slug)throw new Error("读取期间页面已切题，请再次读取。");
     return {
       source: "leetcode",
-      url: location.href,
+      url: capturedUrl,
       slug,
       frontendId: question?.questionFrontendId || "",
       title: question?.translatedTitle || question?.title || getTitle() || slug,

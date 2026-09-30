@@ -43,6 +43,8 @@ docker compose -f docker-compose.prebuilt.yml down
 
 ## 安装浏览器插件
 
+统一版开发预览已经支持免本地部署的离线 Python，使用生成目录 `dist/extension/`，不能直接加载新版源码目录。构建、安装和当前能力见 [离线插件说明](docs/extension-runtime.md)。下文为稳定版 v3.0.4 的本地插件安装方式。
+
 插件目前先走手动加载，还没有发布到 Edge Add-ons 或 Chrome Web Store。插件目录是源码里的：
 
 ```text

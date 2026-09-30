@@ -6,7 +6,7 @@ test("edge extension manifest exposes a side panel on leetcode pages", () => {
   const manifest = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
 
   assert.equal(manifest.manifest_version, 3);
-  assert.equal(manifest.side_panel.default_path, "sidebar.html");
+  assert.equal(manifest.side_panel.default_path, "workspace.html");
   assert.ok(manifest.permissions.includes("sidePanel"));
   assert.ok(manifest.permissions.includes("scripting"));
   assert.ok(manifest.host_permissions.includes("https://leetcode.cn/*"));
