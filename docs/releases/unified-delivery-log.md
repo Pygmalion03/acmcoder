@@ -12,7 +12,7 @@
 
 ## 执行状态
 
-W0 完成（15/15），进入 W1；其他任务尚未完成。计划总入口：`docs/superpowers/plans/2026-09-30-unified-product-roadmap.md`。
+截至下文最新记录：W0 完成；网站、插件、本地/Docker 的统一练习和设备同步已完成多条真实闭环。各任务仍按其剩余验收条件判断，不能据此宣布 W1–W6、E1–E3、S1–S3 全部完成；A1/A2、L1、R1/R2 尚待推进。计划总入口：`docs/superpowers/plans/2026-09-30-unified-product-roadmap.md`。
 
 ## W1 — 统一记录与保留策略
 
@@ -72,3 +72,11 @@ W0 完成（15/15），进入 W1；其他任务尚未完成。计划总入口：
 - 后续真实旧浏览器迁移验证通过：Python/C++/Java原草稿、未完成重写及原快照恢复，原学习键保留，刷新不重复导入。修正迁移标记按浏览器保存，避免第一个空浏览器阻止其他浏览器导入。临时云测试用户已删除，D1计数确认零；正式账号数据未触碰。
 - 网站公开题面读取改为匿名可用，同源校验、固定官方来源、超时/大小限制和每IP每小时20次读取上限；失败仍可手动导入，插件捕获不消耗该网页读取限额。本地统一页增加相同链接导入适配，复用既有LeetCode抓取器。该补充的真实公开站点抓取随本次部署验证。
 - 检查并补充当前Mutagen会话排除：data/unified、credentials、.wrangler、.dev.vars*、.superpowers、浏览器测试缓存；保留原端点、两端文件、two-way-safe和已有排除，flush后同步正常。正式服务的sudo重启已按S3计划请用户在自己的终端执行。
+
+## 本轮公开部署的最终验证
+
+- 源码提交`2e418ba`已推送至`codex/unified-product`。Pages Git集成部署`949779f5`和重试`ec94f2ef`均在仓库克隆阶段失败，错误包含GnuTLS接收失败、early EOF和index-pack失败；未继续重复相同部署路径。
+- 取Mac已提交源码的`git archive`，在WSL临时隔离目录构建，临时将静态产物与现有API编译为Pages `_worker.js`直接上传。部署`74f078f0-20d8-4f2f-b6d0-bc981a48d36c`成功，对应源码`2e418ba`，未带入工作区原有未提交改动。独立预览D1、域名和Git集成均保留；这是部署恢复路径，后续源码部署仍使用原有Git构建配置。
+- 公开入口`https://acmcoder-unified-preview.pages.dev/`，不可变入口`https://74f078f0.acmcoder-unified-preview.pages.dev/`。真实Mac Chrome验证共享首页及CSP下Python自测通过；匿名粘贴题面/原始样例→练习→运行→刷新后中文题面、样例、代码及stdin保留，无pageerror。截图`/tmp/acmcoder-public-import-fallback.png`。
+- **真实限制：**本轮Cloudflare直接请求leetcode.cn与leetcode.com均失败，界面明确提示可保留原链接并粘贴题面。公开站的官方题面一键抓取不能标为验收通过；已有真实浏览器插件当前页捕获及网站接续证据仍有效，不以模拟抓取测试代替该限制。
+- 公开读取新增匿名额度回归的最小相关检查17项通过；本轮最新完整检查仍为此前305/305，不把后续增量测试描述成又一次全量检查。网站真实GitHub OAuth仍缺独立配置，Codex GitHub插件连接不能代替它。正式43117服务仍active，尚未获得用户执行sudo重启的回复，旧数据实机验收保持未完成。
