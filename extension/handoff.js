@@ -17,8 +17,10 @@ export function installHandoff(){
         validateHandoff(message.records);
         const tab=await chrome.tabs.create({url:'about:blank'});
         const targetOrigin=trusted?SITE_ORIGIN:extensionOrigin;
-        const envelope=await vault.create({records:message.records,source:trusted?'extension':'website',targetOrigin,targetTabId:tab.id});
-        await chrome.tabs.update(tab.id,{url:trusted?`${SITE_ORIGIN}/#handoff=${envelope.nonce}`:chrome.runtime.getURL(`workspace.html#handoff=${envelope.nonce}`)});
+        try{
+          const envelope=await vault.create({records:message.records,source:trusted?'extension':'website',targetOrigin,targetTabId:tab.id});
+          await chrome.tabs.update(tab.id,{url:trusted?`${SITE_ORIGIN}/#handoff=${envelope.nonce}`:chrome.runtime.getURL(`workspace.html#handoff=${envelope.nonce}`)});
+        }catch(error){await chrome.tabs.remove(tab.id).catch(()=>{});throw error;}
         return {opened:true};
       }
       if(message.type==='ACMCODER_HANDOFF_CONSUME'){

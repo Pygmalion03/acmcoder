@@ -1,6 +1,6 @@
 # 统一插件预览：离线 Python
 
-2026-09-30 的统一插件预览使用共享题库、今日、练习、草稿、重写、归档和备份界面。Python 默认在插件内运行，网站和本地服务均可关闭。Java/C++ 暂保留在旧本地侧栏，入口位于设置中的“打开原版界面”。插件商店发布、设备账号连接和匿名网站接续尚未完成。
+2026-09-30 的统一插件预览使用共享题库、今日、练习、草稿、重写、归档和备份界面。Python 默认在插件内运行，网站和本地服务均可关闭。Java/C++ 暂保留在旧本地侧栏，入口位于设置中的“打开原版界面”。同浏览器匿名接续已接入独立预览网站；插件商店发布和设备账号连接尚未完成。
 
 ## 构建与安装
 
@@ -36,3 +36,9 @@ node scripts/build-clients.mjs extension
 - [Sandbox manifest](https://developer.chrome.com/docs/extensions/reference/manifest/sandbox)
 - [Manifest V3要求](https://developer.chrome.com/docs/webstore/program-policies/mv3-requirements/)
 - [远程代码要求](https://developer.chrome.com/docs/extensions/develop/migrate/remote-hosted-code)
+
+## 同浏览器匿名接续
+
+练习页点击“在网站继续”，打开独立预览网站并显示题目、代码和记录数量。确认后写入网站匿名空间；已有不同版本时新建副本，原版本仍在。网站的“在插件继续”打开插件工作区确认导入；随后可关掉网站，继续在插件内离线练习，工具栏侧栏使用相同插件数据。
+
+接续仅在主动点击时发生，不要求网站登录、不自动上传账号云端。URL只带随机短期标识，正文暂存在可信扩展会话存储；五分钟失效、只能消费一次，且绑定确切目标标签页和来源。不同浏览器、未安装插件或失效时使用完整备份导入。当前接续目标是 `https://acmcoder-unified-preview.pages.dev`，生产切换随统一版最终发布进行。
