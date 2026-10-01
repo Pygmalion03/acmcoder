@@ -3,6 +3,21 @@ import assert from 'node:assert/strict';
 import {IDBFactory} from 'fake-indexeddb';
 import {createBrowserStore} from '../shared/browser-store.js';
 const create=()=>createBrowserStore({namespace:crypto.randomUUID(),indexedDB:new IDBFactory(),storage:null});
+test('backup preview validates references and reports conflicts without writing; confirmation rechecks newer edits',async()=>{
+  const store=create();
+  await store.putRecord({kind:'problem',id:'one',payload:{title:'One'}});
+  await store.saveDraft({problemId:'one',language:'python',code:'local',stdin:'',expected:''});
+  const incoming={version:3,records:[{kind:'problem',id:'two',payload:{title:'Two'}},{kind:'problem',id:'one',payload:{title:'One'}},{kind:'draft',id:'one--python',problemId:'one',language:'python',payload:{code:'incoming',stdin:'',expected:'',mode:'normal'}}]};
+  const before=await store.exportBackup();
+  const preview=await store.previewBackup(incoming);
+  assert.equal(preview.imported,1);assert.equal(preview.skipped,1);assert.equal(preview.conflicts.length,1);
+  assert.deepEqual(preview.counts,{problem:2,draft:1});
+  const after=await store.exportBackup();assert.deepEqual(after.records,before.records);assert.deepEqual(after.pendingRestores,before.pendingRestores);
+  await store.saveDraft({problemId:'one',language:'python',code:'newer local',stdin:'',expected:''});
+  const result=await store.restoreBackup(incoming);assert.equal(result.conflicts.length,1);
+  assert.equal((await store.getDraft({problemId:'one',language:'python'})).code,'newer local');
+  await assert.rejects(store.previewBackup({version:3,records:[{kind:'draft',id:'two--python',problemId:'two',language:'python',payload:{code:'rewrite',stdin:'',expected:'',mode:'rewrite',previousAttemptId:'missing'}}]}),/缺失.*快照/);
+});
 test('archive preserves drafts; permanent deletion removes only related data; backup restores snapshots',async()=>{
   const store=create();
   await store.putRecord({kind:'problem',id:'one',payload:{title:'One'}});

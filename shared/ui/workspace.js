@@ -2,6 +2,7 @@ import {templates} from '../practice.js';
 import {normalizeProblem} from '../import.js';
 import {createAIPanel} from './ai.js';
 import {resolveProblemRequest,verifyProblemCandidate} from '../ai-import.js';
+import {normalizeBackup} from '../backup.js';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const example={kind:'problem',id:'sum',payload:{title:'两个整数相加',statement:'读取两个整数，输出它们的和。\n\n输入：一行两个整数，以空格分隔。\n输出：两个整数的和。',sourceKind:'builtin',tags:['入门','标准输入输出'],rawSamples:['输入：3 5\n输出：8'],cases:[{stdin:'3 5\n',expected:'8\n'}],archivedAt:null}};
@@ -10,6 +11,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   const languages=client.languages||['python'];let language=languages[0];
   let view='today',selected='sum',filter='mine',query='',draft=null,runId=null,noticeTimer=null,navigation=0;
   let releaseInfo;
+  let pendingBackup=null;
   let legacyProgress=new Map();
   let problems=[],settings={theme:'light',timezone:'Asia/Shanghai',count:3},output='',errorOutput='',importKind='manual',importCases=[],candidates=[];
   let findText=await store.getMeta('problem-request')||'';
@@ -155,6 +157,15 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
     dialog.innerHTML=`<div class="dialog-title"><h2>备份与合并冲突</h2>${button('close-backup-conflicts','关闭')}</div><p>现有记录保持原样。待处理版本保存在此设备，并随完整备份导出；题目可连同历史另存为新题。偏好设置冲突可先导出查看。</p>${pending.map(entry=>`<section class="glass"><h3>${escape(new Date(entry.createdAt).toLocaleString())} · ${entry.conflicts.length} 项冲突</h3>${entry.conflicts.map(c=>{const r=entry.backup.records.find(r=>r.kind===c.kind&&r.id===c.id);return `<p>${escape(r?.kind==='problem'?r.payload.title:r?.kind==='draft'?r.payload.code:c.kind+' · '+c.id)}</p>`;}).join('')}<div class="actions">${entry.conflicts.some(c=>entry.backup.records.some(r=>r.kind===c.kind&&r.id===c.id&&(r.kind==='problem'||r.problemId)))?button('copy-backup-conflict','题目另存为副本','primary',entry.id):''}${button('export-backup-conflict','导出待处理版本','',entry.id)}</div></section>`).join('')||'<p>当前没有待处理的恢复冲突。</p>'}`;
     if(!dialog.open)dialog.showModal();
   }
+  async function previewBackupFile(file){
+    pendingBackup=null;
+    const backup=normalizeBackup(JSON.parse(await file.text()));
+    const preview=await store.previewBackup(backup);
+    let dialog=$('backup-preview-dialog');if(!dialog){dialog=document.createElement('dialog');dialog.id='backup-preview-dialog';root.append(dialog);dialog.addEventListener('close',()=>{pendingBackup=null;});}
+    const labels={problem:'题目',draft:'草稿',attempt:'重写快照',run:'自测记录',review:'复习安排',plan:'每日计划',progress:'进度',settings:'偏好设置',conversation:'AI 对话'};
+    dialog.innerHTML=`<h2>确认恢复备份</h2><p>${escape(file.name)}</p><p>${Object.entries(preview.counts).map(([kind,count])=>`${escape(labels[kind]||kind)} ${count} 条`).join(' · ')}</p><p>将新增 ${preview.imported} 条，已有相同记录 ${preview.skipped} 条，冲突 ${preview.conflicts.length} 条。${preview.pendingRestores?`另有 ${preview.pendingRestores} 组待处理恢复。`:''}</p><p class="muted">确认后合并到当前练习空间。已有不同版本保留，不会被覆盖；确认时会重新检查最新记录。</p><p id="backup-preview-error" role="status"></p><footer>${button('cancel-backup','取消')}${button('confirm-backup','确认合并','primary')}</footer>`;
+    pendingBackup=backup;dialog.showModal();
+  }
   let deleting=null;
   root.addEventListener('click',async event=>{
     const target=event.target.closest('[data-action]');if(!target)return;
@@ -183,6 +194,14 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       if(action==='conflicts')await showConflicts();
       if(action==='close-conflicts')$('conflicts-dialog').close();
       if(action==='backup-conflicts')await showBackupConflicts();
+      if(action==='cancel-backup')$('backup-preview-dialog').close();
+      if(action==='confirm-backup'){
+        const backup=pendingBackup;if(!backup)throw new Error('请重新选择备份文件。');
+        target.disabled=true;
+        try{const result=await store.restoreBackup(backup,{mode:'merge'});$('backup-preview-dialog').close();await refresh();toast(`恢复 ${result.imported} 条，已有 ${result.skipped} 条，冲突 ${result.conflicts.length} 条（未覆盖）。`);if(result.conflicts.length)await showBackupConflicts();}
+        catch(error){$('backup-preview-error').textContent=error.message;throw error;}
+        finally{target.disabled=false;}
+      }
       if(action==='close-backup-conflicts')$('backup-conflicts-dialog').close();
       if(action==='copy-backup-conflict'){target.disabled=true;try{const result=await store.backupCopyConflict(id);await refresh();await showBackupConflicts();toast(`已另存 ${result.problemIds.length} 道题，原题与历史保留。`);}finally{target.disabled=false;}}
       if(action==='export-backup-conflict'){const entry=(await store.getMeta('backup:pending')||[]).find(p=>p.id===id);if(entry)downloadJSON(entry.backup,'acmcoder-pending-restore.json');}
@@ -256,7 +275,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       if(event.target.id==='daily-count')settings.count=Number(event.target.value);else settings.timezone=event.target.value;
         await store.putRecord({kind:'settings',id:'preferences',payload:settings});await render();
       }
-      if(event.target.id==='backup-file'&&event.target.files[0]){const result=await store.restoreBackup(JSON.parse(await event.target.files[0].text()),{mode:'merge'});await refresh();toast(`恢复 ${result.imported} 条，已有 ${result.skipped} 条，冲突 ${result.conflicts.length} 条（未覆盖）。`);if(result.conflicts.length)await showBackupConflicts();}
+      if(event.target.id==='backup-file'&&event.target.files[0]){const file=event.target.files[0];event.target.value='';await previewBackupFile(file);}
     }catch(error){toast(error.message);}
   });
   const leaving=()=>{if(view==='practice')saveEditor().catch(()=>{});};

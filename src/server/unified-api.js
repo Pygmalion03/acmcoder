@@ -6,7 +6,7 @@ import {withoutCredentials} from '../../shared/backup.js';
 import {createSyncEngine} from '../../shared/sync.js';
 import {migrateLegacyProgress} from './legacy-progress.js';
 
-const methods=new Set(['getDraft','saveDraft','startRewrite','finishRewrite','discardRewrite','listAttempts','getRecord','listRecords','putRecord','getMeta','setMeta','archiveProblem','restoreProblem','deleteProblem','exportBackup','restoreBackup','flush','syncConflicts','syncResolve','syncCopyConflict','backupCopyConflict']);
+const methods=new Set(['getDraft','saveDraft','startRewrite','finishRewrite','discardRewrite','listAttempts','getRecord','listRecords','putRecord','getMeta','setMeta','archiveProblem','restoreProblem','deleteProblem','exportBackup','previewBackup','restoreBackup','flush','syncConflicts','syncResolve','syncCopyConflict','backupCopyConflict']);
 export function createUnifiedApi({dataDir,credentialDir,memoryFile,progressFile,cloudFetch}){
   const stores=new Map(),engines=new Map(),timers=new Map(),subscriptions=new Map();
   const auth=createCloudAuth({credentialDir,fetch:cloudFetch});let migration=null;

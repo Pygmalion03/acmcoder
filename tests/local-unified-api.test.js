@@ -73,5 +73,9 @@ test('HTTP unified writes require local session token; the server serves shared 
     assert.equal((await fetch(`${origin}/api/unified/store`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(mutation)})).status,401);
     const token=await fetch(`${origin}/api/session`).then(r=>r.json()).then(r=>r.token);
     assert.equal((await fetch(`${origin}/api/unified/store`,{method:'POST',headers:{'content-type':'application/json','x-acmcoder-token':token},body:JSON.stringify(mutation)})).status,200);
+    const previewRequest={namespace:'local-guest',method:'previewBackup',args:[{version:3,records:[{kind:'problem',id:'new',payload:{title:'待确认'}}]}]};
+    const {result:preview}=await fetch(`${origin}/api/unified/store`,{method:'POST',headers:{'content-type':'application/json','x-acmcoder-token':token},body:JSON.stringify(previewRequest)}).then(r=>r.json());
+    assert.equal(preview.imported,1);assert.deepEqual(preview.counts,{problem:1});
+    assert.equal(await createLocalStore({dataDir:path.join(directory,'learning')}).getRecord({kind:'problem',id:'new'}),null);
   }finally{await new Promise(resolve=>server.close(resolve));await fs.rm(directory,{recursive:true,force:true});}
 });

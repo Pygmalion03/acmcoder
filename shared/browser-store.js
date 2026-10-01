@@ -132,6 +132,45 @@ export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,s
       record.payload.archivedAt=archivedAt;record.updatedAt=Date.now();s('records').put(record);return record;
     }));
   }
+  async function inspectRestore(s,normalized,write){
+    const records=normalized.records;
+    const ids=new Set(records.filter(r=>r.kind==='problem').map(r=>r.id));
+    const result={imported:0,conflicts:[],skipped:0};
+    const conflictingSnapshots=new Set();
+    for(const record of records.filter(r=>r.kind==='attempt')){
+      const existing=await requestValue(s('attempts').get(record.id));
+      if(existing&&['code','stdin','expected','reason','createdAt'].some(k=>existing[k]!==record.payload[k]))conflictingSnapshots.add(record.id);
+    }
+    for(const record of records){
+      const previousId=record.kind==='draft'&&record.payload.previousAttemptId;
+      if(previousId){
+        const previous=records.find(r=>r.kind==='attempt'&&r.id===previousId)||await requestValue(s('attempts').get(previousId));
+        if(!previous||previous.problemId!==record.problemId||previous.language!==record.language)throw new Error('备份缺失匹配的重写快照。');
+      }
+    }
+    for(const record of records){
+      if(record.problemId&&!ids.has(record.problemId)&&!await requestValue(s('records').get(['problem',record.problemId])))throw new Error('备份包含缺失题目的记录。');
+      const problemId=record.kind==='problem'?record.id:record.problemId;
+      if(problemId&&await requestValue(s('meta').get(`deleted:${problemId}`))){result.conflicts.push({kind:record.kind,id:record.id,reason:'deleted'});continue;}
+      if(record.kind==='draft'&&conflictingSnapshots.has(record.payload.previousAttemptId)){result.conflicts.push({kind:record.kind,id:record.id,reason:'snapshot-conflict'});continue;}
+      const table=record.kind==='draft'?'drafts':record.kind==='attempt'?'attempts':'records';
+      const key=table==='records'?[record.kind,record.id]:record.id;
+      const value=table==='records'?record:{...record.payload,id:record.id,problemId:record.problemId,language:record.language,updatedAt:record.updatedAt};
+      const existing=await requestValue(s(table).get(key));
+      if(existing){
+        const comparable=item=>table==='records'?item.payload:{code:item.code,stdin:item.stdin,expected:item.expected,mode:item.mode,reason:item.reason,previousAttemptId:item.previousAttemptId};
+        if(JSON.stringify(comparable(existing))===JSON.stringify(comparable(value)))result.skipped++;
+        else result.conflicts.push({kind:record.kind,id:record.id,current:existing,incoming:value});
+      }else{if(write)s(table).add(value);result.imported++;}
+    }
+    if(write){
+      const pending=await requestValue(s('meta').get('backup:pending'))||[];
+      for(const entry of normalized.pendingRestores||[])if(!pending.some(p=>p.id===entry.id))pending.push(entry);
+      if(result.conflicts.length)pending.push({id:crypto.randomUUID(),createdAt:Date.now(),conflicts:result.conflicts.map(c=>({kind:c.kind,id:c.id,reason:c.reason})),backup:{version:3,records}});
+      s('meta').put(pending,'backup:pending');
+    }
+    return result;
+  }
   return {
     namespace,getDraft,saveDraft,...syncAdapter.api,
     subscribe:listener=>{listeners.add(listener);return ()=>listeners.delete(listener);},
@@ -166,45 +205,16 @@ export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,s
       for(const attempt of await requestValue(s('attempts').getAll()))records.push({kind:'attempt',id:attempt.id,problemId:attempt.problemId,language:attempt.language,revision:0,updatedAt:attempt.createdAt,payload:{code:attempt.code,stdin:attempt.stdin,expected:attempt.expected,reason:attempt.reason,createdAt:attempt.createdAt}});
       return {version:3,exportedAt:new Date().toISOString(),records,pendingRestores:await requestValue(s('meta').get('backup:pending'))||[]};
     }),
+    previewBackup:backup=>read(allStores,async s=>{
+      const normalized=normalizeBackup(backup);
+      const result=await inspectRestore(s,normalized,false);
+      const counts={};for(const record of normalized.records)counts[record.kind]=(counts[record.kind]||0)+1;
+      return {...result,counts,pendingRestores:normalized.pendingRestores?.length||0};
+    }),
     restoreBackup:(backup,{mode='merge'}={})=>enqueue(async()=>{
       if(mode!=='merge')throw new Error('仅支持合并恢复。');
-      const normalized=normalizeBackup(backup),records=normalized.records;
-      const ids=new Set(records.filter(r=>r.kind==='problem').map(r=>r.id));
-      return transaction(allStores,'readwrite',async s=>{
-        const result={imported:0,conflicts:[],skipped:0};
-        const conflictingSnapshots=new Set();
-        for(const record of records.filter(r=>r.kind==='attempt')){
-          const existing=await requestValue(s('attempts').get(record.id));
-          if(existing&&['code','stdin','expected','reason','createdAt'].some(k=>existing[k]!==record.payload[k]))conflictingSnapshots.add(record.id);
-        }
-        for(const record of records){
-          const previousId=record.kind==='draft'&&record.payload.previousAttemptId;
-          if(previousId){
-            const previous=records.find(r=>r.kind==='attempt'&&r.id===previousId)||await requestValue(s('attempts').get(previousId));
-            if(!previous||previous.problemId!==record.problemId||previous.language!==record.language)throw new Error('备份缺失匹配的重写快照。');
-          }
-        }
-        for(const record of records){
-          if(record.problemId&&!ids.has(record.problemId)&&!await requestValue(s('records').get(['problem',record.problemId])))throw new Error('备份包含缺失题目的记录。');
-          const problemId=record.kind==='problem'?record.id:record.problemId;
-          if(problemId&&await requestValue(s('meta').get(`deleted:${problemId}`))){result.conflicts.push({kind:record.kind,id:record.id,reason:'deleted'});continue;}
-          if(record.kind==='draft'&&conflictingSnapshots.has(record.payload.previousAttemptId)){result.conflicts.push({kind:record.kind,id:record.id,reason:'snapshot-conflict'});continue;}
-          const table=record.kind==='draft'?'drafts':record.kind==='attempt'?'attempts':'records';
-          const key=table==='records'?[record.kind,record.id]:record.id;
-          const value=table==='records'?record:{...record.payload,id:record.id,problemId:record.problemId,language:record.language,updatedAt:record.updatedAt};
-          const existing=await requestValue(s(table).get(key));
-          if(existing){
-            const comparable=item=>table==='records'?item.payload:{code:item.code,stdin:item.stdin,expected:item.expected,mode:item.mode,reason:item.reason,previousAttemptId:item.previousAttemptId};
-            if(JSON.stringify(comparable(existing))===JSON.stringify(comparable(value)))result.skipped++;
-            else result.conflicts.push({kind:record.kind,id:record.id,current:existing,incoming:value});
-          }else{s(table).add(value);result.imported++;}
-        }
-        const pending=await requestValue(s('meta').get('backup:pending'))||[];
-        for(const entry of normalized.pendingRestores||[])if(!pending.some(p=>p.id===entry.id))pending.push(entry);
-        if(result.conflicts.length)pending.push({id:crypto.randomUUID(),createdAt:Date.now(),conflicts:result.conflicts.map(c=>({kind:c.kind,id:c.id,reason:c.reason})),backup:{version:3,records}});
-        s('meta').put(pending,'backup:pending');
-        return result;
-      });
+      const normalized=normalizeBackup(backup);
+      return transaction(allStores,'readwrite',s=>inspectRestore(s,normalized,true));
     }),
     backupCopyConflict:id=>enqueue(()=>transaction(allStores,'readwrite',async s=>{
       const pending=await requestValue(s('meta').get('backup:pending'))||[],entry=pending.find(p=>p.id===id);
