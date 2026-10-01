@@ -364,3 +364,15 @@
 - 实际用户43117服务尚未重启，sudo -n要求密码；旧进程unified/session为404而静态包为rc.6，未冒称已有真实升级。只读导出原memory/problems及progress：memory0页、问题5条、progress2条。WSL独立备份/home/pygmalion/backups/acmcoder/before-stable-upgrade-20261001T145002与Mac长期Backups目录均保留，所有文件尺寸/SHA256一致；settings/Key与认证令牌没有进入学习备份。
 - 固定3749604本地静态文件复制到dist/local-web-rc9-prepared，未切换旧静态或重启服务。Mac编写activation脚本再传到WSL，bash -n通过：先校验version/commit，再sudo -v；取得授权后保留旧静态目录、切换预备目录并restart/is-active。已交接用户在自己的Terminal运行，用户密码不进入Agent。
 - 网站设置只预填用户已指定的非秘密地址/模型，未读取密钥框；当前状态尚未设置密钥，已交接手动填写并保存，保持不刷新。自动脚本能取用密码库并不等于浏览器有直接凭据注入接口；不建立临时无认证密钥服务绕过这一限制。截图dist/releases/4.0.0-rc.9/ai-configuration-handoff.jpg。上述真实AI与升级完整门槛继续未完成，未递增版本、重建候选或发布稳定渠道。
+
+## rc.10 — 三端真实AI、旧安装升级与导出并发验收，2026-10-02
+
+- 实际Cloudflare无密钥探针确认运行环境拒绝redirect:error；同目标不带该选项返回401，证明提供商可达。共享transport改为manual并拒绝HTTP/浏览器opaque重定向，临时探针已删除。固定源码e587c0874665d74db5a637b57e433ac1fc148cf2，375/375全量通过，三端/Pages/候选包构建与一致性检查通过。此前77d6129构建在测试阶段因旧断言失败中止；修正后仅使用e587最终产物，不把失败尝试算成功。
+- 实际网站部署8b62cdff-2997-4b54-9b4e-455692cee573，固定网址https://8b62cdff.acmcoder-unified-preview.pages.dev/，主网址版本10/e587已核对。源码包852136字节/SHA256 1fc8f3923db5169a7849c927921704d182c6ff75f710fe23c592b5aefe2dd3b1；插件ZIP33769999字节/SHA256 bb958964781a128cf36808af5a2ede6fdf73756e1ac10705721845b42eff8381。源码pax commit、MIT、ZIP CRC及数字版本4.0.0.10通过。插件12份非许可运行资源与rc.9逐字节一致，旧产物均保留。
+- Docker候选acmcoder-app:unified-rc10-e587c08，本地ID sha256:273281dc37328360241ce0cc90163d1a465f5dde62bab672b2057971193292ab，仅沿用自建隔离四数据卷和回环36440。原Python代码与10 32输入准确保留，版本/commit、MIT和隐私200核对通过；旧测试容器停止保留，registryDigest为空。CFT同ID插件更新为rc.10，旧安装目录另存，原草稿和17行/7行重写历史保留。
+- 用户现有43117服务经用户授权重启并验收rc.9/3749604；原5题导出、2条统计及原始文件逐项一致，迁移标记重复读取不变。实际题库显示旧次数2和1，Python自测8通过，10条学习备份恢复到隔离文件存储payload/引用全部相等。升级前后Mac与WSL独立备份及旧静态目录保留。证据stable-upgrade-verification-2026-10-01.json；这不宣称该服务已激活rc.10。
+- 用户分别配置Key后，网站Cloudflare转发、CFT实装插件直连及现有本地服务界面各完成真实Qwen问答42、取消、随后问答42、真实无效模型404及恢复正确模型连接。三端原代码/输入保持，取消的用户问题保留且没有伪造回答。收据ai-website-ui-2026-10-01.json、ai-extension-ui-2026-10-02.json及ai-local-ui-2026-10-02.json。网站Key所在页面未刷新，其已加载rc.9 UI与rc.10部署后台分别登记。插件实际20条学习导出经密码库内部注入比对不含Key，私有备份已保留；早先本地HTTP学习导出Key排除证据继续使用。
+- 网站真实自然语言生成“极光计数”原创题，预览完整题面/输入输出及三组样例，点击导入进入练习；浏览器Python执行1->1、4->2、7->4全部通过。证据ai-original-finder-ui-2026-10-01.json；不把模型样例通过称作LeetCode隐藏测试AC。
+- 真实galatea0315账号界面导出期间，在第二标签页约0.315秒后完成编辑。为稳定观察，临时延迟IndexedDB事务完成通知10秒，保留实际存储事务及下载链路；17条导出payload/引用均与编辑前完整快照相等，另一标签页刷新确认后续编辑已保存。实际备份不含Key，临时通知钩子移除、测试注释恢复。证据backup-ui-concurrency-2026-10-02.json明确记录仪器范围，未将之前窄范围存储探针冒充产品UI验收。
+- 正式功能验收表12/12通过，实际版本/部署/本地image及产物摘要记于rc10-release-acceptance.json和本地发行manifest。原18任务的GitHub Release/GHCR分发、最终需求审计及对应版本商店材料仍需完成；未更新稳定tag/latest或提交商店。最初回退点、旧候选及私有学习备份全部保留。
+- 文档同步后WSL最小命名/发行检查8/8通过，Git diff空白检查通过；本批仅保存验收与发布指引，不重复未受影响的375项全量或构建。文档提交使用[CF-Pages-Skip]，保持e587产物及当前部署关联；临时备份标签已关闭，网站/本地Key会话保留。

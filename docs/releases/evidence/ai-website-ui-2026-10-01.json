@@ -1,0 +1,20 @@
+{
+  "testedAt": "2026-10-01T15:47:42.579Z",
+  "provider": "Beijing workspace OpenAI-compatible",
+  "model": "qwen3.7-flash-2026-07-15",
+  "connectionTestPassed": true,
+  "answer42Passed": true,
+  "codeAndInputs": {
+    "code": "import sys\nvalues = list(map(int, sys.stdin.read().split()))\nprint(sum(values[1:1 + values[0]]))\n",
+    "expected": "4\n",
+    "stdin": "4\n-1 -2 3 4\n"
+  },
+  "cancelStatus": "问答已取消。",
+  "cancelledQuestionSavedWithoutAnswer": true,
+  "recoveryAnswer42Passed": true,
+  "providerError": "模型服务返回 404，请检查密钥、模型或服务额度。",
+  "errorRecoveryStatus": "连接成功，模型已返回文本。",
+  "passed": true,
+  "deploymentCommit": "e587c0874665d74db5a637b57e433ac1fc148cf2",
+  "scope": "Real website UI: configured key, Cloudflare relay, question, cancel, real 404 model error and recovery; existing page retained without refresh"
+}

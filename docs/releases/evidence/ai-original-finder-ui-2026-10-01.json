@@ -1,0 +1,32 @@
+{
+  "testedAt": "2026-10-01T15:51:09.154Z",
+  "scope": "Real website natural-language finder, configured provider and import UI",
+  "model": "qwen3.7-flash-2026-07-15",
+  "title": "极光计数 · 原创验收",
+  "cases": [
+    {
+      "stdin": "1",
+      "expected": "1",
+      "actual": "1",
+      "passed": true
+    },
+    {
+      "stdin": "4",
+      "expected": "2",
+      "actual": "2",
+      "passed": true
+    },
+    {
+      "stdin": "7",
+      "expected": "4",
+      "actual": "4",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "importedViaNaturalLanguageUI": true,
+  "practiceTitle": "极光计数 · 原创验收",
+  "completeStatementAndInputOutputObserved": true,
+  "samplePreviewObserved": true,
+  "deploymentCommit": "e587c0874665d74db5a637b57e433ac1fc148cf2"
+}

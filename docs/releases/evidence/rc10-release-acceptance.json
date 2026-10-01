@@ -1,0 +1,50 @@
+{
+  "version": "4.0.0-rc.10",
+  "commit": "e587c0874665d74db5a637b57e433ac1fc148cf2",
+  "artifacts": [
+    {
+      "name": "acmcoder-source-v4.0.0-rc.10.tar.gz",
+      "bytes": 852136,
+      "sha256": "1fc8f3923db5169a7849c927921704d182c6ff75f710fe23c592b5aefe2dd3b1"
+    },
+    {
+      "name": "acmcoder-extension-v4.0.0-rc.10.zip",
+      "bytes": 33769999,
+      "sha256": "bb958964781a128cf36808af5a2ede6fdf73756e1ac10705721845b42eff8381"
+    }
+  ],
+  "website": {
+    "deploymentId": "8b62cdff-2997-4b54-9b4e-455692cee573",
+    "url": "https://8b62cdff.acmcoder-unified-preview.pages.dev/",
+    "status": "success"
+  },
+  "images": {
+    "app": {
+      "localTag": "acmcoder-app:unified-rc10-e587c08",
+      "localId": "sha256:273281dc37328360241ce0cc90163d1a465f5dde62bab672b2057971193292ab",
+      "registryDigest": null
+    },
+    "runner": null,
+    "status": "local-only"
+  },
+  "tests": {
+    "total": 375,
+    "passed": 375,
+    "failed": 0
+  },
+  "extension": {
+    "id": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+    "sameInstallPath": true,
+    "previousInstallationPreserved": true,
+    "versionObserved": "4.0.0-rc.10",
+    "previousDraftAndRewriteComparisonObserved": true,
+    "unchangedNonLicenseRuntimeFilesVsRC9": 12
+  },
+  "acceptancePassed": 12,
+  "acceptanceTotal": 12,
+  "boundaries": [
+    "Existing user WSL service remains RC9/3749604; RC10 local candidate built and Docker smoke passed",
+    "No GitHub Release/GHCR publication or marketplace submission",
+    "Final original-roadmap distribution audit pending"
+  ]
+}

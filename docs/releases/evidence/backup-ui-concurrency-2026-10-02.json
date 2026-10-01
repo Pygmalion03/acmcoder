@@ -1,0 +1,42 @@
+{
+  "testedAt": "2026-10-01T16:21:58.952Z",
+  "account": "galatea0315",
+  "version": "4.0.0-rc.10",
+  "commit": "e587c0874665d74db5a637b57e433ac1fc148cf2",
+  "scope": "Actual account product UI export while editing in a second tab; temporary 10-second IDB completion notification delay",
+  "before": {
+    "code": "n = int(input())\nprint((n + 1) // 2)\n",
+    "expected": "4\n",
+    "stdin": "7\n"
+  },
+  "events": [
+    [
+      "acmcoder-acceptance-export-start",
+      1790871765401
+    ],
+    [
+      "acmcoder-acceptance-export-snapshot-ready",
+      1790871765416
+    ],
+    [
+      "acmcoder-acceptance-export-released",
+      1790871775418
+    ]
+  ],
+  "editCompletedAt": 1790871765716,
+  "afterRefresh": {
+    "code": "n = int(input())\nprint((n + 1) // 2)\n# export-edit-acceptance-20261002\n",
+    "expected": "4\n",
+    "stdin": "7\n"
+  },
+  "temporaryInstrumentationRemoved": true,
+  "passed": true,
+  "exportedRecordCount": 17,
+  "exportContainsCoherentOriginalSnapshot": true,
+  "all17PayloadsEqualToPreEditBackup": true,
+  "editPersistedAfterFreshTabReload": true,
+  "backupContainsNoAPIKey": true,
+  "backupSHA256": "5c977d79a0d84418026fe71810e91b8ef85f1014e8d4640713c1638390965939",
+  "testOnlyDraftCommentRestored": true,
+  "backupFile": "/Users/pygmalion/Documents/Codex/Backups/002-acmcoder/export-ui-concurrency-20261002/during-export.json"
+}

@@ -1,0 +1,21 @@
+{
+  "testedAt": "2026-10-01T16:19:23.125Z",
+  "version": "4.0.0-rc.10",
+  "commit": "e587c0874665d74db5a637b57e433ac1fc148cf2",
+  "extensionId": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+  "scope": "Actual installed Chrome for Testing extension UI and direct provider requests",
+  "model": "qwen3.7-flash-2026-07-15",
+  "connectionTestPassed": true,
+  "answer42Passed": true,
+  "cancelStatus": "问答已取消。",
+  "cancelledQuestionRetainedWithoutAnswer": true,
+  "recoveryAnswer42Passed": true,
+  "originalCodeAndInputObservedUnchanged": true,
+  "providerError": "模型服务返回 404，请检查密钥、模型或服务额度。",
+  "errorRecoveryPassed": true,
+  "passed": true,
+  "backupContainsNoAPIKey": true,
+  "exportedRecordCount": 20,
+  "backupSHA256": "c2df8e6defadc89f73fa091d4f58fb8af6de54788ac7ac6ae18bc95817e05285",
+  "backupFile": "/Users/pygmalion/Documents/Codex/Backups/002-acmcoder/extension-ai-20261002/learning-backup.json"
+}

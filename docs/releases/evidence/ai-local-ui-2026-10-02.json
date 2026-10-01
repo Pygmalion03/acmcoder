@@ -1,0 +1,27 @@
+{
+  "testedAt": "2026-10-01T16:28:01.507Z",
+  "scope": "Actual existing user WSL service local browser UI",
+  "version": "4.0.0-rc.9",
+  "commit": "374960477b71effb869732fcfd130ab28bd25cde",
+  "model": "qwen3.7-flash-2026-07-15",
+  "connectionTestPassed": true,
+  "before": {
+    "code": "a, b = map(int, input().split())\nprint(a + b)\n",
+    "expected": "8\n",
+    "stdin": "3 5\n"
+  },
+  "answer42Passed": true,
+  "cancelStatus": "问答已取消。",
+  "recoveryAnswer42Passed": true,
+  "cancelledQuestionRetainedWithoutAnswer": true,
+  "after": {
+    "code": "a, b = map(int, input().split())\nprint(a + b)\n",
+    "expected": "8\n",
+    "stdin": "3 5\n"
+  },
+  "providerError": "模型服务返回 404，请检查密钥、模型或服务额度。",
+  "errorRecoveryPassed": true,
+  "keyReadyAfterRecovery": true,
+  "codeInputExpectedUnchanged": true,
+  "passed": true
+}

@@ -1,0 +1,38 @@
+{
+  "testedAt": "2026-10-01T15:25:41.309Z",
+  "scope": "Actual user WSL service and pre-upgrade learning backup",
+  "passed": true,
+  "version": "4.0.0-rc.9",
+  "commit": "374960477b71effb869732fcfd130ab28bd25cde",
+  "unifiedSessionAvailable": true,
+  "originalMemoryPagesUnchanged": 0,
+  "originalProblemExportUnchanged": 5,
+  "originalProgressFileUnchanged": true,
+  "originalProgressCount": 2,
+  "migratedProgressMatchesOriginal": true,
+  "backupRecordCount": 4,
+  "migrationMarker": {
+    "imported": 4,
+    "skippedDeleted": 0,
+    "conflicts": 0
+  },
+  "backupSHA256": "14069f7bbce6a3bca74a2eca032ed5742672ddda08c91b898e12721883f901b4",
+  "backupFile": "/home/pygmalion/backups/acmcoder/before-stable-upgrade-20261001T145002/after-rc9/unified-learning-backup.json",
+  "previousStaticDirectoryRetained": true,
+  "uiVerification": {
+    "testedAt": "2026-10-01T15:46:15.279Z",
+    "originalCountsObserved": [
+      2,
+      1
+    ],
+    "pythonSelfTest": {
+      "stdout": "8",
+      "passed": true
+    },
+    "afterUIBackupRecords": 10,
+    "restorePayloadEquality": true,
+    "isolatedRestoreDirectory": "/tmp/acmcoder-stable-upgrade-restore-mn9PF6",
+    "backupFile": "/home/pygmalion/backups/acmcoder/before-stable-upgrade-20261001T145002/after-rc9/unified-learning-backup-after-ui.json",
+    "backupSHA256": "f0c99d765074bc16a9065f2df12e903a22bbf2979d6750bafe88aae9f1806d0a"
+  }
+}

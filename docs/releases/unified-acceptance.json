@@ -26,8 +26,8 @@
       "evidence": "Real galatea0315 website account, cloud-saved observed: exported 10 records, restored through native file chooser into a new Chrome for Testing incognito browser space, preview 8 new/2 identical/0 conflicts; today completed, 7/3-line rewrite history and refreshed draft/input observed; re-exported all 10 payloads exactly equal including 2026-10-02 review. evidence/cloud-account-backup-2026-10-01.json. Destination local restore is not destination-account synchronization."
     },
     "backup-edit-during-export": {
-      "status": "blocked",
-      "evidence": "Native IndexedDB 20-round concurrent export/rewrite probe passed with actual RC8 BrowserStore, complete 106 old runs and 40 snapshots restored (evidence/backup-concurrency-2026-10-01.json). W5 product UI editing during real-account export remains unverified; this narrower storage probe does not replace it."
+      "status": "passed",
+      "evidence": "Actual galatea0315 RC10 product UI export while editing in a second tab. Temporary 10-second IndexedDB completion notification delay kept export pending; editing completed 0.315 seconds after export start. All 17 exported payloads/references equal the original complete snapshot; fresh tab reload observed the new draft. Key excluded; instrumentation removed and test comment restored. evidence/backup-ui-concurrency-2026-10-02.json. Notification-delay instrumentation is explicit; prior storage probe remains separate."
     },
     "sync-conflict-delete": {
       "status": "passed",
@@ -38,16 +38,16 @@
       "evidence": "Pygmalion03 in ordinary Chrome and galatea0315 in IAB simultaneously authenticated/cloud-saved. Same problem ID added with distinct payloads; first account export kept all 13 old payloads plus its own record, second account refresh/export retained all 10 original payloads including its distinct same-ID problem. evidence/two-real-accounts-2026-10-01.json; adversarial API isolation remains covered by existing server tests, not claimed as this browser exercise."
     },
     "ai-real-three-clients": {
-      "status": "blocked",
-      "evidence": "Authorized Bitwarden key consumption and real qwen3.7-flash-2026-07-15 shared transport request passed HTTP 200, plus real original candidate validated. Website/installed extension/local UI question, cancel and recovery with provider remain pending; direct transport success is not three-client acceptance. evidence/ai-provider-chat-2026-10-01.json. Real RC9 Docker local HTTP API plus shared createAIClient now passed question, post-dispatch cancellation, same-request retry, real invalid-model error/recovery, no duplicate question, unchanged code/input/expected and key-free learning backup: evidence/ai-local-http-client-2026-10-01.json; this is not browser UI."
+      "status": "passed",
+      "evidence": "Actual qwen3.7-flash-2026-07-15 provider: website UI through Cloudflare RC10/e587c08, installed same-ID RC10/e587c08 extension UI and existing local RC9/3749604 service UI. Each passed connection, answer 42, cancellation, subsequent answer 42, real invalid-model 404 and recovery; original code/input retained. Actual extension 20-record export and earlier local HTTP export exclude Key. evidence/ai-website-ui-2026-10-01.json, ai-extension-ui-2026-10-02.json, ai-local-ui-2026-10-02.json and ai-local-http-client-2026-10-01.json. Local installed version recorded separately; no claim of RC10 activation of that service."
     },
     "ai-original-import": {
-      "status": "blocked",
-      "evidence": "Real qwen3.7-flash-2026-07-15 original candidate passed shared resolveProblemRequest and all three sample sums verified. V3 file UI imported it as AI original into real account, actual Python self-tests and rewrite history passed; evidence/ai-original-candidate-2026-10-01.json. Website natural-language finder with real configured provider remains pending; file import is not that full UI path."
+      "status": "passed",
+      "evidence": "Actual configured website provider through Cloudflare: natural-language request generated aurora odd-number counting original, preview retained complete ACM statement/input/output and 3 model samples, user-facing import button opened practice, actual browser Python runs 1->1, 4->2, 7->4 all passed. evidence/ai-original-finder-ui-2026-10-01.json and rc10 screenshot. Prior real generated sum/file-import evidence retained; this new proof is the actual natural-language UI path."
     },
     "old-install-upgrade": {
-      "status": "blocked",
-      "evidence": "Commits 25814b7 and ce34f0e: real v3.0.4 fixture volumes retained questions, samples and self-test count; migrated synthetic old Key supports real HTTP requests after container restart and stays out of learning backup. User stable WSL upgrade still needs sudo restart; this fixture does not replace it. Actual 43117 API learning exports/progress copied and hashed in WSL and Mac; prepared fixed rc9 static directory and syntax-checked activation script, existing service/static untouched. evidence/stable-upgrade-preparation-2026-10-01.json; user sudo still required."
+      "status": "passed",
+      "evidence": "Actual existing user acmcoder-v3.service activated RC9/3749604 with user sudo. Original 5-problem export, 2 old progress rows and raw files exactly unchanged; migration marker repeated read unchanged. Actual unified UI showed counts 2 and 1, Python self-test output 8 passed; actual 10-record learning export restored into an isolated file store with every payload/reference equal. Before/after learning backups retained in WSL and Mac, previous static directory retained. evidence/stable-upgrade-verification-2026-10-01.json. RC9 accepted here does not mean later candidates have been activated on this stable service."
     }
   }
 }
