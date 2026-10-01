@@ -1,16 +1,16 @@
 # ACMCoder部署：统一候选版与稳定版
 
-公开统一候选版为 **4.0.0-rc.12**，固定源码 **f3c7078**；网站部署1c5fb1e3、同ID插件ZIP及本地候选镜像已关联。375/375测试及三端构建通过。设置与题库布局对齐；AI显示每页最多20条，固定高度滚动，203条隔离会话在翻页/刷新后完整保存与导出，插件原5条真实问答保留。桌面1154像素和侧栏400像素布局没有横向溢出。43117静态界面已更新rc.12，后端仍为已验收的rc.9；旧候选及数据备份保留。12项功能验收证据沿用，本轮不重复未受界面修改影响的真实AI调用与语言实验。稳定版仍为3.0.4；GitHub Release/GHCR公开分发与最终审计仍待完成。
+公开统一候选版为 **4.0.0-rc.13**，固定源码 **e844d9e**；[GitHub Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.13)有源码/插件ZIP/校验和/关联清单，网站部署18a7b08e，同源码app/runner镜像已发布并匿名拉取。384/384及三端构建通过。新用户空数据启动、3.0.4升级/重启/备份恢复/回退再升级通过，实际执行架构为amd64，arm64发行清单存在但未做执行验收。用户43117后端仍rc9、静态rc12；本批没有替换用户安装。插件最终实装及真实设备离线删除重连仍待验。稳定3.0.4/latest不变，见[需求核对](releases/unified-requirement-audit.md)。
 
 源码部署先 `npm ci --ignore-scripts`，再 `node scripts/build-clients.mjs all`，`npm start`；默认127.0.0.1:43117。发布构建提供 `ACMCODER_BUILD_COMMIT` 完整Git SHA，各客户端version.json必须一致。WSL镜像不含.git，使用Mac固定commit归档并传入该SHA构建。
 
 候选Docker app从同一源码构建，生成共享本地界面，保留三语言工具链：
 
 ```sh
-docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.12 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
+docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.13 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
 ```
 
-候选镜像发布后的版本引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.13`，runner对应 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.13`；这两者目前是拟发布名称，尚未有公开digest，不应用“拟发布”命令代替已可下载证明。稳定镜像latest不会随候选构建更新。
+候选引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.13` 和 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.13`。两者registry digest及平台清单见[rc13说明](releases/v4.0.0-rc.13.md)。在公开源码包解压目录执行 `docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml up -d` 即可使用统一版，端口只绑定回环；候选不改变稳定latest。
 
 Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删除迁移表；网站删除与旧设备写入遵循协议1墓碑。数据库、学习数据与credentials不放入源码包或源码同步。完整升级路径见 [升级](upgrade.md)，实际能力见 [矩阵](releases/unified-feature-matrix.md)。
 

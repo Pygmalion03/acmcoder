@@ -397,3 +397,14 @@
 - 本地旧rc.11静态目录保存在dist/local-web-before-rc12-f3c7078，更新完整rc.12静态目录，实际43117显示12/f3c7078及三语言。没有服务端修改，未重启既有rc.9后端。插件旧目录另存e9a318f-rc11-preserved，从实际ZIP更新原路径重载；管理页确认12/同ID。真实扩展页面原7行代码、2 -1/-1 0输入保留，AI旧5条问答仍可见，新滚动和分页按钮显示；没有额外真实AI请求。
 - Docker本地候选acmcoder-app:unified-rc12-f3c7078，image ID sha256:0cec5f5e2e079bbf0f64e19c85d6acf92cff393a4e97fcf39fb2527728419ccd。只停止保留自建rc.11容器，rc.12沿用四个原测试卷及36440回环限制。初次读取在容器尚未监听时socket关闭，确认running后只读检查通过：原10 32草稿、commit、MIT和隐私200保持；没有写入草稿制造保留证据。未发布GHCR/latest。
 - 本批收据rc12-layout-chat-acceptance.json与本地发行manifest保存产物/部署/镜像/回退点，旧rc.11及之前学习备份保留。12项既有功能验收继续有效，本次不声称重复真实AI/语言执行实验；原18任务的公开分发和最终发布审计仍未完成。
+
+## rc13 — 原18节点核对、公开分发与新用户安装，2026-10-02
+
+- 固定e844d9e从Mac Git归档到WSL隔离目录，384/384、三端/Pages/品牌构建及候选一致性通过。新增9项直接调用实际workspace UI处理器及IndexedDB验证午夜/DST/跨年、时区切换、归档恢复/完成不建快照；DOM壳首轮缺createElement和清理顺序失败，修正后通过，未改产品日期逻辑。
+- 原18节点逐项核对表落盘；同步删除门槛改回pending，真实临时插件会话不冒充GitHubOAuth，未以12项绿检查宣布全计划完成。私有before-public-distribution-20261002保存4de75cc Git bundle/源码/原未提交补丁；无关修改不纳入本批。
+- GitHub公开v4.0.0-rc.13候选Release，源码/插件ZIP/SHA256SUMS/release-manifest真实上传，tag精确e844d9e。workflow 36907086039成功，app/runner均amd64+arm64；两镜像空DOCKER_CONFIG匿名拉取，OCI版本/commit与流水线digest匹配，latest与3.0.4清单逐字节相等。全量gh run download先遇非ZIP dockerbuild附件提取错误，改精确image-*仅取所需JSON成功，没有重跑流水线。
+- 新用户无凭据公开下载源码/ZIP，SHA256/ZIP CRC/MIT/源pax commit通过；插件85份非版本文件与rc12相等，仅manifest/version.json变，权限/运行资源/代码不变。源码在全新依赖目录npm ci与三客户端构建，实际三语言42通过，WSL工具链已预装的范围明确。
+- 全空公开app Compose首次启动、API草稿/备份及三语言通过；另外公开3.0.4新建隔离目录，真实旧memory导入→保留升级前副本→rc13迁移→109条V3/104快照/未完成中文重写/2020计划→重启→备份恢复payload/引用相等→升级前副本回退3.0.4旧题导出相等→回到rc13原109条相等。回退不删除升级后的记录。初次helper仅接受200，旧memory创建实际201，修正验收helper及导出动态时间比较后通过，未改产品。公开runner实际产品Docker适配器三语言42通过，未执行arm64。所有测试使用新目录/36441或36443，用户43117不变。
+- 实际IAB网站rc13/galatea0315，1440×900和1280×800无横溢，finder/rows同1188；自建中文题Python输出中文42样例通过，Tab插入四空格不运行，刷新代码/input准确，结束重写两份历史对照，明暗主题可读，减弱动态模拟匹配/按钮transition0s并恢复。测试题归档保留历史；视口/媒体模拟复原，测试标签关闭，没有额外真实AI消耗。OS输入法composition未单独测试。
+- Mac原生Chrome for Testing提示锁屏，停止原生操作；不把IAB当插件实装。S1实装真实GitHub授权/撤销、S2真实离线删除重连、新用户插件安装/回退、当前版本五张插件截图仍待完成。商店文案/权限/隐私/审核流程改为当前事实，MIT/三端AI已完成，历史rc6图片仍明确历史，未改标签冒充最终。Chrome/Edge官方图片及提交要求复查，未接受条款/登记/代付/提交审核。
+- 证据见rc13-public-distribution-2026-10-02.json；关联清单已上传Release，旧rc12、私有学习备份及所有原测试卷保留。公开候选完成不等于完整目标或稳定4.0.0完成。

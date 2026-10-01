@@ -1,0 +1,220 @@
+{
+  "version": "4.0.0-rc.13",
+  "commit": "e844d9e5a1810db27b8d601e3763f24727fc9de7",
+  "date": "2026-10-02",
+  "channel": "public-prerelease",
+  "checks": {
+    "fixedSourceTests": {
+      "passed": 384,
+      "failed": 0
+    },
+    "threeClientBuilds": true,
+    "pagesBuild": true,
+    "candidateConsistency": true,
+    "hashesAndZipCRCAndMIT": true,
+    "anonymousSourceAndZipDownload": true,
+    "anonymousGHCRAppAndRunnerPull": true,
+    "bothRegistryArchitectures": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "actualExecutionArchitectures": [
+      "linux/amd64"
+    ],
+    "latestStillStable304": true,
+    "releaseTagExactSource": true,
+    "cleanSourceInstall": {
+      "passed": true,
+      "sourceDownloadedAnonymously": true,
+      "lockedDependencyInstall": true,
+      "version": "4.0.0-rc.13",
+      "commit": "e844d9e5a1810db27b8d601e3763f24727fc9de7",
+      "realLanguages": [
+        "python",
+        "cpp",
+        "java"
+      ],
+      "hostToolchainsPreinstalled": true
+    },
+    "freshDockerInstall": {
+      "passed": true,
+      "dataInitiallyEmpty": true,
+      "sourceDownloadedFromPublicRelease": true,
+      "productionComposeFiles": true,
+      "onlyOverride": "own test loopback port 36443",
+      "actualLanguages": [
+        "python",
+        "cpp",
+        "java"
+      ]
+    },
+    "dockerUpgradeAndRestart": {
+      "stage": "after-restart",
+      "passed": true,
+      "version": "4.0.0-rc.13",
+      "commit": "e844d9e5a1810db27b8d601e3763f24727fc9de7",
+      "records": 109,
+      "attempts": 104,
+      "legacyMigrationExact": true,
+      "unfinishedRewriteRetained": true,
+      "backupRecordsExact": true,
+      "restoredPayloadsExact": true,
+      "threeActualLanguages": true,
+      "backupSHA256": "75096779a2d0be0921ebe19927bfc1bf380dc1c114482a383360527d2865a998"
+    },
+    "stableRollbackWithPreUpgradeCopy": {
+      "stage": "verify-legacy",
+      "passed": true,
+      "legacyExportExact": true
+    },
+    "forwardRecovery": {
+      "stage": "after-forward-recovery",
+      "passed": true,
+      "version": "4.0.0-rc.13",
+      "commit": "e844d9e5a1810db27b8d601e3763f24727fc9de7",
+      "records": 109,
+      "attempts": 104,
+      "legacyMigrationExact": true,
+      "unfinishedRewriteRetained": true,
+      "backupRecordsExact": true,
+      "restoredPayloadsExact": true,
+      "threeActualLanguages": true,
+      "backupSHA256": "75096779a2d0be0921ebe19927bfc1bf380dc1c114482a383360527d2865a998"
+    },
+    "runner": {
+      "passed": true,
+      "image": "ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.13",
+      "realProductDockerAdapter": true,
+      "checks": [
+        {
+          "language": "python",
+          "status": "AC",
+          "stdout": "42\n"
+        },
+        {
+          "language": "cpp",
+          "status": "AC",
+          "stdout": "42"
+        },
+        {
+          "language": "java",
+          "status": "AC",
+          "stdout": "42"
+        }
+      ]
+    },
+    "publicWebsite": {
+      "passed": true,
+      "browser": "Codex IAB; actual authenticated galatea0315 test space",
+      "desktopViewports": [
+        [
+          1440,
+          900
+        ],
+        [
+          1280,
+          800
+        ]
+      ],
+      "horizontalOverflow": false,
+      "finderAndRowsWidthsAt1440": [
+        1188,
+        1188
+      ],
+      "tabInsertsFourSpacesWithoutRunning": true,
+      "chineseCodeAndInputRetainedAfterReload": true,
+      "realPythonStdout": "中文 42\n",
+      "samplePassed": true,
+      "rewriteHistoryVersions": 2,
+      "themeLightAndDarkObserved": true,
+      "reducedMotionEmulation": {
+        "matched": true,
+        "buttonTransition": "0s",
+        "reset": true
+      },
+      "testProblem": "公开候选 · 中文与键盘验收",
+      "testProblemArchivedWithoutRemovingHistory": true,
+      "scope": "Committed Chinese text entry and Tab tested; native OS IME composition was not separately exercised."
+    },
+    "extensionPackageReuse": {
+      "unchangedFiles": 85,
+      "changedFiles": [
+        "manifest.json",
+        "version.json"
+      ],
+      "codeRuntimeAndPermissionsUnchanged": true,
+      "currentlyInstalledVersion": "4.0.0-rc.12",
+      "rc13InstallationVerified": false
+    }
+  },
+  "website": {
+    "deploymentId": "18a7b08e-b461-4435-a202-dc55099a8268",
+    "url": "https://18a7b08e.acmcoder-unified-preview.pages.dev/",
+    "canonicalUrl": "https://acmcoder-unified-preview.pages.dev/",
+    "status": "verified-http-and-desktop-ui"
+  },
+  "github": {
+    "releaseUrl": "https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.13",
+    "workflowRun": "https://github.com/Pygmalion03/acmcoder/actions/runs/36907086039",
+    "status": "public-prerelease"
+  },
+  "images": {
+    "status": "published-and-anonymously-pulled",
+    "app": {
+      "ref": "ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.13",
+      "registryDigest": "sha256:24491ceb4a02a0c9a5448e9e5a532ba7497be3d62f9d38f0d45ca1dfc9ec8970",
+      "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "executionVerified": [
+        "linux/amd64"
+      ]
+    },
+    "runner": {
+      "ref": "ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.13",
+      "registryDigest": "sha256:d947749b173eb6f95df773fa24de6bec167b66dbf6e6d09aa86621c5203811bf",
+      "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "executionVerified": [
+        "linux/amd64"
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "name": "acmcoder-source-v4.0.0-rc.13.tar.gz",
+      "bytes": 867916,
+      "sha256": "fd8b1ba3c0e998f25848568f1c008291c654cb2db32c9baadf252ee5d38b3c65"
+    },
+    {
+      "name": "acmcoder-extension-v4.0.0-rc.13.zip",
+      "bytes": 33771689,
+      "sha256": "06851c798ab27e08e825f2b7a7042b4820bdf003ccf3b9f762de69e45d0a9bc8"
+    }
+  ],
+  "rollback": {
+    "previousWebsite": "https://1c5fb1e3.acmcoder-unified-preview.pages.dev/",
+    "previousArtifacts": "dist/releases/4.0.0-rc.12",
+    "privateCheckpoint": "/Users/pygmalion/Documents/Codex/Backups/002-acmcoder/before-public-distribution-20261002",
+    "ownDockerTestDirectory": "/tmp/acmcoder-new-user-rc13",
+    "beforeStableData": "/tmp/acmcoder-new-user-rc13/rollback-stable-data",
+    "afterUpgradeData": "/tmp/acmcoder-new-user-rc13/after-upgrade-data",
+    "userStable43117": "untouched"
+  },
+  "remaining": [
+    "real GitHub installed extension authorize/revoke",
+    "real independent-device offline edit/delete/reconnect",
+    "public-download extension fresh install/upgrade/rollback acceptance",
+    "five current-version actual installed extension screenshots"
+  ],
+  "blocker": "Native Chrome for Testing cannot be operated while Mac is locked. IAB website checks worked. User asked to collect actions until they wake; no unlock or secret requested during sleep.",
+  "screenshots": [
+    "dist/releases/4.0.0-rc.13/website-practice-1440.jpg",
+    "dist/releases/4.0.0-rc.13/website-dark-1280.jpg",
+    "dist/releases/4.0.0-rc.13/website-rewrite-1280.jpg"
+  ],
+  "scope": "Actual public distribution and isolated Linux source/Docker product API installation evidence. Does not replace installed extension or real cross-device deletion acceptance."
+}

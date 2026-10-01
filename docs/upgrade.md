@@ -1,8 +1,8 @@
 # 升级、备份与恢复
 
-当前统一候选版为 **4.0.0-rc.12**，网站、插件ZIP及已验收的本地候选镜像对应固定源码 **f3c70783ffaeac9e5b4c906691afa3425ec44ff4**。稳定3.0.4及原有数据应先保留。候选包不是商店自动更新或正式稳定发布；后续文档提交不改变这个已保存候选的源码标识。
+当前公开统一候选版为 **4.0.0-rc.13**，固定源码 **e844d9e5a1810db27b8d601e3763f24727fc9de7**。网站、插件ZIP及GHCR双架构镜像在[候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.13)关联；稳定3.0.4/latest不变。
 
-本机已保存的候选目录为 `dist/releases/4.0.0-rc.12/`。先核对 `SHA256SUMS`：插件ZIP为 `89bec6e5a53203431ba7d3962dcc8f4278c95d1bf1b1f8ad7bb3842ce02503b1`，源码包为 `ba8797729116e58ec9a03fde4e06181761da81a23786fbc821e888a784ce3e94`。公网预览为 https://acmcoder-unified-preview.pages.dev/ ，固定部署为 https://1c5fb1e3.acmcoder-unified-preview.pages.dev/ 。当前候选尚未发布稳定GitHub Release/GHCR；没有可直接拉取的正式4.0.0镜像。
+先核对随包 `SHA256SUMS`：插件ZIP `06851c798ab27e08e825f2b7a7042b4820bdf003ccf3b9f762de69e45d0a9bc8`，源码包 `fd8b1ba3c0e998f25848568f1c008291c654cb2db32c9baadf252ee5d38b3c65`。固定网站为 https://18a7b08e.acmcoder-unified-preview.pages.dev/ 。空数据首次运行及公开3.0.4→rc13→重启→升级前副本回退3.0.4→回到rc13已通过；109条V3记录逐项相等。证据见[rc13收据](releases/evidence/rc13-public-distribution-2026-10-02.json)。最终插件新安装/回退和真实设备删除重连仍待完成，不把Docker演练代替它们。
 
 ## 升级前
 
@@ -28,17 +28,17 @@
 
 旧AI接口首次读取配置时，将 settings.json 中的明文Key迁入独立凭据文件；设置页、问答和今日计划沿用该配置。默认凭据目录是 ~/.local/share/acmcoder/credentials，可用 ACMCODER_CREDENTIAL_DIR 指定，Docker Compose 已使用独立 credentials 挂载。凭据文件0600、新建目录0700，先原子写入并确认持久化，再移除普通设置文件中的Key；失败保留原配置，下次读取重试。定制 settingsFile 的调用方应明确指定独立 credentialDir；测试默认放在该临时目录的 .credentials 子目录。统一练习页仍需要在其自带API设置里自行配置或解锁Key，不会自动将旧服务器Key返回浏览器或同步。
 
-Docker保持原数据挂载路径；不用新空卷替换旧卷。从上述已核对摘要的 **rc.12源码包** 解压出的独立目录构建候选镜像，命令为：
+Docker保持原数据挂载路径；不用新空卷替换旧卷。从上述已核对摘要的 **rc.13源码包** 解压出的独立目录构建候选镜像，命令为：
 
 ```sh
-docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.12 --build-arg ACMCODER_BUILD_COMMIT=f3c70783ffaeac9e5b4c906691afa3425ec44ff4 .
+docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.13 --build-arg ACMCODER_BUILD_COMMIT=e844d9e5a1810db27b8d601e3763f24727fc9de7 .
 ```
 
 准备好原数据导出后停止旧容器，再使用相同数据挂载启动新镜像。需要回退时先保留升级后的记录，使用旧镜像及升级前独立备份；不要删除新记录或降级迁移表来“回滚”。协议不兼容时停止云写入，先升级客户端，设备草稿与队列保留。
 
-上述固定标识只适用于该源码包，不可对不同分支源码强行填入f3c7078冒充同一构建。本项目的构建/运行仍在登记的WSL环境执行；不要在运行镜像里改Git工作树。当前工作区与常驻服务的静态构建须作为同一批升级，不要仅重启旧进程就假定三端版本一致。
+上述固定标识只适用于该源码包，不可对不同分支源码强行填入e844d9e冒充同一构建。本项目的构建/运行仍在登记的WSL环境执行；不要在运行镜像里改Git工作树。当前工作区与常驻服务的静态构建须作为同一批升级，不要仅重启旧进程就假定三端版本一致。
 
-实际已验收镜像为 `acmcoder-app:unified-rc12-f3c7078`，本地image ID `sha256:0cec5f5e2e079bbf0f64e19c85d6acf92cff393a4e97fcf39fb2527728419ccd`。它保留了隔离测试卷的原草稿；这是本地linux/amd64候选镜像，不是GHCR registry digest，也不是用户稳定安装升级完成的证据。
+当前公开镜像为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.13`，registry digest `sha256:24491ceb4a02a0c9a5448e9e5a532ba7497be3d62f9d38f0d45ca1dfc9ec8970`；runner digest和同版本Compose命令见[rc13说明](releases/v4.0.0-rc.13.md)。升级后的数据保留在原挂载目录；演练回退时另挂升级前副本，升级后的109条记录独立保留，回到rc13后完整读取。实际执行验证为linux/amd64。
 
 正式WSL服务 acmcoder-v3.service 需要 sudo 重启才会使用新服务代码。用户现有后端已实机升级并验收rc.9/3749604：5个旧题目导出、2条统计及原始文件保持，Python自测8通过，10条学习记录导出恢复逐项相等；升级前后Mac/WSL备份和旧静态目录保留。本轮只将静态界面更新为rc.12/f3c7078，不涉及服务端修改，因此没有重启后端；旧界面另存dist/local-web-before-rc12-f3c7078。之前的隔离3.0.4同卷升级、合成旧Key迁移及容器重启证据继续保留。
 

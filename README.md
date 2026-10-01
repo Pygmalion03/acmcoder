@@ -2,7 +2,7 @@
 
 ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地/Docker版共用题库、今日安排、自动保存、重新手撕和长期历史；代码由你编写，自测只代表当前样例通过。
 
-当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.13`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。rc.12修正设置API卡片和题库找题区排版；AI对话使用固定高度的滚动区，每页最多显示20条，完整历史继续保存、备份与同步。203条隔离测试历史已在实际浏览器翻到最早并返回最新，保存及备份数量保持203条，问题草稿在翻页与刷新后保留。旧候选与数据备份继续保留。原18节点逐项证据见[需求核对](docs/releases/unified-requirement-audit.md)；真实离线删除重连及最终分发验收仍未完成，尚非完整正式发布。
+当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.13`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。rc.12修正设置API卡片和题库找题区排版；AI对话使用固定高度的滚动区，每页最多显示20条，完整历史继续保存、备份与同步。203条隔离测试历史已在实际浏览器翻到最早并返回最新，保存及备份数量保持203条，问题草稿在翻页与刷新后保留。旧候选与数据备份继续保留。[公开候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.13)已提供源码、插件ZIP和校验和；GHCR双架构镜像已匿名拉取并验证amd64三语言。原18节点逐项证据见[需求核对](docs/releases/unified-requirement-audit.md)；实装插件最终验收及真实离线删除重连仍未完成，尚非完整稳定发布。
 
 - **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python与C++17；登录GitHub可跨设备同步。
 - **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python，不需要本地服务或网站打开。商店未上架。
@@ -74,7 +74,7 @@ docker compose -f docker-compose.prebuilt.yml pull
 docker compose -f docker-compose.prebuilt.yml up -d
 ```
 
-统一候选镜像发布后，在同一数据目录使用版本锁定覆盖文件：
+统一候选镜像已发布，在本版源码解压目录使用版本锁定覆盖文件；升级时沿用原数据目录：
 
 ```bash
 docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml pull
