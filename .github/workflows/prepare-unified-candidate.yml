@@ -23,12 +23,15 @@ jobs:
         run: |
           npm test
           npm run build:clients
+          npm run build:store-assets
           npm run check:release -- --candidate
           npm run pack:release -- --candidate
-      - name: Upload candidate ZIP, source and checksums
+      - name: Upload candidate ZIP, source, checksums and brand assets
         uses: actions/upload-artifact@v4
         with:
           name: unified-candidate-${{ github.sha }}
-          path: dist/releases/
+          path: |
+            dist/releases/
+            dist/store-assets/
           if-no-files-found: error
       # This job does not create a Release, publish images, deploy or change latest.

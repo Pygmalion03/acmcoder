@@ -1,0 +1,8 @@
+body{background:radial-gradient(ellipse at 8% 0%,#8dc5ff42,transparent 46%),radial-gradient(ellipse at 95% 28%,#ba99ff36,transparent 48%),var(--bg)}
+main{max-width:900px;margin:48px auto 80px;padding:0 24px}
+header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+h1,h2,p{margin-top:0}h1{font-size:34px;line-height:1.2;margin-bottom:0;letter-spacing:-.03em}h2{font-size:19px;margin-bottom:14px}p{margin-bottom:14px}section p:last-child{margin-bottom:0}
+.eyebrow{font-size:12px;letter-spacing:.15em;font-weight:700;color:var(--primary);margin-bottom:7px}.lead{font-size:18px}.muted{color:var(--muted);font-size:13px}
+section{margin-top:20px;padding:26px 30px;background:var(--glass);border:1px solid var(--edge);border-radius:24px;box-shadow:0 12px 40px var(--shadow);backdrop-filter:blur(18px)}
+a{text-underline-offset:3px}a:hover{color:var(--secondary)}
+@media(max-width:600px){main{margin:28px auto 40px;padding:0 16px}h1{font-size:28px}section{padding:22px 20px}}
