@@ -24,3 +24,11 @@ test('release checks reject mixed source commits, wrong tag and unaccepted stabl
   assert.deepEqual(validateRelease({...stable,license:true,acceptance}),[]);
   assert.ok(validateRelease({...stable,license:true,acceptance,tag:'v3.0.4'}).length);
 });
+test('stable release requires the two W5 acceptances and cannot substitute a storage probe',()=>{
+  const stable=fixture('4.0.0');
+  const acceptance=Object.fromEntries(REQUIRED_ACCEPTANCE.filter(id=>!['cloud-backup-roundtrip','backup-edit-during-export'].includes(id)).map(id=>[id,{status:'passed',evidence:'Unit fixture only; not product acceptance.'}]));
+  acceptance['native-backup-concurrency']={status:'passed',evidence:'Narrow storage probe only.'};
+  assert.deepEqual(validateRelease({...stable,license:true,acceptance}),['Acceptance pending: cloud-backup-roundtrip','Acceptance pending: backup-edit-during-export']);
+  acceptance['cloud-backup-roundtrip']={status:'passed',evidence:'Unit fixture only.'};
+  assert.deepEqual(validateRelease({...stable,license:true,acceptance}),['Acceptance pending: backup-edit-during-export']);
+});

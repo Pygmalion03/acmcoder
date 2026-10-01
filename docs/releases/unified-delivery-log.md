@@ -314,3 +314,10 @@
 - 新增 `docs/releases/license-decision.md`，给出MIT建议、Apache专利及NOTICE差别、未定状态，以及版权署名所需输入。依据MIT文本、Apache官方第3/4节及Mozilla MPL FAQ核对，未创建根LICENSE。此为完整计划R1要求的具体选择材料，不是许可证已决定或完整法律义务已完成的证明。
 - 对已保存rc.8实际插件ZIP核对CRC、version.json及15份许可/NOTICE，记录逐份体积/摘要和资源清单摘要于 `docs/releases/evidence/rc8-license-inventory.json`；ZIP SHA256仍为23a3b7de340cc857e2d365ff6ea41b85c505af150a2ae9781c84ec0c1162f4bf，未改动。核对上游C++ NOTICE原内容逐字节保留，源码补充实际内存/文件预算、头文件、worker和gzip调整说明；第三方总说明补充固定Pyodide源码获取入口及C++来源/修改脚本。同步完成，源码diff空白检查通过；只有文档/许可声明变动，不重复运行器测试或全量构建。
 - 补充说明尚未进入历史rc.8网站/ZIP/镜像，下一发行构建统一带入。Docker系统软件包的源码获取义务仍需在公开镜像前按实际包确认，不能凭原版权文件存在宣称已完成。真实提供商、第二真实账号、稳定安装升级及正式分发等原18任务门槛保持。
+
+## W5/R1 — 原生浏览器并发备份与完整发行门槛，2026-10-01
+
+- 新增独立 `experiments/backup-consistency` 探针，只在自己的43118预览静态产物临时复制页面/模块；不加入客户端构建或公开站。Mac修改经Mutagen同步后WSL语法检查通过。使用当前共享模块，不改产品存储；两实例共用随机namespace，原生IDBFactory观察代理只记录四表只读事务打开/complete，另一实例在事务打开时立即请求真实startRewrite。
+- Chrome for Testing151.0.7922.34实际原生UI打开探针，20/20轮通过（03:03:58.985–03:03:59.149 UTC）。每轮事件顺序为导出打开→重写请求→导出事务结束→重写完成，导出保留一致的原代码/stdin/expected；后续重写和关联旧快照实际存在。106条2020年旧自测、2020年计划、聊天和40份重写前后快照最终导出150条，恢复到另一随机空间后所有payload相等。没有读普通学习namespace、Key或云账号。
+- 通过原生下载保存实际JSON及JPEG，JSON 5,771字节/SHA256 `1ef6d5158fa2490ff0a96d874a28259674456a235b91943eddc4b254eec8eeec`；截图实际格式JPEG并已视觉检查。结构化收据 `docs/releases/evidence/backup-concurrency-2026-10-01.json` 登记20轮事件及截图/源码摘要。BrowserStore SHA256 `a481013be36642c08f97a77646f5e44cbd608783bfb7c93b79564dca0aac0a0e` 与实际已保存rc.8 ZIP逐字节相同；本轮不是新产品版本、未重复构建/部署。
+- 对照原W5完整要求，发现正式checker此前只有durable-history，未单列真实云账号到新浏览器与导出期间界面编辑。补入 `cloud-backup-roundtrip` / `backup-edit-during-export` 两门槛，均保持blocked并明确窄范围原生存储证据不替代完整集成。新回归证明已有其他passed/原生探针不能跳过这两项；WSL最小发行检查4/4通过。未选择根许可、不更新正式tag/GHCR/latest，旧候选清单保留构建时快照。

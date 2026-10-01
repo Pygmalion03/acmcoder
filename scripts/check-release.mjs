@@ -3,7 +3,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {extensionVersion,releaseLanguages} from './release-version.mjs';
 
-export const REQUIRED_ACCEPTANCE=['anonymous-site','offline-extension','browser-cpp-two-clients','local-docker','durable-history','sync-conflict-delete','two-real-accounts','ai-real-three-clients','ai-original-import','old-install-upgrade'];
+export const REQUIRED_ACCEPTANCE=['anonymous-site','offline-extension','browser-cpp-two-clients','local-docker','durable-history','cloud-backup-roundtrip','backup-edit-during-export','sync-conflict-delete','two-real-accounts','ai-real-three-clients','ai-original-import','old-install-upgrade'];
 export function validateRelease({version,lockVersion,clients,manifest,tag,candidate=false,license=false,acceptance={}}){
   const failures=[];
   if(lockVersion!==version)failures.push('Lockfile version differs from package.json');

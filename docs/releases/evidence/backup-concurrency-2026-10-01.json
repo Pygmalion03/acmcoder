@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-01T03:03:58.985Z",
+  "completedAt": "2026-10-01T03:03:59.149Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+  "namespace": "backup-race-66f2a334-48a6-4258-8b5d-2d05701e8794",
+  "status": "passed",
+  "rounds": [
+    {
+      "round": 1,
+      "records": 110,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 2,
+      "records": 112,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 3,
+      "records": 114,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 4,
+      "records": 116,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 5,
+      "records": 118,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 6,
+      "records": 120,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 7,
+      "records": 122,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 8,
+      "records": 124,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 9,
+      "records": 126,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 10,
+      "records": 128,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 11,
+      "records": 130,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 12,
+      "records": 132,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 13,
+      "records": 134,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 14,
+      "records": 136,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 15,
+      "records": 138,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 16,
+      "records": 140,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 17,
+      "records": 142,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 18,
+      "records": 144,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 19,
+      "records": 146,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    },
+    {
+      "round": 20,
+      "records": 148,
+      "events": [
+        "export-transaction-open",
+        "rewrite-requested-while-export-open",
+        "export-transaction-complete",
+        "rewrite-complete"
+      ],
+      "status": "passed"
+    }
+  ],
+  "finalRecords": 150,
+  "oldRuns": 106,
+  "restoredSnapshots": 40,
+  "restoredPayloadsEqual": true,
+  "boundaries": [
+    "Real native IndexedDB with two BrowserStore instances in one document",
+    "Synthetic fixture only; no user namespace, credential or cloud request",
+    "Not real cloud account export or a product UI editing test"
+  ],
+  "productSource": {
+    "module": "shared/browser-store.js",
+    "sha256": "a481013be36642c08f97a77646f5e44cbd608783bfb7c93b79564dca0aac0a0e",
+    "sameAsActualRc8Zip": true,
+    "runtimeCommit": "e38df559db3f1e16c19dd81bed2b00febf68ce75"
+  },
+  "probeFiles": [
+    {
+      "path": "experiments/backup-consistency/probe.html",
+      "sha256": "5e76aae2e0e110d32a0c515cddf10e595e10fd2a7880155a008404bbebb8870c"
+    },
+    {
+      "path": "experiments/backup-consistency/probe.js",
+      "sha256": "14faa9f1eeb9ddf0e09a31d6ec6143e6c3618fb690252916fe921e27297b6710"
+    }
+  ],
+  "download": {
+    "sha256": "1ef6d5158fa2490ff0a96d874a28259674456a235b91943eddc4b254eec8eeec",
+    "bytes": 5771
+  },
+  "screenshot": {
+    "path": "dist/backup-consistency-acceptance/native-result.jpg",
+    "sha256": "d03a749ba188f2565a92fa8185d2f2c4e9ace550ac518f62a978a45dd40c826e"
+  }
+}

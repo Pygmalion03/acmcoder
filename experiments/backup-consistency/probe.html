@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACMCoder · 备份一致性验收</title>
+<style>body{font:17px system-ui;background:#edf0ff;color:#1c2440;max-width:1100px;margin:40px auto;padding:24px}button{font:inherit;padding:12px 20px;border:0;border-radius:14px;background:#5264cd;color:white;margin:8px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:white;border-radius:18px;padding:24px}p{line-height:1.7}</style>
+<h1>真实浏览器备份一致性</h1>
+<p>使用产品的 BrowserStore 和浏览器原生 IndexedDB。只在随机命名的验收空间写入自建题目，两个独立存储实例并发导出和重写。不会连接云端、读取学习空间或配置密钥。</p>
+<p>这验证实际存储事务，不替代真实账号恢复或产品界面中的并发编辑验收。</p>
+<button id="run">执行 20 轮并发检查</button><button id="export" disabled>下载验收结果</button>
+<pre id="status" role="status">等待启动</pre><pre id="result" aria-label="验收结果"></pre>
+<script type="module" src="./probe.js"></script></html>

@@ -21,6 +21,14 @@
       "status": "passed",
       "evidence": "unified-delivery-log.md: history, backup and recovery milestone 5416774"
     },
+    "cloud-backup-roundtrip": {
+      "status": "blocked",
+      "evidence": "W5 requires real account export to a fresh browser with code, plans and rewrite history comparison. RC8 anonymous extension/site/local backup recovery passed, but is not this account acceptance. Current available IAB/CFT sessions are anonymous."
+    },
+    "backup-edit-during-export": {
+      "status": "blocked",
+      "evidence": "Native IndexedDB 20-round concurrent export/rewrite probe passed with actual RC8 BrowserStore, complete 106 old runs and 40 snapshots restored (evidence/backup-concurrency-2026-10-01.json). W5 product UI editing during real-account export remains unverified; this narrower storage probe does not replace it."
+    },
     "sync-conflict-delete": {
       "status": "passed",
       "evidence": "unified-delivery-log.md: independent real GitHub local/web conflict copying; SQLite deletion coverage"
