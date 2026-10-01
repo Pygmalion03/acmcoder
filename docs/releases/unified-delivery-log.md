@@ -420,3 +420,14 @@
 - 固定auth.js实际调用公网API，Chrome API仅为进程夹具：PKCE403→device start200→未批准token428，STATUS无用户；退出清pending并保留自建learningFixture，没有网站会话或真实批准。初次helper错误把设备详情当作匿名可读，实际要求登录401；修正helper后完整路径通过，产品源码未改。设备秘密仅留进程内，不输出、不进收据。收据明确nativeInstall/githubApproval为false。
 - 当前源码品牌PNG已生成，尺寸/CRC/摘要通过，与rc13品牌像素逐字节相同；商店文案/权限/隐私/审核流程和品牌组成审核准备ZIP，152511字节/SHA256 478a74ad8c8cc004f73b8438b1c36c30a96ec607415a004ac3049886e739d41f。包内清单明确当前原生截图0、submissionReady=false，不以旧rc6画面冒充当前版本，不提交商店。
 - [完整收据](evidence/rc14-zip-device-preparation-2026-10-02.json)。待用户醒来解锁后继续实际插件新安装/真实GitHub授权及撤销/更新重启与回退、真实离线删除重连和五张当前截图；Goal不标完成。Chrome身份固定与MV3生命周期依据分别为[manifest key](https://developer.chrome.com/docs/extensions/reference/manifest/key)及[后台生命周期](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)，未使用长期保持后台存活的额外权限。
+
+
+## rc14 — 同源码公开分发与安装/升级/回退，2026-10-02
+
+- 本轮再次确认Mac锁屏；此前rc13和rc14准备阶段均有同一原生阻塞。没有因为锁屏停止可独立进行的分发：保留33cd7c5准备包至dist/releases/4.0.0-rc.14-pre-public-33cd7c5，修正本版Compose镜像锁定14与下载指引，固定源码5adac6ab53d55087993004f443a06d5b60d19c8e。授权/共享业务代码与已通过393项的33cd7c5相同，本地21项相关检查通过；GitHub同5ad源码Node22全393/393、三端构建、app烟测通过。
+- 推送生产源码分支与新候选tag；Cloudflare部署591372c0-3346-47cf-8ca6-c18f6918ea82 success，主网站实际14/5ad。固定部署HTTP烟测通过匿名会话、保护记录401、隐私CSP及五份C++压缩资源摘要，不冒称新增C++执行或插件实装。
+- GitHub候选Release14最初草稿上传，镜像流水线36914402731全部成功后公开。源码881406字节/SHA256 dc33e289fc25933c1731c71f488eb52ce2ec2c3f53ee42e76ab397945ba43ca3；ZIP33772438字节/SHA256 ec2ba9a6160c5ef9c727f14767872feeb90ce649167f96c60a08abab2dd72e42。WSL无凭据curl实际公开下载源码/ZIP/SHA，摘要、pax、ZIP CRC和4.0.0.14 metadata匹配。tag与三端源码同5ad，未覆盖旧13包。
+- GHCR app/runner双架构index分别46739bac1f1e89bef21352e8d40792eb5ac241b25ab7620d0534ee70bd826ca9、35159220f84ee85973d1f138ba0271c4650ef8ecddc7b44155f5971d8f7f92c0，空DOCKER_CONFIG真实pull通过。registry原始JSON摘要/两架构与流水线匹配，OCI版本/revision匹配。latest与3.0.4原始清单cmp通过；GitHub稳定latest仍3.0.4。
+- 全空公开源码目录直接Compose拉取候选14，默认目录种子/统一界面/持久草稿API/备份/三语言实际运行通过。另复制上一轮自建测试109条数据到新隔离目录，公开13→14→重启→升级前副本回退13→14，每段实际只读导出均109条/104份历史及同一SHA，未完成中文重写保留；每段备份恢复payload/引用相等，14升级后实际三语言42通过。产品Docker适配器在公开runner14三语言42、network none/memory256MiB/pids128通过。实际执行为amd64，不宣称arm64执行。
+- 测试项目acmcoder-public-fresh-rc14/ acmcoder-upgrade-rc14及36445/36444回环端口均隔离；测试完成容器停止、数据与升级前/升级后两目录保留。用户43117服务没有重启，学习数据及原有无关源码修改未动。最终关联release-manifest上传替换候选分发状态，仍明确真实插件/删除重连/当前截图pending。
+- [收据](evidence/rc14-public-distribution-2026-10-02.json)记录最终源、镜像、安装阶段与范围。商店品牌/文案审核准备ZIP本地保留，当前原生截图仍0、submissionReady=false，不发布商店或把旧图改标签。剩余工作依赖原生Mac解锁与真实用户交互，完整Goal不能标完成。

@@ -1,6 +1,6 @@
 # ACMCoder部署：统一候选版与稳定版
 
-公开统一候选版为 **4.0.0-rc.13**，固定源码 **e844d9e**；[GitHub Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.13)有源码/插件ZIP/校验和/关联清单，网站部署18a7b08e，同源码app/runner镜像已发布并匿名拉取。384/384及三端构建通过。新用户空数据启动、3.0.4升级/重启/备份恢复/回退再升级通过，实际执行架构为amd64，arm64发行清单存在但未做执行验收。用户43117后端仍rc9、静态rc12；本批没有替换用户安装。插件最终实装及真实设备离线删除重连仍待验。稳定3.0.4/latest不变，见[需求核对](releases/unified-requirement-audit.md)。
+公开统一候选版为 **4.0.0-rc.14**，固定源码 **5adac6a**；[GitHub Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)关联源码/插件ZIP/校验和/网站591372c0及两套GHCR镜像。GitHub393/393、三端构建与Docker烟测通过，实际匿名下载/拉取及amd64三语言运行通过；空目录首次运行、rc13升级/重启/回退再升级的109条记录保持一致。arm64清单存在但未执行验收。旧3.0.4→rc13升级收据保留，不能重命名代替新版本。用户43117仍原安装，未重启；插件最终实装与真实设备离线删除重连待验。稳定3.0.4/latest不变，见[本版说明](releases/v4.0.0-rc.14.md)及[需求核对](releases/unified-requirement-audit.md)。
 
 源码部署先 `npm ci --ignore-scripts`，再 `node scripts/build-clients.mjs all`，`npm start`；默认127.0.0.1:43117。发布构建提供 `ACMCODER_BUILD_COMMIT` 完整Git SHA，各客户端version.json必须一致。WSL镜像不含.git，使用Mac固定commit归档并传入该SHA构建。
 
@@ -10,7 +10,7 @@
 docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.14 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
 ```
 
-候选引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.13` 和 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.13`。两者registry digest及平台清单见[rc13说明](releases/v4.0.0-rc.13.md)。rc13公开源码包的覆盖文件锁定rc13；本版rc14源码包锁定rc14。按对应Release确认镜像已发布后，在该包解压目录执行 `docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml up -d` 使用统一版，端口只绑定回环；候选不改变稳定latest。
+当前候选引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.14` 和 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.14`。两者registry digest及平台清单见[rc14说明](releases/v4.0.0-rc.14.md)。rc13公开源码包的覆盖文件锁定rc13；本版rc14源码包锁定rc14。按对应Release确认镜像已发布后，在该包解压目录执行 `docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml up -d` 使用统一版，端口只绑定回环；候选不改变稳定latest。
 
 Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删除迁移表；网站删除与旧设备写入遵循协议1墓碑。数据库、学习数据与credentials不放入源码包或源码同步。完整升级路径见 [升级](upgrade.md)，实际能力见 [矩阵](releases/unified-feature-matrix.md)。
 

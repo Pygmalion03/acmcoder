@@ -1,0 +1,203 @@
+{
+  "date": "2026-10-02",
+  "version": "4.0.0-rc.14",
+  "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+  "sourceTag": "v4.0.0-rc.14",
+  "release": "https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14",
+  "sourceArtifacts": [
+    {
+      "name": "acmcoder-source-v4.0.0-rc.14.tar.gz",
+      "bytes": 881406,
+      "sha256": "dc33e289fc25933c1731c71f488eb52ce2ec2c3f53ee42e76ab397945ba43ca3"
+    },
+    {
+      "name": "acmcoder-extension-v4.0.0-rc.14.zip",
+      "bytes": 33772438,
+      "sha256": "ec2ba9a6160c5ef9c727f14767872feeb90ce649167f96c60a08abab2dd72e42"
+    }
+  ],
+  "website": {
+    "deploymentId": "591372c0-3346-47cf-8ca6-c18f6918ea82",
+    "url": "https://591372c0.acmcoder-unified-preview.pages.dev/",
+    "status": "success",
+    "httpSmoke": "passed"
+  },
+  "images": {
+    "app": {
+      "name": "app",
+      "version": "4.0.0-rc.14",
+      "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+      "digest": "sha256:46739bac1f1e89bef21352e8d40792eb5ac241b25ab7620d0534ee70bd826ca9"
+    },
+    "runner": {
+      "name": "runner",
+      "version": "4.0.0-rc.14",
+      "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+      "digest": "sha256:35159220f84ee85973d1f138ba0271c4650ef8ecddc7b44155f5971d8f7f92c0"
+    },
+    "status": "public-anonymous-pull-and-amd64-execution-passed",
+    "workflow": "https://github.com/Pygmalion03/acmcoder/actions/runs/36914402731",
+    "publishedArchitectures": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "executedArchitectures": [
+      "linux/amd64"
+    ]
+  },
+  "verification": {
+    "sourceCommit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+    "githubWorkflow": "https://github.com/Pygmalion03/acmcoder/actions/runs/36914402731",
+    "githubTests": {
+      "passed": 393,
+      "failed": 0
+    },
+    "localRelatedChecks": {
+      "passed": 21,
+      "failed": 0
+    },
+    "websiteHTTP": {
+      "origin": "https://591372c0.acmcoder-unified-preview.pages.dev",
+      "version": "4.0.0-rc.14",
+      "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+      "anonymousAPI": "passed",
+      "protectedAPI": "passed",
+      "privacy": "passed",
+      "cppBridgeHeaders": "passed",
+      "publicCppFiles": 5,
+      "cppExecution": "not-tested-by-HTTP-smoke"
+    }
+  },
+  "publicDownloads": {
+    "anonymous": true,
+    "sourcePaxCommit": "matched",
+    "extensionZIPCRC": "passed",
+    "sha256": "matched"
+  },
+  "dockerInstall": {
+    "freshEmptyData": "passed",
+    "upgradeFromRC13": {
+      "rc13-before": {
+        "stage": "rc13-before",
+        "version": "4.0.0-rc.13",
+        "commit": "e844d9e5a1810db27b8d601e3763f24727fc9de7",
+        "records": 109,
+        "attempts": 104,
+        "recordsExact": true,
+        "unfinishedRewritePreserved": true,
+        "restoredPayloadsAndReferencesExact": true,
+        "backupSHA256": "75096779a2d0be0921ebe19927bfc1bf380dc1c114482a383360527d2865a998",
+        "executed": []
+      },
+      "rc14-upgrade": {
+        "stage": "rc14-upgrade",
+        "version": "4.0.0-rc.14",
+        "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+        "records": 109,
+        "attempts": 104,
+        "recordsExact": true,
+        "unfinishedRewritePreserved": true,
+        "restoredPayloadsAndReferencesExact": true,
+        "backupSHA256": "75096779a2d0be0921ebe19927bfc1bf380dc1c114482a383360527d2865a998",
+        "executed": [
+          "python",
+          "cpp",
+          "java"
+        ]
+      },
+      "rc14-restart": {
+        "stage": "rc14-restart",
+        "version": "4.0.0-rc.14",
+        "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+        "records": 109,
+        "attempts": 104,
+        "recordsExact": true,
+        "unfinishedRewritePreserved": true,
+        "restoredPayloadsAndReferencesExact": true,
+        "backupSHA256": "75096779a2d0be0921ebe19927bfc1bf380dc1c114482a383360527d2865a998",
+        "executed": []
+      },
+      "rc13-rollback": {
+        "stage": "rc13-rollback",
+        "version": "4.0.0-rc.13",
+        "commit": "e844d9e5a1810db27b8d601e3763f24727fc9de7",
+        "records": 109,
+        "attempts": 104,
+        "recordsExact": true,
+        "unfinishedRewritePreserved": true,
+        "restoredPayloadsAndReferencesExact": true,
+        "backupSHA256": "75096779a2d0be0921ebe19927bfc1bf380dc1c114482a383360527d2865a998",
+        "executed": []
+      },
+      "rc14-return": {
+        "stage": "rc14-return",
+        "version": "4.0.0-rc.14",
+        "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+        "records": 109,
+        "attempts": 104,
+        "recordsExact": true,
+        "unfinishedRewritePreserved": true,
+        "restoredPayloadsAndReferencesExact": true,
+        "backupSHA256": "75096779a2d0be0921ebe19927bfc1bf380dc1c114482a383360527d2865a998",
+        "executed": []
+      }
+    },
+    "runnerExecution": {
+      "image": "ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.14",
+      "version": "4.0.0-rc.14",
+      "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+      "architecture": "amd64",
+      "productDockerAdapter": true,
+      "executed": [
+        "python",
+        "cpp",
+        "java"
+      ],
+      "allOutputs": "42",
+      "network": "none",
+      "memoryMiB": 256,
+      "pids": 128
+    },
+    "architectureActuallyExecuted": "amd64",
+    "testRoot": "/tmp/acmcoder-new-user-rc14",
+    "ports": [
+      36444,
+      36445
+    ],
+    "composeProjects": [
+      "acmcoder-public-fresh-rc14",
+      "acmcoder-upgrade-rc14"
+    ],
+    "newContainersStopped": true,
+    "user43117Untouched": true
+  },
+  "preserved": {
+    "rc13Release": "unchanged",
+    "rc13FixedDeployment": "https://18a7b08e.acmcoder-unified-preview.pages.dev/",
+    "stableLatest": "3.0.4-registry-manifests-byte-equal",
+    "prePublicRC14": "dist/releases/4.0.0-rc.14-pre-public-33cd7c5",
+    "rollbackRC13Data": "/tmp/acmcoder-new-user-rc14/rollback-rc13-data",
+    "upgradedRC14Data": "/tmp/acmcoder-new-user-rc14/upgrade-data"
+  },
+  "storeReviewKit": {
+    "file": "acmcoder-store-review-v4.0.0-rc.14.zip",
+    "bytes": 152739,
+    "sha256": "37c6860947b19ec18aba4bcc20da40a180af772548a36fbae302446b07399e2e",
+    "nativeScreenshots": 0,
+    "submissionReady": false,
+    "publicAsset": false
+  },
+  "stillUnproven": [
+    "new public ZIP actual native installation and upgrade/restart/rollback",
+    "real GitHub installed extension approve/sync/revoke and draft retention",
+    "real independent client offline edit / permanent delete / reconnect",
+    "five current installed extension store screenshots"
+  ],
+  "limits": [
+    "Candidate public release is not full goal completion or stable release",
+    "amd64 execution does not prove arm64 execution",
+    "Live device transport receipt used a Chrome API shim, not native installation",
+    "No store submission, new terms acceptance or payment",
+    "Old user service remains prior installed version and was not restarted"
+  ]
+}

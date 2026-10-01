@@ -1,6 +1,6 @@
 # 升级、备份与恢复
 
-当前公开统一候选版为 **4.0.0-rc.13**，固定源码 **e844d9e5a1810db27b8d601e3763f24727fc9de7**。网站、插件ZIP及GHCR双架构镜像在[候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.13)关联；稳定3.0.4/latest不变。
+当前公开统一候选版为 **4.0.0-rc.14**，固定源码 **5adac6ab53d55087993004f443a06d5b60d19c8e**。网站、插件ZIP及GHCR双架构镜像在[候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)关联；稳定3.0.4/latest不变。以下原rc13迁移命令与收据按历史版本保留；rc14升级补充见文末，使用对应源码包的候选Compose文件。
 
 先核对随包 `SHA256SUMS`：插件ZIP `06851c798ab27e08e825f2b7a7042b4820bdf003ccf3b9f762de69e45d0a9bc8`，源码包 `fd8b1ba3c0e998f25848568f1c008291c654cb2db32c9baadf252ee5d38b3c65`。固定网站为 https://18a7b08e.acmcoder-unified-preview.pages.dev/ 。空数据首次运行及公开3.0.4→rc13→重启→升级前副本回退3.0.4→回到rc13已通过；109条V3记录逐项相等。证据见[rc13收据](releases/evidence/rc13-public-distribution-2026-10-02.json)。最终插件新安装/回退和真实设备删除重连仍待完成，不把Docker演练代替它们。
 
@@ -43,3 +43,10 @@ docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.13 --build-arg ACMCODER_
 正式WSL服务 acmcoder-v3.service 需要 sudo 重启才会使用新服务代码。用户现有后端已实机升级并验收rc.9/3749604：5个旧题目导出、2条统计及原始文件保持，Python自测8通过，10条学习记录导出恢复逐项相等；升级前后Mac/WSL备份和旧静态目录保留。本轮只将静态界面更新为rc.12/f3c7078，不涉及服务端修改，因此没有重启后端；旧界面另存dist/local-web-before-rc12-f3c7078。之前的隔离3.0.4同卷升级、合成旧Key迁移及容器重启证据继续保留。
 
 AI对话每页最多显示20条，在固定高度的区域内滚动；这只是显示方式，完整历史、备份与同步不按20条截断。更早的对话、更新的对话和回到最新均不会改写记录或问题输入。
+
+
+## rc14公开候选补充
+
+当前候选[rc14](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)固定5adac6a；下载本版源码，Compose候选覆盖文件锁定rc14镜像，沿用四个数据路径。公开源码/ZIP与两镜像已匿名下载/拉取。隔离数据中rc13→rc14→重启→升级前副本回退rc13→回到rc14，109条记录、104份历史及未完成重写精确保留。回退挂升级前副本，升级后的目录继续保留。旧3.0.4→rc13迁移演练仍有效，不能把rc13旧收据更名成rc14。
+
+本版新目录插件账号连接修正已发布但仍待真实安装/授权/撤销与更新回退；旧已安装插件不会仅因Release更新就自动升级。商店未上架，保持原目录手动更新并先导出备份。完整证据见[rc14收据](releases/evidence/rc14-public-distribution-2026-10-02.json)。
