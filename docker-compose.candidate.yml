@@ -2,4 +2,4 @@
 # Candidate releases never change the stable latest tag.
 services:
   acmcoder:
-    image: ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.13
+    image: ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.14

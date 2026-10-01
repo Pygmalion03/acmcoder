@@ -7,10 +7,10 @@
 候选Docker app从同一源码构建，生成共享本地界面，保留三语言工具链：
 
 ```sh
-docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.13 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
+docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.14 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
 ```
 
-候选引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.13` 和 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.13`。两者registry digest及平台清单见[rc13说明](releases/v4.0.0-rc.13.md)。在公开源码包解压目录执行 `docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml up -d` 即可使用统一版，端口只绑定回环；候选不改变稳定latest。
+候选引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.13` 和 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.13`。两者registry digest及平台清单见[rc13说明](releases/v4.0.0-rc.13.md)。rc13公开源码包的覆盖文件锁定rc13；本版rc14源码包锁定rc14。按对应Release确认镜像已发布后，在该包解压目录执行 `docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml up -d` 使用统一版，端口只绑定回环；候选不改变稳定latest。
 
 Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删除迁移表；网站删除与旧设备写入遵循协议1墓碑。数据库、学习数据与credentials不放入源码包或源码同步。完整升级路径见 [升级](upgrade.md)，实际能力见 [矩阵](releases/unified-feature-matrix.md)。
 
@@ -20,7 +20,7 @@ Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删
 
 # ACMCoder 部署现状
 
-源码待验候选rc.14的拟发布镜像名称为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.14` 和 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.14`，尚未发布，不要把拟定名称当作可拉取产物。下面的已公开安装路径仍锁定rc.13；插件新目录账号连接限制见[插件说明](edge-extension.md)。
+本版候选覆盖文件锁定 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.14`，runner引用为 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.14`。镜像实际发布及digest以[rc14候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)的关联清单为准，不能仅从拟定tag推断镜像已发布。上述rc13为已完成的历史分发/安装收据；当前候选新用户插件授权仍待实装。
 
 ## 先分清入口和运行模式
 
