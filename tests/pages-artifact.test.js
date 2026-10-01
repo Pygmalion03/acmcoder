@@ -46,3 +46,8 @@ test('deployment rejects a multipart upload envelope named as _worker.js',async 
   await put('_worker.js','------formdata-test\r\nContent-Disposition: form-data; name="metadata"\r\n\r\n{"main_module":"worker.js"}\r\n');
   await assert.rejects(inspectPagesArtifact(root),/JavaScript module/);
 });
+test('deployment rejects an otherwise valid module with a Node-only runtime dependency',async t=>{
+  const {root,put}=await fixture(t);
+  await put('_worker.js','import {Writable} from "node:stream"; export default {fetch(){return new Response(String(Writable))}};');
+  await assert.rejects(inspectPagesArtifact(root),/Node-only runtime imports/);
+});

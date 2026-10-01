@@ -16,6 +16,7 @@ export async function inspectPagesArtifact(directory){
   if(!worker.length||gzipSync(worker).length>3*1024*1024)throw new Error('API Worker exceeds the free compressed script budget');
   try{execFileSync(process.execPath,['--input-type=module','--check'],{input:worker,stdio:['pipe','ignore','pipe']});}
   catch{throw new Error('Pages Worker must be a JavaScript module, not an upload envelope');}
+  if(/\b(?:from\s*|import\s*(?:\(\s*)?)["']node:/.test(worker.toString()))throw new Error('Pages Worker must not depend on Node-only runtime imports');
   const index=await fs.readFile(path.join(root,'index.html')),workspace=await fs.readFile(path.join(root,'workspace.html'));
   if(!index.equals(workspace))throw new Error('Pages root must open the unified workspace');
   for(const file of ['legacy.html','_headers','shared/privacy.html','shared/ui/privacy.css','shared/ui/brand-mark.svg'])await fs.access(path.join(root,file));
@@ -41,6 +42,6 @@ export async function inspectPagesArtifact(directory){
     cppBytes+=bytes.length;
   }
   if(cppBytes!==cpp.totalBytes)throw new Error('C++ resource total differs from the manifest');
-  return {version:info.version,commit:info.commit,protocolVersion:info.protocolVersion,tool:{name:'wrangler',version:'4.144.0'},worker:{bytes:worker.length,gzipBytes:gzipSync(worker).length,sha256:hash(worker)},assets:{count,totalBytes,largest},routes,cpp:{version:cpp.version,totalBytes:cpp.totalBytes},deployment:{status:'not-deployed'}};
+  return {version:info.version,commit:info.commit,protocolVersion:info.protocolVersion,tool:{name:'esbuild',version:'0.28.1'},worker:{bytes:worker.length,gzipBytes:gzipSync(worker).length,sha256:hash(worker)},assets:{count,totalBytes,largest},routes,cpp:{version:cpp.version,totalBytes:cpp.totalBytes},deployment:{status:'not-deployed'}};
 }
 if(process.argv[1]===fileURLToPath(import.meta.url))console.log(JSON.stringify(await inspectPagesArtifact(process.argv[2]||'dist/site'),null,2));

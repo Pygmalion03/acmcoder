@@ -14,7 +14,7 @@ docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.5 --build-arg ACMCODER_B
 
 Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删除迁移表；网站删除与旧设备写入遵循协议1墓碑。数据库、学习数据与credentials不放入源码包或源码同步。完整升级路径见 [升级](upgrade.md)，实际能力见 [矩阵](releases/unified-feature-matrix.md)。
 
-网站完整构建执行 `npm run build:pages`，输出 `dist/site` 的共享工作区、压缩C++静态资源、`_worker.js` API及仅 `/api/*` 的路由。固定 Wrangler 4.144.0 编译既有Functions，检查单文件25MiB/20,000文件与3MiB压缩Worker免费预算，构建清单位于 `dist/pages-build/manifest.json`。现有预览项目通过GitHub连接构建此目录；仪表盘OAuth/D1绑定保持，不上传源码中的旧正式配置。直接上传时只对已授权的预览项目使用这份完整输出，不能只上传静态页面而丢API，也不能把C++资源内嵌Worker。
+网站完整构建执行 `npm run build:pages`，输出 `dist/site` 的共享工作区、压缩C++静态资源、`_worker.js` API及仅 `/api/*` 的路由。固定 esbuild 0.28.1 打包 `cloudflare/worker.js`，复用既有Functions的API处理器与Pages ASSETS静态绑定，不引入Node运行模块，检查单文件25MiB/20,000文件与3MiB压缩Worker免费预算，构建清单位于 `dist/pages-build/manifest.json`。现有预览项目通过GitHub连接构建此目录；仪表盘OAuth/D1绑定保持，不上传源码中的旧正式配置。直接上传时只对已授权的预览项目使用这份完整输出，不能只上传静态页面而丢API，也不能把C++资源内嵌Worker。
 
 以下记录稳定3.0.4的安装与运行方式，旧用户仍可使用。
 

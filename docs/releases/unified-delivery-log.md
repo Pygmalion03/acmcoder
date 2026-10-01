@@ -243,3 +243,7 @@
 - 该首次rc.5源码仍独立保存：三端/素材/包构建一致性通过，Mac dist/releases/4.0.0-rc.5暂对应96fe868；需要在校正源码包关联时另保留该目录，不能覆盖原包。其本地amd64 app镜像 `acmcoder-app:unified-rc5-96fe868` ID `sha256:ba4117fdb02598502244d915767e8cb7b1b9c93c2829d3e5a9640d0631efbb4e` 已构建，独立新卷/只读/cap-drop环境真实smoke通过：统一界面、同commit、草稿/备份、Java/C++/Python执行。它不是已部署网站或公开GHCR镜像的证据。容器 `acmcoder-rc5-smoke-96fe868` 随机回环36437，旧容器/卷/镜像保留。
 
 - 使用真正本地Pages运行时与独立local-DB（不是远程预览/正式D1）发现`.html`会308到无后缀路径；原cpp-bridge.html上的CSP没有进入最终200响应。补workspace/cpp-bridge规范路径及隐私页策略，重启仅会话自建43118 tmux读取新_headers。HTTP联调通过：统一首页、匿名auth/session200、records401、隐私页200、两种C++桥接入口的最终connect-src none/worker-src blob及5份gzip实际摘要。脚本smoke-pages明确不把HTTP检查标为C++执行或离线插件证明。
+
+- 8fd45ad的Git部署edbb5244已成功上传64个静态文件，发布Function时因生成工具注入node:stream失败；项目原配置为2026-01-01且无Node标志。仅预览production兼容日期更新2026-09-30并增加nodejs_compat，OAuth变量名称、预览D1和Git来源保留。重试5dc22b81进入Function初始化后因注入兼容层的Object.defineProperty失败；同源码加构建标志的离线探针仍生成完全相同摘要，因此没有再次盲目推送同一Worker。
+- 改为官方Advanced-mode的小型模块入口：复用原onRequest，非API请求转给env.ASSETS；固定esbuild0.28.1中性平台打包，不注入Node/unenv兼容层。Worker87,812字节，构建图没有剩余模块导入；检查拒绝Node专用运行模块。入口/产物/API相关24/24通过，本地真正Pages运行时无Node标志的HTTP联调再次通过。检索当前官方Advanced-mode/最佳实践与Workers类型；新入口无全局请求状态、不读取正文、不打印凭据，保留waitUntil的对象调用。
+- 8fd45ad同源码的修正候选包在Mac dist/releases/4.0.0-rc.5；此前96fe868包移到dist/candidates/4.0.0-rc.5/96fe868独立保留。8fd45ad本地镜像ID sha256:33afc82ef1bc593de26ff639e403e84216d286ddf4c1b62570274c8e6fe49529，在同一自建96fe868学习卷替换测试容器后，只读确认原草稿仍为10 32、源commit/版本正确及隐私HTML200，没有先写回原草稿制造证据；容器acmcoder-rc5-smoke-8fd45ad回环36438。两者是过程候选，最终须另关联实际成功网站提交，不作为GHCR/stable发布证据。
