@@ -294,3 +294,15 @@
 - 使用实际rc.6插件导出的 `extension-test-backup-final.json`，在Chrome for Testing通过原生文件选择器恢复到隔离本地版。预览3题/4草稿/2快照/8自测/1复习，新增16/相同1/冲突1；先取消，题库仍为原4题。重新选择并确认后，两道LeetCode题进入题库，冲突在待处理区、原草稿未覆盖。
 - 真实界面打开两数之和II，负数输入 `2 -1 / -1 0`、期望 `1 2` 与7行程序恢复；本地Python实际自测通过。历史对照显示17行原程序和7行重写程序，刷新保留草稿/输入。随后只读核对自己的验收学习目录：18条源记录中17条payload逐字段相等；仅 `sum--python` 因既有本地内容不同而保留双方，输入备份中的冲突草稿完整留存；两份重写快照和10月2日复习日期一致。
 - 原生实际截图 `dist/backup-preview-acceptance/{preview,restored-history}.jpg` 和结构化验收收据保留。此为真实插件备份到本地恢复，不能代替真实云账号到新浏览器、双账号或真实提供商验收。代码已提交，下一候选发布批次再统一版本/三端构建/部署；不会重写现有rc.6发行包或商店材料。
+
+## rc.7/rc.8 — 真实备份幂等恢复、删除范围及统一部署，2026-10-01
+
+- 补齐W5删除面板题名/关联数量，清理共享每日计划中已删除题目的completed/items引用，保留其他题目；同步追踪与删除事务一起提交。匹配的待恢复版本/恢复包也清理，其他题目的冲突保留。新增回归先因缺少预览方法失败；相关30/30通过，随后rc.7完整里程碑371/371通过，日志 `/tmp/acmcoder-rc7-data-milestone.log`。
+- rc.7固定源码eb4dd37770e2f2bb6a0b0e81ed6627f1a430dc3c的三端、Pages、品牌及镜像构建成功。首次隔离目录打包未传源码归档导致Git目录缺失，随后只重做打包，用Mac Git archive显式传入，不重建已成功产物。Pages Git部署ba010a67-50d7-4ead-b564-60767b1bd4a2成功，源码包823,657字节/SHA256 f3051b17e5fd0d6dda7bce61ca6a75d3b8b81c4ac0017f6762ed9ed93001ea5f；ZIP33,768,389字节/SHA256 dca9aecd2175b0c2086e52f46252fef23add9ec691032bf9670173707547e671。该镜像只构建，未冒称运行验收。rc.6安装源码另复制保留，再从实际ZIP在同路径升级，测试ID不变；普通重新加载后工作区可打开。
+- 真实插件预览原备份显示16条相同/2冲突，取消后导出18条，与升级前备份所有payload逐字段相等；确认数据未丢失。发现快照内部带有草稿状态字段，而备份/同步只存快照自身字段，恢复比较因此误报。新增真实start/finish重写→导出→预览/恢复回归，先复现2项冲突，再统一使用toSyncRecord的实际持久字段比较。修正后相关21/21、版本/文档7/7通过，不重复未受影响的完整371项，不把rc.7预览误报当成功。
+- 修正进入独立rc.8，固定源码e38df559db3f1e16c19dd81bed2b00febf68ce75；Mac Git archive在 `/tmp/acmcoder-rc8-e38df55` 构建三端、Pages、品牌、候选包及Docker。Pages部署4f2af202-78e4-485b-b9b0-8601d1cfa0de实际success（02:33:57–02:34:03 UTC），固定网址 https://4f2af202.acmcoder-unified-preview.pages.dev/；主网址version/commit及匿名会话、受保护records401和隐私200通过。HTTP smoke最初使用不存在的auth/me路径而中止，改按源码的auth/session核对后通过，未将第一次中止视为完整成功。正式项目/D1不变。
+- Mac `dist/releases/4.0.0-rc.8`：源码824,450字节/SHA256 9ffd5ae010a0fc735e9753cf207097f992a3408c73a6f76634f25b0f65fbf3f2；ZIP33,768,371字节/SHA256 23a3b7de340cc857e2d365ff6ea41b85c505af150a2ae9781c84ec0c1162f4bf。实际ZIP CRC、manifest4.0.0.8/version_name、version.json及源码pax commit通过；34份运行器/资源与rc.6逐字节相同，沿用此前真正离线和C++完整证据。rc.7/rc.6及最初快照未覆盖。
+- rc.7测试安装源码另复制保留，再从实际rc.8 ZIP同ID升级，普通重新加载成功。原备份真实预览0新增/18相同/0冲突，实际确认合并仍为0/18/0。归档两数之和II后查看删除确认：1题、1草稿、2快照、3自测、1复习；截图后取消，再恢复归档题，没有执行永久删除。此为开发安装更新，不是商店自动升级证明。
+- 同一自建CFT匿名浏览器打开公开站，实际文件选择器导入原插件备份，预览并确认新增16/相同2/零冲突。Python负数ACM输入实际输出1 2、自测通过；17行旧程序/7行重写对照及刷新恢复通过。随后原生下载的 `site-restored-backup.json` 为19条：原18条payload逐字段相等，另1条真实网站自测，待处理恢复0。输出14,173字节/SHA256 6e7521ff0cacdd7ee184afd85f0ea32a44bd88ade859103040007305e7a9179d；这不是云账号到新浏览器验收。
+- rc.8本地镜像真实localImageId为sha256:58c03097b17c826ed012aa1de916682fe58e2ad4c3296b1c74270e05785041e1，linux/amd64、本地标识而非GHCR digest。停留存的自建rc.6容器，用相同4个测试卷启动rc.8容器acmcoder-rc8-smoke-e38df55（回环36440）；read-only/cap-drop/no-new-privileges等约束保留，凭据独立目录用正确单数变量。原image-smoke-problem程序/stdin 10 32先读取且一致，两个只读预览通过；未冒称本次重新跑三语言或用户稳定安装升级。稳定43117未重启。构建日志 `/tmp/acmcoder-rc8-docker-build.log`。
+- 四张真实原生JPEG、实际输入/输出备份和结构化 `rc8-data-acceptance.json` 保留；发行manifest关联实际部署/镜像。品牌构建收据not-captured保留构建时含义，rc.6五张商店PNG作为历史材料留存，不冒充rc.8最终商店提交图片。真实AI/原创导题、第二真实账号、用户旧安装、许可证/正式分发仍待完成，原18任务范围不缩小。

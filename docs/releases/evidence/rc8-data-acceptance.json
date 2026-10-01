@@ -1,0 +1,22 @@
+{
+  "scope": "Backup preview, idempotent restore and permanent-deletion scope across current candidate clients; not a replacement for the original 18-task acceptance.",
+  "commit": "e38df559db3f1e16c19dd81bed2b00febf68ce75",
+  "version": "4.0.0-rc.8",
+  "website": {"deploymentId": "4f2af202-78e4-485b-b9b0-8601d1cfa0de", "url": "https://4f2af202.acmcoder-unified-preview.pages.dev/", "canonicalUrl": "https://acmcoder-unified-preview.pages.dev/", "status": "success", "startedOn": "2026-10-01T02:33:57.695989Z", "endedOn": "2026-10-01T02:34:03.513689Z", "publicVersionAndCommitPassed": true, "anonymousRecords401": true, "loginAvailable": true, "privacy200": true},
+  "checks": {"rc7FullSuite": {"passed": 371, "commit": "eb4dd37770e2f2bb6a0b0e81ed6627f1a430dc3c"}, "afterSnapshotFix": {"targetedPassed": 21, "versionDocsPassed": 7, "fullSuiteRepeated": false}, "threeClientBuildsPassed": true, "candidateConsistencyPassed": true, "sourceArchivePaxAndZipCRCPassed": true, "unchangedRunnerResourceFiles": 34},
+  "artifacts": [
+    {"name": "acmcoder-source-v4.0.0-rc.8.tar.gz", "bytes": 824450, "sha256": "9ffd5ae010a0fc735e9753cf207097f992a3408c73a6f76634f25b0f65fbf3f2"},
+    {"name": "acmcoder-extension-v4.0.0-rc.8.zip", "bytes": 33768371, "sha256": "23a3b7de340cc857e2d365ff6ea41b85c505af150a2ae9781c84ec0c1162f4bf"}
+  ],
+  "extension": {"browser": "Chrome for Testing 151.0.7922.34", "id": "jmdplnhlhdhcaaefllfndokbcmhbpmdb", "installationPath": "dist/extension-acceptance/e9a318f", "sameIdRc6ToRc7ToRc8": true, "rc7OldExportPayloadsUnchanged": 18, "rc7PreviewFalseSnapshotConflicts": 2, "rc8Preview": {"imported": 0, "skipped": 18, "conflicts": 0}, "rc8ConfirmedMerge": {"imported": 0, "skipped": 18, "conflicts": 0}, "deleteScopePreview": {"problem": 1, "draft": 1, "attempt": 2, "run": 3, "review": 1}, "permanentDeleteSubmitted": false, "archiveRestoredAfterPreview": true, "storeAutomaticUpdateClaimed": false},
+  "anonymousWebsiteRestore": {"nativeFileChooser": true, "input": "dist/releases/4.0.0-rc.6/extension-test-backup-final.json", "inputRecords": 18, "imported": 16, "skipped": 2, "conflicts": 0, "pythonStdin": "2 -1\n-1 0\n", "expectedAndActual": "1 2\n", "selfTestPassed": true, "originalAndRewriteVisible": true, "draftAndInputPreservedAfterRefresh": true, "output": "dist/releases/4.0.0-rc.8/site-restored-backup.json", "outputBytes": 14173, "outputSha256": "6e7521ff0cacdd7ee184afd85f0ea32a44bd88ade859103040007305e7a9179d", "outputRecords": 19, "originalPayloadsExactlyEqual": 18, "additionalRecord": "One real website Python self-test", "pendingRestores": 0},
+  "docker": {"tag": "acmcoder-app:unified-rc8-e38df55", "localImageId": "sha256:58c03097b17c826ed012aa1de916682fe58e2ad4c3296b1c74270e05785041e1", "container": "acmcoder-rc8-smoke-e38df55", "platform": "linux/amd64", "registryDigest": null, "oldOwnFixtureVolumesRetained": true, "originalDraftCodeAndStdinPreserved": true, "recordsInOwnBackup": 2, "identicalPreviewSkipped": 2, "deletePreviewReadOnlyPassed": true, "newNativeThreeLanguageRunsClaimed": false},
+  "screenshots": [
+    {"path": "dist/releases/4.0.0-rc.8/evidence/extension-idempotent-preview.jpg", "sha256": "74856ebe4dfe5aa77c4faa4f9aaa1c6a53d76293a7bf6ff509a2ca614346b69b"},
+    {"path": "dist/releases/4.0.0-rc.8/evidence/extension-delete-scope.jpg", "sha256": "87d921b696176e187b960ef47af8dcaee4190646c2ab0dd49288b81ba4649cf5"},
+    {"path": "dist/releases/4.0.0-rc.8/evidence/site-backup-preview.jpg", "sha256": "f4c968eb30acaa077dc5765b52051d9a7e5b7ede476004473c04e4aa7ee6cbf5"},
+    {"path": "dist/releases/4.0.0-rc.8/evidence/site-restored-history.jpg", "sha256": "797150e4e8a3ff1d6fb22d03a54a77fbc187b53d4c3e6cb72854e8a60d978c7a"}
+  ],
+  "remaining": ["Real external provider AI in three clients and original problem import", "Second real GitHub account", "User stable WSL upgrade", "Repository license choice", "Stable GitHub/GHCR distribution and final store version materials"],
+  "boundaries": ["Own anonymous CFT fixture data only; no user Key or private Chrome page inspected", "Formal Cloudflare project/D1 and stable WSL service unchanged", "Prior releases, exact deployment URLs and original checkpoint retained", "This does not prove real cloud-account export to a fresh browser or concurrent editing during export"]
+}
