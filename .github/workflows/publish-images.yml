@@ -39,12 +39,16 @@ jobs:
       - name: Run unit tests
         run: npm test
 
-      - name: Build unified clients and require stable acceptance
+      - name: Build unified clients and verify the declared release channel
         env:
           ACMCODER_RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version_tag }}
         run: |
           npm run build:clients
-          npm run check:release
+          if node -e 'process.exit(require("./package.json").version.includes("-rc.") ? 0 : 1)'; then
+            npm run check:release -- --candidate
+          else
+            npm run check:release
+          fi
 
       - name: Read accepted product version
         id: version

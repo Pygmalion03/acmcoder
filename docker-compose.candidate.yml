@@ -1,0 +1,5 @@
+# Use with docker-compose.prebuilt.yml to keep data paths and loopback binding.
+# Candidate releases never change the stable latest tag.
+services:
+  acmcoder:
+    image: ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.13

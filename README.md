@@ -2,7 +2,7 @@
 
 ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地/Docker版共用题库、今日安排、自动保存、重新手撕和长期历史；代码由你编写，自测只代表当前样例通过。
 
-当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.12`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。rc.12修正设置API卡片和题库找题区排版；AI对话使用固定高度的滚动区，每页最多显示20条，完整历史继续保存、备份与同步。203条隔离测试历史已在实际浏览器翻到最早并返回最新，保存及备份数量保持203条，问题草稿在翻页与刷新后保留。旧候选与数据备份继续保留。12项功能验收已通过；GitHub Release、GHCR及最终分发仍待完成，尚非完整正式发布。
+当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.13`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。rc.12修正设置API卡片和题库找题区排版；AI对话使用固定高度的滚动区，每页最多显示20条，完整历史继续保存、备份与同步。203条隔离测试历史已在实际浏览器翻到最早并返回最新，保存及备份数量保持203条，问题草稿在翻页与刷新后保留。旧候选与数据备份继续保留。原18节点逐项证据见[需求核对](docs/releases/unified-requirement-audit.md)；真实离线删除重连及最终分发验收仍未完成，尚非完整正式发布。
 
 - **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python与C++17；登录GitHub可跨设备同步。
 - **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python，不需要本地服务或网站打开。商店未上架。
@@ -65,28 +65,23 @@ docker compose -f docker-compose.prebuilt.yml down
 
 ## 另一台设备怎么更新
 
-如果另一台设备是手动下载 ZIP 使用：
+统一候选插件先导出备份，再关闭扩展页面，把新发行ZIP解压覆盖**原安装目录**，在 `edge://extensions/` 或 `chrome://extensions/` 点 `Reload`。不要卸载、换目录或直接加载源码 `extension/`；生成包目录是 `dist/extension/`，发行ZIP解压后的根目录直接含manifest.json。商店尚未上架，当前为手动更新。
 
-1. 下载最新 Release 或最新源码 ZIP。
-2. 解压到一个新的目录，或者覆盖旧目录。
-3. 在新目录里启动服务：
+稳定3.0.4的Docker用户在原数据目录执行：
 
 ```bash
 docker compose -f docker-compose.prebuilt.yml pull
 docker compose -f docker-compose.prebuilt.yml up -d
 ```
 
-4. 到 `edge://extensions/` 或 `chrome://extensions/`，对 ACMCoder 点 `Reload` / 重新加载。若旧扩展指向旧解压目录，重新 `Load unpacked` 并选择新目录里的 `extension/`。
-
-如果另一台设备是 Git clone：
+统一候选镜像发布后，在同一数据目录使用版本锁定覆盖文件：
 
 ```bash
-git pull
-docker compose -f docker-compose.prebuilt.yml pull
-docker compose -f docker-compose.prebuilt.yml up -d
+docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml pull
+docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml up -d
 ```
 
-然后在扩展管理页点 `Reload`。
+覆盖文件仅更换镜像，沿用四个数据/凭据路径和回环端口。升级前先导出并另存数据目录；不要运行带删除卷的命令。降级先保留当前数据，按[升级与回退](docs/upgrade.md)使用升级前副本；旧服务不会显示全部V3记录。
 
 如果你在 Compose 文件里固定了镜像 tag，把 tag 更新到当前版本：
 
