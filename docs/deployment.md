@@ -1,13 +1,13 @@
 # ACMCoder部署：统一候选版与稳定版
 
-统一候选版本为4.0.0-rc.11，固定源码e24b73a。网站、插件ZIP和本地候选镜像已构建验收，375/375测试通过；三端实际Python自测在新排版下通过。12项功能验收证据继续保留，本轮未重复未受布局修改影响的AI调用。用户现有43117静态界面已更新rc.11，后端仍为已验收的rc.9；原题目、统计、旧候选及备份保留。公开预览网站为 https://acmcoder-unified-preview.pages.dev/；网站Python/C++在浏览器内运行，插件自带离线Python/C++。网站首次下载资源需联网。GitHub Release/GHCR公开分发、最终需求审计和商店材料版本核对仍待完成；稳定版仍为3.0.4。
+公开统一候选版为 **4.0.0-rc.12**，固定源码 **f3c7078**；网站部署1c5fb1e3、同ID插件ZIP及本地候选镜像已关联。375/375测试及三端构建通过。设置与题库布局对齐；AI显示每页最多20条，固定高度滚动，203条隔离会话在翻页/刷新后完整保存与导出，插件原5条真实问答保留。桌面1154像素和侧栏400像素布局没有横向溢出。43117静态界面已更新rc.12，后端仍为已验收的rc.9；旧候选及数据备份保留。12项功能验收证据沿用，本轮不重复未受界面修改影响的真实AI调用与语言实验。稳定版仍为3.0.4；GitHub Release/GHCR公开分发与最终审计仍待完成。
 
 源码部署先 `npm ci --ignore-scripts`，再 `node scripts/build-clients.mjs all`，`npm start`；默认127.0.0.1:43117。发布构建提供 `ACMCODER_BUILD_COMMIT` 完整Git SHA，各客户端version.json必须一致。WSL镜像不含.git，使用Mac固定commit归档并传入该SHA构建。
 
 候选Docker app从同一源码构建，生成共享本地界面，保留三语言工具链：
 
 ```sh
-docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.10 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
+docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.12 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
 ```
 
 候选镜像发布后的版本引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.12`，runner对应 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.12`；这两者目前是拟发布名称，尚未有公开digest，不应用“拟发布”命令代替已可下载证明。稳定镜像latest不会随候选构建更新。

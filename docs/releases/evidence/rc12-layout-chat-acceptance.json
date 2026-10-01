@@ -1,0 +1,114 @@
+{
+  "version": "4.0.0-rc.12",
+  "commit": "f3c70783ffaeac9e5b4c906691afa3425ec44ff4",
+  "date": "2026-10-02",
+  "checks": {
+    "fixedSourceTests": {
+      "passed": 375,
+      "failed": 0
+    },
+    "threeClientBuilds": true,
+    "pagesBuild": true,
+    "candidatePackageConsistency": true,
+    "artifactHashesAndZipCRC": true,
+    "publicSettings": {
+      "viewport": 1154,
+      "settingsWidth": 850,
+      "apiWidth": 850,
+      "apiInsideSettings": true,
+      "horizontalOverflow": false
+    },
+    "publicLibrary": {
+      "finderWidth": 1074,
+      "listWidth": 1074,
+      "aligned": true,
+      "horizontalOverflow": false
+    },
+    "isolatedChat": {
+      "origin": "http://127.0.0.1:43118",
+      "savedMessagesBefore": 203,
+      "savedMessagesAfter": 203,
+      "exportedMessagesAfter": 203,
+      "latestRange": [
+        184,
+        203
+      ],
+      "oldestRange": [
+        1,
+        3
+      ],
+      "maxRenderedMessages": 20,
+      "transcriptHeight": 186,
+      "transcriptScrollHeight": 4301,
+      "composerOutsideTranscript": true,
+      "questionDraftRetainedAfterPagingAndReload": true,
+      "earlierNewerLatestControlsVerified": true
+    },
+    "sideWidth400": {
+      "practiceOverflow": false,
+      "settingsOverflow": false,
+      "libraryOverflow": false,
+      "apiSingleColumn": true,
+      "finderWidth": 352,
+      "listWidth": 352
+    },
+    "installedExtension": {
+      "id": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+      "version": "4.0.0-rc.12",
+      "oldConversationMessagesRetained": 5,
+      "originalCodeAndInputRetained": true
+    },
+    "existingLocal": {
+      "frontend": "4.0.0-rc.12",
+      "backend": "rc.9/3749604",
+      "serviceRestarted": false
+    },
+    "docker": {
+      "version": "4.0.0-rc.12",
+      "commit": "f3c70783ffaeac9e5b4c906691afa3425ec44ff4",
+      "previousTestDraftRetained": true,
+      "MITServed": true,
+      "privacyStatus": 200,
+      "readOnlyCheck": true
+    }
+  },
+  "website": {
+    "deploymentId": "1c5fb1e3-a4d9-4e0a-8e8a-e07b57ab7403",
+    "url": "https://1c5fb1e3.acmcoder-unified-preview.pages.dev/",
+    "status": "verified"
+  },
+  "artifacts": [
+    {
+      "name": "acmcoder-source-v4.0.0-rc.12.tar.gz",
+      "bytes": 860783,
+      "sha256": "ba8797729116e58ec9a03fde4e06181761da81a23786fbc821e888a784ce3e94"
+    },
+    {
+      "name": "acmcoder-extension-v4.0.0-rc.12.zip",
+      "bytes": 33771687,
+      "sha256": "89bec6e5a53203431ba7d3962dcc8f4278c95d1bf1b1f8ad7bb3842ce02503b1"
+    }
+  ],
+  "images": {
+    "app": {
+      "localTag": "acmcoder-app:unified-rc12-f3c7078",
+      "localImageId": "sha256:0cec5f5e2e079bbf0f64e19c85d6acf92cff393a4e97fcf39fb2527728419ccd"
+    },
+    "runner": null,
+    "status": "app-locally-verified-not-published"
+  },
+  "rollback": {
+    "website": "https://966ef595.acmcoder-unified-preview.pages.dev/",
+    "localStatic": "/home/pygmalion/runs/002-acmcoder/v3/dist/local-web-before-rc12-f3c7078",
+    "extensionDirectory": "dist/extension-acceptance/e9a318f-rc11-preserved",
+    "oldDockerContainer": "acmcoder-rc11-smoke-e24b73a",
+    "oldArtifacts": "dist/releases/4.0.0-rc.11"
+  },
+  "screenshots": [
+    "dist/releases/4.0.0-rc.12/website-settings.jpg",
+    "dist/releases/4.0.0-rc.12/website-library.jpg",
+    "dist/releases/4.0.0-rc.12/chat-pagination-preview.jpg",
+    "dist/releases/4.0.0-rc.12/extension-chat.jpg"
+  ],
+  "scope": "Presentation only; no history trimming, API transport, credential, storage or synchronization changes. Real AI calls and language runtime checks reuse prior unaffected evidence."
+}
