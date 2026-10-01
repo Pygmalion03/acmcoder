@@ -134,7 +134,18 @@
       },
       "testProblem": "公开候选 · 中文与键盘验收",
       "testProblemArchivedWithoutRemovingHistory": true,
-      "scope": "Committed Chinese text entry and Tab tested; native OS IME composition was not separately exercised."
+      "scope": "Committed Chinese text entry and Tab tested; native OS IME composition was not separately exercised.",
+      "screenshotPixels": {
+        "website-practice-1440.jpg": [
+          1404,
+          900
+        ],
+        "website-dark-1280.jpg": [
+          1280,
+          800
+        ]
+      },
+      "screenshotBoundary": "1440x900 is the actual DOM viewport measured by the browser. Native IAB panel capture clips its rightmost 36 pixels at that setting; the 1280x800 screenshot covers the full viewport. Viewport dimensions are not inferred from screenshot dimensions."
     },
     "extensionPackageReuse": {
       "unchangedFiles": 85,
