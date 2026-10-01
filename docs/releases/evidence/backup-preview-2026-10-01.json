@@ -1,0 +1,19 @@
+{
+  "scope": "Real rc6 installed-extension learning backup restored through the new local UI; not cloud-account or second-account acceptance.",
+  "sourceCommit": "6b94851061672de3388fc754fc86fd8ae039d3d5",
+  "implementationCommits": ["10db7325d99b31f5e870314e7cdddd1b1d718de1", "6b94851061672de3388fc754fc86fd8ae039d3d5"],
+  "publicCandidateUnchanged": {"version": "4.0.0-rc.6", "commit": "89dfab94fa10cb946df8f10b04de04ae17c4475e"},
+  "client": "Google Chrome for Testing 151.0.7922.34; native CUA actions and file chooser",
+  "target": "http://127.0.0.1:43118/workspace.html; own isolated WSL local preview",
+  "input": {"path": "dist/releases/4.0.0-rc.6/extension-test-backup-final.json", "sha256": "e000a2a552df9b85f24f14b233649604c8087f91dc0a428eb7b8abda2abdc740", "records": 18},
+  "preview": {"counts": {"problem": 3, "draft": 4, "attempt": 2, "run": 8, "review": 1}, "imported": 16, "skipped": 1, "conflicts": 1},
+  "cancellation": {"observed": true, "originalLibraryProblems": 4, "leetcodeProblemsAdded": false},
+  "confirmation": {"observed": true, "exactPayloadMatches": 17, "differentRecord": "draft:sum--python", "originalDraftPreserved": true, "incomingDraftPreservedInPendingRestore": true, "rewriteSnapshots": 2, "reviewDueDay": "2026-10-02"},
+  "realRun": {"language": "python", "stdin": "2 -1\n-1 0\n", "expected": "1 2\n", "uiResult": "样例通过", "originalCodeLines": 17, "rewrittenCodeLines": 7, "comparisonVisible": true, "draftPreservedAfterRefresh": true},
+  "checks": {"targetedTestsPassed": 18, "fullSuiteRerun": false, "localClientBuildPassed": true, "httpPreviewMethodCovered": true},
+  "screenshots": [
+    {"path": "dist/backup-preview-acceptance/preview.jpg", "sha256": "ed0361fc2fa61bac3e24a88ef5d4dc37213ec5129687cb83f251abecdf979fcb"},
+    {"path": "dist/backup-preview-acceptance/restored-history.jpg", "sha256": "e86e950cd20db66cecff140b7191d4b1bc0272f16c659de8ffd4ae3adde0822b"}
+  ],
+  "limits": ["No real provider Key or second GitHub account used.", "No stable WSL service restart or production Cloudflare migration.", "Website and installed extension still use the prior published rc6; this local development build is not a new distributed release."]
+}
