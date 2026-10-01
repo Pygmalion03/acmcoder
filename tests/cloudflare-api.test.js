@@ -240,12 +240,14 @@ test('public LeetCode fetch uses only official endpoints and reports failures as
   const urls = [];
   globalThis.fetch = async url => {
     urls.push(url);
-    return url.startsWith('https://leetcode.cn/') ? new Response('', { status: 403 }) : Response.json({ data: { question: { title: 'Two Sum', content: '<p>Find pair.</p>' } } });
+    return url.startsWith('https://leetcode.cn/') ? new Response('', { status: 403 }) : Response.json({ data: { question: { title: 'Two Sum', content: '<p>Find pair. n &lt; 10<sup>4</sup></p><p>Example 1:</p><pre>Input: [2,7]<br>Output: [0,1]</pre><p>Example 2:</p><pre>Input: [3,3]<br>Output: [0,1]</pre><p>Constraints:</p><p>n &gt; 1</p>' } } });
   };
   try {
     const fetched = await call('a', 'import/fetch', 'POST', { url: 'https://leetcode.cn/problems/two-sum/' });
     assert.equal(fetched.status, 200);
-    assert.equal(fetched.data.statement, 'Find pair.');
+    assert.match(fetched.data.statement, /Find pair\. n < 10\^4/);
+    assert.equal(fetched.data.rawSamples.length, 2);
+    assert.match(fetched.data.rawSamples[1], /Input: \[3,3\]\nOutput: \[0,1\]/);
     assert.deepEqual(urls, ['https://leetcode.cn/graphql/', 'https://leetcode.com/graphql/']);
     globalThis.fetch = async () => new Response('', { status: 403 });
     const failed = await call('a', 'import/fetch', 'POST', { url: 'https://leetcode.cn/problems/two-sum/' });

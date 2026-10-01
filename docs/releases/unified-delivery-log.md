@@ -265,3 +265,10 @@
 - 无限循环5秒自动停止，未定义标识符编译错误清楚显示源行；新C++编译运行恢复通过。切回Python后原独立草稿仍为a+b，并在仍Offline时自测通过。这里的断网是测试目标的DevTools网络阻断，不宣称已关闭整机网络；运行器自身隔离及内存/大输入/20次重复仍引用同源码共享实现及此前真实产品证据，不杜撰本轮测量。
 - 保留4份真实原生PNG：`dist/releases/4.0.0-rc.5/extension-evidence/{offline,network-blocked,recovery,python-offline}.png`；摘要 `experiments/browser-languages/evidence/cpp-product-extension-2026-10-01.json`。这些是实装验收证据，尚未裁定为符合商店尺寸的最终截图；LeetCode侧栏与其余商店画面继续准备。
 - 结束后恢复No throttling并关闭DevTools，测试安装与学习数据保留。结合技术有界实验、产品全用例及网站/插件两端真实运行，L1现有完整判定：Python/C++17交付浏览器运行；Java两个候选按既定许可/内存原因不进入本次支持，本地Java保留。browser-cpp-two-clients更新passed，网站/包版本不递增；其余原18任务门槛不因此完成。此前文档相关最小7/7通过，无新增运行代码，不重复未受影响全量回归。
+
+## rc.6 — 真实侧栏发现的题面保真修正，2026-10-01
+
+- 重新核对HEAD06eef16、原未提交修改与中央映射；真实Chrome for Testing打开LeetCode cn两数之和，点击实际ACMCoder图标打开侧栏，一键读取成功。但原包把上标10⁴压为104，独立样例区只列第一组。暂不把这个画面作为最终商店截图；rc.5 ZIP、源码、镜像及实装数据保留。
+- 新增共享纯文本转换规则，网站API/本地题面读取/扩展捕获及链接导入复用：上标为^、下标为_、段落和br换行保持，所有示例分组保留；来源仍只作纯文本数据，不执行HTML。网页捕获的GraphQL和DOM回退都采用相同规则。内容脚本由固定esbuild0.28.1打包为经典IIFE并作经典语法检查，不增加权限或web-accessible资源。源码extension目录需构建后安装，README明确说明。
+- 新增3项题面回归，覆盖数学格式、全部中英文样例、非法字符实体和真正content-script消息入口的GraphQL/DOM两路；相关39/39通过。完整里程碑368项中367通过，唯一失败是README候选文案与已有版本断言不一致；修正文案并增强真实API响应的上标/双样例断言后，相关26/26通过。日志/tmp/acmcoder-rc6-import-milestone.log，未重跑未受文案影响的367项检查，不冒称最初全量零失败。
+- 根版本与插件数字版本递增rc.6/4.0.0.6；待同commit构建、公开部署和新安装包真实侧栏复查，再登记实际版本/产物及截图。稳定43117未重启，不更新稳定tag/GHCR/latest，不改真实D1学习数据。

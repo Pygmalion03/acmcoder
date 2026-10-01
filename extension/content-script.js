@@ -1,3 +1,5 @@
+import {htmlToText} from '../shared/problem-text.js';
+
 (function acmcoderContentScript() {
   if (window.__ACMCODER_CONTENT_SCRIPT_READY__) {
     return;
@@ -57,13 +59,6 @@
       .trim();
   }
 
-  function htmlToText(html) {
-    if (!html) return "";
-    const container = document.createElement("div");
-    container.innerHTML = html;
-    return compactText(container.innerText || container.textContent || "");
-  }
-
   function textFromFirst(selectors) {
     for (const selector of selectors) {
       const element = document.querySelector(selector);
@@ -97,15 +92,19 @@
   }
 
   function getContent() {
-    const content = textFromFirst([
+    const selectors = [
       '[data-track-load="description_content"]',
       '[data-testid="question-content"]',
       'div[class*="question-content"]',
       'div[class*="description"]',
       "main",
-    ]);
-
-    return compactText(content || document.body.innerText).slice(0, 20000);
+    ];
+    for(const selector of selectors){
+      const element=document.querySelector(selector);
+      const content=htmlToText(element?.innerHTML);
+      if(content)return compactText(content).slice(0,20000);
+    }
+    return compactText(htmlToText(document.body.innerHTML)||document.body.innerText).slice(0,20000);
   }
 
   function getDifficulty() {

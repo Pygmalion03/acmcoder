@@ -1,3 +1,4 @@
+import {htmlToText} from '../../shared/problem-text.js';
 const LEETCODE_GRAPHQL_URL = "https://leetcode.cn/graphql/";
 
 const QUESTION_QUERY = `query questionData($titleSlug: String!) {
@@ -16,44 +17,7 @@ const QUESTION_QUERY = `query questionData($titleSlug: String!) {
   }
 }`;
 
-const namedEntities = {
-  amp: "&",
-  apos: "'",
-  gt: ">",
-  lt: "<",
-  nbsp: " ",
-  quot: '"',
-};
-
-function decodeHtmlEntities(value) {
-  return value.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (match, entity) => {
-    if (entity[0] !== "#") {
-      return namedEntities[entity.toLowerCase()] ?? match;
-    }
-
-    const hexadecimal = entity[1]?.toLowerCase() === "x";
-    const codePoint = Number.parseInt(entity.slice(hexadecimal ? 2 : 1), hexadecimal ? 16 : 10);
-    return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
-  });
-}
-
-export function htmlToText(html) {
-  return decodeHtmlEntities(
-    String(html || "")
-    .replace(/<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
-    .replace(/<!--[^]*?-->/g, "")
-    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
-    .replace(/<\s*sup\b[^>]*>/gi, "^")
-    .replace(/<\s*li\b[^>]*>/gi, "- ")
-    .replace(/<\s*\/\s*(p|div|pre|li|ul|ol|h[1-6]|table|tr)\s*>/gi, "\n\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\u00a0/g, " ")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n[ \t]+/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim(),
-  );
-}
+export {htmlToText};
 
 function extractFirstSample(content) {
   const input = content.match(/(?:输入|Input)[:：]\s*([^\n]+)/i);

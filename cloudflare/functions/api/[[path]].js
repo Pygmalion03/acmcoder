@@ -1,3 +1,4 @@
+import {htmlToText,extractRawSamples} from '../../../shared/problem-text.js';
 import { InputError, normalizeProblem, problemFromRow, validateSourceUrl } from '../../lib/problem.js';
 import { backupManifest, backupPage, restoreOne, restorePreview } from '../../lib/backup.js';
 import { catalogFor, normalizeCatalog, normalizePreferences, preferencesFor, readSettings, patchSetting, rankedRecommendations, recommendationId, validRecommendationId } from '../../lib/recommendations.js';
@@ -280,7 +281,7 @@ async function fetchText(request) {
   if (['leetcode.cn', 'leetcode.com'].includes(url.hostname) && leetCodeMatch && !url.search) {
     const question = await fetchLeetCodePublic(leetCodeMatch[1], url.hostname);
     if (!question.statement) throw new InputError(`力扣公开题面暂不可用（${question.error}）；可收藏原题链接并手动粘贴题面。`, 422);
-    return json({ sourceUrl, statement: question.statement, title: question.title, sourceKind: 'fetched' });
+    return json({ sourceUrl, statement: question.statement, title: question.title, rawSamples: extractRawSamples(question.statement), sourceKind: 'fetched' });
   }
   if (url.hostname !== 'raw.githubusercontent.com' || !/^\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/.+\.(md|txt)$/i.test(url.pathname)) throw new InputError('只支持力扣题目链接或 GitHub 公共仓库原始 Markdown/TXT；其他链接可收藏后手动粘贴题面。');
   const response = await fetch(url.href, { redirect: 'error', signal: AbortSignal.timeout(5000), headers: { accept: 'text/plain, text/markdown' } });
@@ -345,13 +346,7 @@ async function generateRecommendationPlan(db, userId, day) {
   return json({ day, plan });
 }
 
-function leetCodeText(html) {
-  const plain = String(html || '').replace(/<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
-    .replace(/<\s*br\s*\/?\s*>/gi, '\n').replace(/<\s*\/\s*(p|div|pre|li|ul|ol|h[1-6])\s*>/gi, '\n\n')
-    .replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/&amp;/gi, '&').replace(/\n{3,}/g, '\n\n').trim();
-  return plain.slice(0, 30000);
-}
+function leetCodeText(html) { return htmlToText(html).slice(0,30000); }
 async function fetchLeetCodePublic(slug, preferredHost = 'leetcode.cn') {
   const query = 'query questionData($titleSlug: String!) { question(titleSlug: $titleSlug) { title translatedTitle content translatedContent } }';
   const hosts = preferredHost === 'leetcode.com' ? ['leetcode.com', 'leetcode.cn'] : ['leetcode.cn', 'leetcode.com'];

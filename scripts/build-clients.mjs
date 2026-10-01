@@ -19,6 +19,10 @@ await fs.cp(path.join(root,'shared'),path.join(destination,'shared'),{recursive:
 await fs.copyFile(path.join(root,'data/recommendation/default-catalog.json'),path.join(destination,'shared/catalog.json'));
 if(target!=='local-web')await bundleCpp(path.join(destination,'vendor/cpp'));
 if(target==='extension'){
+  // Content scripts are classic scripts. Bundle the shared text rules into the
+  // isolated-world entry instead of exposing a module to the source webpage.
+  execFileSync('npx',['--yes','esbuild@0.28.1',path.join(root,'extension/content-script.js'),'--bundle','--format=iife','--platform=browser','--target=es2022',`--outfile=${path.join(destination,'content-script.js')}`],{cwd:root,stdio:'inherit'});
+  execFileSync(process.execPath,['--input-type=commonjs','--check'],{input:await fs.readFile(path.join(destination,'content-script.js')),stdio:['pipe','inherit','inherit']});
   await buildExtensionIcons(path.join(destination,'icons'));
   await bundlePython(path.join(destination,'vendor/python'));
   for(const name of ['capture.js','store.js','runner.js','handoff.js']){

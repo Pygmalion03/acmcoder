@@ -1,3 +1,4 @@
+import {extractRawSamples} from '../../shared/problem-text.js';
 import fs from "node:fs/promises";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createUnifiedApi } from './unified-api.js';
@@ -382,7 +383,7 @@ export function createAcmcoderServer(options = {}) {
         const {url:source}=await readJsonBody(request),url=new URL(source);
         const match=/^\/problems\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/.exec(url.pathname);
         if(url.protocol!=='https:'||!['leetcode.cn','leetcode.com'].includes(url.hostname)||!match||url.username||url.password||url.port||url.search){sendJson(response,400,{error:'请填写公开 LeetCode 题目链接。'});return;}
-        const page=await fetchLeetCodePage(match[1],url.href);sendJson(response,200,{title:page.title,statement:page.content,rawSamples:page.sample?[`输入：${page.sample.inputText}\n输出：${page.sample.outputText}`]:[],sourceUrl:url.href});return;
+        const page=await fetchLeetCodePage(match[1],url.href);sendJson(response,200,{title:page.title,statement:page.content,rawSamples:extractRawSamples(page.content).length?extractRawSamples(page.content):page.sample?[`输入：${page.sample.inputText}\n输出：${page.sample.outputText}`]:[],sourceUrl:url.href});return;
       }
 
       if (request.method === "GET" && requestUrl.pathname === "/api/health") {
