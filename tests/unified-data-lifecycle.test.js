@@ -3,6 +3,16 @@ import assert from 'node:assert/strict';
 import {IDBFactory} from 'fake-indexeddb';
 import {createBrowserStore} from '../shared/browser-store.js';
 const create=()=>createBrowserStore({namespace:crypto.randomUUID(),indexedDB:new IDBFactory(),storage:null});
+test('a real rewrite backup previews and restores idempotently without false snapshot conflicts',async()=>{
+ const store=create();await store.putRecord({kind:'problem',id:'one',payload:{title:'One'}});
+ await store.saveDraft({problemId:'one',language:'python',code:'original',stdin:'1',expected:'2'});
+ await store.startRewrite({problemId:'one',language:'python',template:'rewritten'});await store.finishRewrite({problemId:'one',language:'python'});
+ const backup=await store.exportBackup();
+ for(const result of [await store.previewBackup(backup),await store.restoreBackup(backup)]){
+  assert.equal(result.conflicts.length,0);assert.equal(result.imported,0);assert.equal(result.skipped,backup.records.length);
+ }
+ assert.deepEqual(await store.getMeta('backup:pending'),[]);
+});
 test('permanent deletion previews the full scope and removes plan references while preserving other questions',async()=>{
  const store=create();for(const id of ['one','two'])await store.putRecord({kind:'problem',id,payload:{title:id}});
  await store.saveDraft({problemId:'one',language:'python',code:'old',stdin:'1',expected:'2'});await store.startRewrite({problemId:'one',language:'python',template:''});

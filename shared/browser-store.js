@@ -159,7 +159,7 @@ export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,s
       const value=table==='records'?record:{...record.payload,id:record.id,problemId:record.problemId,language:record.language,updatedAt:record.updatedAt};
       const existing=await requestValue(s(table).get(key));
       if(existing){
-        const comparable=item=>table==='records'?item.payload:{code:item.code,stdin:item.stdin,expected:item.expected,mode:item.mode,reason:item.reason,previousAttemptId:item.previousAttemptId};
+        const comparable=item=>table==='records'?item.payload:toSyncRecord(table,item).payload;
         if(JSON.stringify(comparable(existing))===JSON.stringify(comparable(value)))result.skipped++;
         else result.conflicts.push({kind:record.kind,id:record.id,current:existing,incoming:value});
       }else{if(write)s(table).add(value);result.imported++;}
