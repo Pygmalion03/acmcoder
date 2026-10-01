@@ -1,0 +1,195 @@
+{
+  "version": "4.0.0-rc.6",
+  "commit": "89dfab94fa10cb946df8f10b04de04ae17c4475e",
+  "date": "2026-10-01",
+  "website": {
+    "deploymentId": "95614136-812a-486d-8296-792d95188b0a",
+    "fixedUrl": "https://95614136.acmcoder-unified-preview.pages.dev",
+    "canonicalUrl": "https://acmcoder-unified-preview.pages.dev",
+    "deploymentStatus": "success",
+    "HTTPChecks": "passed: version/commit, anonymous auth, protected records, privacy, bridge CSP and five C++ files; HTTP checks do not prove execution"
+  },
+  "extension": {
+    "id": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+    "browser": "Chrome for Testing 151.0.7922.34",
+    "source": "Actual rc.6 ZIP; same test installation path and extension ID retained",
+    "installPath": "dist/extension-acceptance/e9a318f",
+    "previousInstallPreserved": "dist/extension-acceptance/e9a318f-rc5-preserved",
+    "observedVersion": "4.0.0-rc.6 / 89dfab9 in rendered Settings",
+    "reloadObservation": "Reload left the test background inactive and reported No SW. Disabling/re-enabling the same test extension restored its background; no source change or data deletion was needed. This is not a store-update acceptance claim."
+  },
+  "checks": {
+    "sourceMath": "passed: 3 * 10^4 and index_1/index_2 in actual exported problem",
+    "samples": "passed: all three numbered source examples retained separately; constraints excluded",
+    "ACM": "passed: self-authored full Python program, manually arranged stdin; three runs with expected outputs 1 2, 1 3, 1 2",
+    "rewrite": "passed: before-rewrite and completed-rewrite immutable snapshots visible side by side",
+    "duplicateCapture": "passed: current source recaptured without extra problem or losing rewritten code/input/history",
+    "oldDrafts": "passed: prior sum Python and C++ drafts, sort/stderr source and 3 5 inputs retained",
+    "review": "passed: tomorrow review action saved; Today shows actual three own problem cards",
+    "backup": "passed: actual native browser download, V3, 18 records and 3 problems, both rewrite snapshots plus three self_pass runs",
+    "runnerReuse": "34 adapter/runtime/resource files byte-identical between accepted rc.5 and rc.6 ZIPs; no claim of a new full rc.6 offline C++ experiment"
+  },
+  "backup": {
+    "file": "dist/releases/4.0.0-rc.6/extension-test-backup-final.json",
+    "bytes": 13502,
+    "sha256": "e000a2a552df9b85f24f14b233649604c8087f91dc0a428eb7b8abda2abdc740",
+    "records": 18,
+    "problemCount": 3,
+    "successfulNewProblemRuns": 3,
+    "rewriteSnapshots": 2,
+    "contents": "Own anonymous acceptance data only; no provider Key or account token exported"
+  },
+  "docker": {
+    "imageTag": "acmcoder-app:unified-rc6-89dfab9",
+    "localImageId": "sha256:8bcb7a3b6a9ede40a9ba2f613636acdaab2f1241d845fa88d8526a6e7cae02e6",
+    "container": "acmcoder-rc6-smoke-89dfab9",
+    "port": "127.0.0.1:36440",
+    "check": "read-only getDraft verified prior Python code and 10 32 input from existing own fixture volumes after container replacement; exact source/version and privacy 200 verified",
+    "registryStatus": "not-published",
+    "userStableService": "untouched"
+  },
+  "artifacts": [
+    {
+      "name": "acmcoder-source-v4.0.0-rc.6.tar.gz",
+      "bytes": 811775,
+      "sha256": "97e328a07e6719d80fd7f8af5b1843ba868ed32297113aced68a9ccb82dec603"
+    },
+    {
+      "name": "acmcoder-extension-v4.0.0-rc.6.zip",
+      "bytes": 33766901,
+      "sha256": "34608f4b394dbd540e2e7691acfabb266d775472118e929d58af1b92fd518d0c"
+    }
+  ],
+  "screenshots": {
+    "version": "4.0.0-rc.6",
+    "commit": "89dfab94fa10cb946df8f10b04de04ae17c4475e",
+    "extensionId": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+    "installation": "same-ID unpacked test extension updated from rc.5 ZIP to rc.6 ZIP",
+    "browser": "Chrome for Testing 151.0.7922.34",
+    "capture": "Native CUA screenshots of the actually installed extension; no website substitute, generated UI or compositing.",
+    "transformation": "Uniform 2400x1500 to 1280x800 downscale using locked resvg 2.6.2; no crop, padding, replacement or overlays.",
+    "pageZoom": "Selected five captures use the actual browser 75% zoom; the origin is unchanged.",
+    "privacy": "Anonymous test profile, self-authored demonstration programs, public source questions, no provider Key configured.",
+    "storeStatus": "not-submitted",
+    "requirements": "https://developer.chrome.com/docs/webstore/images",
+    "raw": [
+      {
+        "name": "raw/01-side-panel-complete.jpg",
+        "width": 2400,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 456419,
+        "sha256": "b6bce50922c819a9efb1cbb4c6f5a17d620ad0ed22066a624d2ac0d06ff2dab1"
+      },
+      {
+        "name": "raw/01-side-panel-run.jpg",
+        "width": 2400,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 451084,
+        "sha256": "ec27e07c93570fbd135b0c5d1e9543df3ed15da30e774bcbd5a9a994fa03a021"
+      },
+      {
+        "name": "raw/01-side-panel-top.jpg",
+        "width": 2400,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 497469,
+        "sha256": "74c5fac202c16d283267920782d6e75cd79cdba8d899b49a27ed81046d439b70"
+      },
+      {
+        "name": "raw/02-library.jpg",
+        "width": 2400,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 320034,
+        "sha256": "b9327b5b9c8ad170f48ead38c58f69b53290b7bb8d6f471ec9e6115868819a95"
+      },
+      {
+        "name": "raw/03-today.jpg",
+        "width": 2400,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 337525,
+        "sha256": "df1342f2961f68098d3495dd56bde4882ba4a8409f58faecb92197732ed7d0d2"
+      },
+      {
+        "name": "raw/04-rewrite.jpg",
+        "width": 2400,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 298418,
+        "sha256": "cc86b374f8ba8614e088ae6370a03296a1368557ac4cfcba28e5f1a7e3e868f8"
+      },
+      {
+        "name": "raw/05-backup.jpg",
+        "width": 2400,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 300686,
+        "sha256": "1a78c5d992cd3435f682e11fd84c95a8812f2365ee54261b94451ac638f61c75"
+      },
+      {
+        "name": "raw/06-ai-settings.jpg",
+        "width": 2400,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 302187,
+        "sha256": "79b9695a4616e182d692f972038dd7e8692ae623f9141a109f20371ecf47f347"
+      }
+    ],
+    "screenshots": [
+      {
+        "name": "01-side-panel.png",
+        "source": "raw/01-side-panel-complete.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 411135,
+        "sha256": "397addf46bb9a8a9a1e75756c156f73e231d147a90de0bdc82fe8f0c6addc62e"
+      },
+      {
+        "name": "02-library.png",
+        "source": "raw/02-library.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 420980,
+        "sha256": "c54c30ada5ef6b5fe617bd8fcf3a046499e403e66453f27af55619b64114cc76"
+      },
+      {
+        "name": "03-today.png",
+        "source": "raw/03-today.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 456046,
+        "sha256": "d4abfca26f98e225ff5a968dcc0599261f4c107c74bc18dd98514934db695414"
+      },
+      {
+        "name": "04-rewrite.png",
+        "source": "raw/04-rewrite.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 356598,
+        "sha256": "05d02694c0f12721e8874b1a5aafbcef0b91911d906ef461a3204d411706636a"
+      },
+      {
+        "name": "05-backup.png",
+        "source": "raw/05-backup.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 389596,
+        "sha256": "f3b55586729c6efdca77873a584e1f0078e9f98aad2e12f58d4ae3a05d198b59"
+      }
+    ]
+  },
+  "limitations": [
+    "Previously saved source problem text is not automatically rewritten by duplicate capture or upgrade.",
+    "Anonymous test profile; no new real account or provider-Key acceptance.",
+    "Store screenshots prepared for this fixed candidate, not a store submission or approval.",
+    "Original 18-task roadmap, second real account, real three-client AI/original import, stable WSL upgrade, repository license and release/store identity gates remain."
+  ]
+}

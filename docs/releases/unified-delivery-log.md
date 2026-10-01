@@ -12,7 +12,7 @@
 
 ## 执行状态
 
-截至下文最新记录：W0 完成；网站、插件、本地/Docker 的统一练习和设备同步已完成多条真实闭环。各任务仍按其剩余验收条件判断，不能据此宣布 W1–W6、E1–E3、S1–S3 全部完成；A1/A2、L1、R1/R2 尚待推进。计划总入口：`docs/superpowers/plans/2026-09-30-unified-product-roadmap.md`。
+截至下文最新记录：W0和L1完成；网站、插件、本地/Docker的统一练习和设备同步已完成多条真实闭环，当前rc.6候选已公开并关联同源码ZIP/本地镜像，R2五张真实插件截图已准备。各任务仍按剩余验收条件判断，不能据此宣布W1–W6、E1–E3、S1–S3全部完成；A1/A2真实模型与R1/R2正式发行门槛仍待完成。计划总入口：`docs/superpowers/plans/2026-09-30-unified-product-roadmap.md`。
 
 ## W1 — 统一记录与保留策略
 
@@ -272,3 +272,16 @@
 - 新增共享纯文本转换规则，网站API/本地题面读取/扩展捕获及链接导入复用：上标为^、下标为_、段落和br换行保持，所有示例分组保留；来源仍只作纯文本数据，不执行HTML。网页捕获的GraphQL和DOM回退都采用相同规则。内容脚本由固定esbuild0.28.1打包为经典IIFE并作经典语法检查，不增加权限或web-accessible资源。源码extension目录需构建后安装，README明确说明。
 - 新增3项题面回归，覆盖数学格式、全部中英文样例、非法字符实体和真正content-script消息入口的GraphQL/DOM两路；相关39/39通过。完整里程碑368项中367通过，唯一失败是README候选文案与已有版本断言不一致；修正文案并增强真实API响应的上标/双样例断言后，相关26/26通过。日志/tmp/acmcoder-rc6-import-milestone.log，未重跑未受文案影响的367项检查，不冒称最初全量零失败。
 - 根版本与插件数字版本递增rc.6/4.0.0.6；待同commit构建、公开部署和新安装包真实侧栏复查，再登记实际版本/产物及截图。稳定43117未重启，不更新稳定tag/GHCR/latest，不改真实D1学习数据。
+
+## rc.6 — 实装导入验收与五张真实插件截图，2026-10-01
+
+- 本轮重新核对Mac HEAD89dfab9、原未提交修改、中央映射及上一真实HTTP smoke句柄66223；该进程明确exit0，主网址版本/commit、匿名接口、受保护接口、隐私与C++桥接规范路径CSP、五份gzip资源检查通过。Cloudflare API另确认部署`95614136-812a-486d-8296-792d95188b0a` success，源码`89dfab94fa10cb946df8f10b04de04ae17c4475e`，固定网址`https://95614136.acmcoder-unified-preview.pages.dev/`。正式项目/D1和稳定43117均未修改。
+- 同源码三端、Pages、品牌素材、候选包和Docker构建正常完成。Mac `dist/releases/4.0.0-rc.6`保存源码811,775字节/SHA256 `97e328a07e6719d80fd7f8af5b1843ba868ed32297113aced68a9ccb82dec603`，插件33,766,901字节/SHA256 `34608f4b394dbd540e2e7691acfabb266d775472118e929d58af1b92fd518d0c`。实际体积/摘要、ZIP CRC、数字版本、version.json、经典内容脚本和源码归档pax commit核对通过；旧候选/回退点保留。
+- 新app镜像`acmcoder-app:unified-rc6-89dfab9`，本地ID `sha256:8bcb7a3b6a9ede40a9ba2f613636acdaab2f1241d845fa88d8526a6e7cae02e6`。只停止并保留会话自建rc.5测试容器，rc.6沿用自建96fe868学习卷，以正确的`ACMCODER_CREDENTIAL_DIR`及read-only/cap-drop/no-new-privileges限制启动，回环36440。只读getDraft先确认原Python程序与10 32输入仍在，版本/源码/隐私200一致；没有先写回数据制造持久化证据，没有测试或暴露授权凭据。实际image/部署关联写入发行manifest，GHCR仍未发布。
+- 将旧测试安装目录完整复制为`dist/extension-acceptance/e9a318f-rc5-preserved`，再从实际rc.6 ZIP替换同一路径；测试ID `jmdplnhlhdhcaaefllfndokbcmhbpmdb`保持。浏览器更新页显示rc.6；重载后后台报告No SW并未启动，侧栏先停在静态捕获栏。读取实际DevTools和后台状态后，停用/启用同一测试插件恢复Service Worker及工作区，无源码变更或数据删除。此处是开发安装验收，不称商店自动更新已验证，也不将最初空白算成功。
+- 升级保留原两数之和存档及a+b的Python/C++独立草稿。为了不覆盖旧题面/代码，从实际LeetCode可见链接打开未导入的「两数之和 II - 输入有序数组」，真实侧栏一键读取。独立样例区显示三组；实际浏览器导出的备份确认题面包含`3 * 10^4`、`index_1/index_2`且三组样例不含后续约束。既有旧题面没有被自动改写；重复捕获保持此设计。
+- 在插件实际编辑完整Python ACM程序，手动安排三组stdin：4 9/2 7 11 15输出1 2，3 6/2 3 4输出1 3，2 -1/-1 0输出1 2，全部自测通过；没有提交LeetCode或称隐藏测试AC。点击重新手撕保存17行原程序，再写7行新程序，完成后新旧对照同时显示。侧栏/完整插件标签页之间接续保留草稿；重复捕获明确显示原代码和历史保留。明天再练动作实际保存10月2日复练，今日页面显示真实三道测试题。
+- 两次实际原生下载V3备份分别保留；最终`extension-test-backup-final.json`为18条记录/3道题/3条本题self_pass/2份before-rewrite与completed-rewrite快照，原a+b Python/C++源及3 5输入仍在；重复捕获没有增添重复题。测试浏览器未登录、未配置Key，未读取普通Chrome私人设置。rc.5与rc.6 ZIP中34份runner适配器及资源逐字节一致，沿用先前离线/公网C++完整证据，不冒称本轮重新执行全部实验。
+- 真实CFT原生窗口调整为2400×1500，五张选定画面采用实际浏览器75%缩放：LeetCode侧栏完整程序/负数样例通过、插件题库、今日、重写对照、设置版本/备份；额外保留侧栏顶端与无Key AI设置。CUA实际返回JPEG，按真实格式保存为`.jpg`，没有把扩展网页换成网站或生成假UI。通过已锁定resvg2.6.2只等比缩为1280×800 PNG，不裁剪/拼接/覆盖内容；五张实际摘要/尺寸/PNG逐chunk CRC通过，均已逐张视觉检查。图片、转换脚本和原始/输出清单在`dist/releases/4.0.0-rc.6/store-screenshots/`，品牌构建收据的not-captured保持构建时含义，另用实装清单关联当前状态。
+- 更新README、部署/功能矩阵、语言/商店材料及rc.6说明；结构化证据`docs/releases/evidence/rc6-extension-acceptance.json`记录范围与摘要。R2当前候选的图片材料已准备；真实AI三端/原创题、第二真实账号、旧稳定安装升级、根许可证及正式分发/商店身份门槛继续保留，不标整个18任务完成。
+- 文档同步后WSL最小命名/发行相关7/7通过，日志`/tmp/acmcoder-rc6-docs-acceptance.log`；本轮没有运行代码修改，不重复已通过的完整回归和三端构建。测试浏览器恢复100%缩放、关闭临时DevTools并保留今日页面/实装数据，未改变普通Chrome。此批为`[CF-Pages-Skip]`文档提交，不触发网站重建或替换89dfab9的产物关联。
