@@ -1,0 +1,50 @@
+{
+  "version": "4.0.0-rc.9",
+  "commit": "374960477b71effb869732fcfd130ab28bd25cde",
+  "tests": {
+    "total": 374,
+    "passed": 374,
+    "failed": 0
+  },
+  "artifacts": [
+    {
+      "name": "acmcoder-source-v4.0.0-rc.9.tar.gz",
+      "bytes": 847137,
+      "sha256": "b08ff874af01ea2119bc4b7314c767d8532d6f475c45954f99b5f91008f443f6"
+    },
+    {
+      "name": "acmcoder-extension-v4.0.0-rc.9.zip",
+      "bytes": 33769932,
+      "sha256": "4d9d0460bcba93eb6d24cd1ff15ead7ffe9a6a3a2f516d785378c2f62ae71b9b"
+    }
+  ],
+  "website": {
+    "deploymentId": "a605b5f7-2515-4c6c-b6ab-72033e85146c",
+    "status": "success",
+    "url": "https://a605b5f7.acmcoder-unified-preview.pages.dev/"
+  },
+  "images": {
+    "app": {
+      "tag": "acmcoder-app:unified-rc9-3749604",
+      "localImageId": "sha256:033a8465260631c11c09aac90f2cb6d8be71c21e6cd598d342ba8d9eecb75d48",
+      "platform": "linux/amd64",
+      "registryDigest": null
+    },
+    "runner": null,
+    "status": "local-only"
+  },
+  "extension": {
+    "id": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+    "sameInstallPath": true,
+    "previousInstallationPreserved": true,
+    "versionObserved": "4.0.0-rc.9",
+    "previousDraftAndRewriteComparisonObserved": true,
+    "unchangedRuntimeFilesVsRC8": 20,
+    "licenseNoticeUpdated": true
+  },
+  "boundaries": [
+    "User stable WSL installation not upgraded",
+    "No GHCR publication or extension marketplace submission",
+    "Real AI UI acceptance remains pending"
+  ]
+}

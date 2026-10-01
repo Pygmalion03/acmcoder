@@ -348,3 +348,11 @@
 - 用户授权密码库在执行脚本内部注入Key。产品共享transport/resolveProblemRequest实际生成原创题，全部三组样例独立核验；真实文件导入/练习已通过，证据ai-original-candidate-2026-10-01.json。网站自然语言找题界面配置真实提供商仍待验收。
 - 发现提供商实际地址为阿里云北京独立工作空间，旧网站白名单拒绝。依据官方Base URL说明补齐受限主机模式，未扩大到任意网址；生产API入口新增允许/六类拒绝回归。相关26项初次25通过，新增回归因请求冷却使用同fixture误报429，改独立fixture后单项通过。实际产品relayAI经真实提供商返回200、42匹配，证据ai-workspace-relay-2026-10-01.json；不替代部署或三端UI验收。
 - 候选递增rc.9；根MIT及第三方通知将进入新产物。8/12正式验收门槛通过，剩余4项保持未完成，原18任务范围不缩小。稳定43117未重启，旧候选/备份保留，其他用户未提交修改不纳入发行源码。
+
+## rc.9 — 固定源码三端构建与实际发布，2026-10-01
+
+- Mac提交374960477b71effb869732fcfd130ab28bd25cde，归档到WSL隔离目录/tmp/acmcoder-rc9-3749604；未纳入其他用户未提交文件。运行374/374全部通过，三端、Pages及候选包一致性通过；日志保留于dist/releases/4.0.0-rc.9。早先工作副本373/374失败仅为插件版本仍rc.8，修正manifest后最小4/4通过，再在固定源码完成上述全量里程碑。
+- 原Git连接自动部署a605b5f7-2515-4c6c-b6ab-72033e85146c，实际success；固定网址https://a605b5f7.acmcoder-unified-preview.pages.dev/及主网址匿名API/受保护401/隐私CSP/C++桥接和五份资源摘要检查通过。IAB真实galatea0315刷新显示rc.9/3749604/已同步，原星空求和代码/stdin/expected保持。未冒称本轮重新运行所有语言或真实AI网站UI。
+- Mac候选包源码847,137字节/SHA256 b08ff874af01ea2119bc4b7314c767d8532d6f475c45954f99b5f91008f443f6；插件ZIP33,769,932字节/SHA256 4d9d0460bcba93eb6d24cd1ff15ead7ffe9a6a3a2f516d785378c2f62ae71b9b。实际ZIP CRC、manifest版本、源码pax commit和完整MIT随包通过。运行资源比较初次因C++ NOTICE新增说明而中止；排除许可文本后实际20份运行器/资源逐字节一致，NOTICE完整保留并补充。旧rc.8产物未重写，旧测试安装复制e9a318f-rc8-preserved后从新ZIP更新同路径；实际管理页rc.9/ID不变，题库三题、原负数草稿与17行/7行历史对照可见。不称商店自动更新或本轮再次导出18条等值。
+- Docker镜像acmcoder-app:unified-rc9-3749604，本地ID sha256:033a8465260631c11c09aac90f2cb6d8be71c21e6cd598d342ba8d9eecb75d48，amd64。仅停止保留会话自建rc.8测试容器，rc.9沿用原四测试卷与安全限制回环36440；先读取原Python代码及10 32输入准确，再核对版本/commit、MIT/隐私200。未写回数据制造持久化证据；稳定43117未重启。实际关联更新本地发行manifest和rc9-release-acceptance.json，registryDigest为空，未更新latest/稳定tag/商店。
+- 发布文档同步后最小命名/发行检查8/8通过；不重复固定源码已通过的374项或构建。该批仅更新实际交付记录，不替换3749604产物。

@@ -1,6 +1,6 @@
 # ACMCoder部署：统一候选版与稳定版
 
-统一候选版本为4.0.0-rc.9，当前公开部署仍为rc.8，固定源码e38df55的网站、插件ZIP与本地镜像已关联；正式稳定镜像仍是3.0.4。真实同ID插件升级、重复恢复、删除范围、匿名网站恢复/运行/历史与隔离Docker旧草稿保留已验证。C++编译运行、超时/恢复及插件离线证据来自rc.5；当前34份运行器及资源与已验收版本逐字节一致。公开预览网站为 https://acmcoder-unified-preview.pages.dev/；网站Python/C++在浏览器内运行，不把用户代码送到Cloudflare执行。候选插件自带离线Python/C++，无需本地部署；网站首次下载运行资源仍需联网。完整正式发布的真实AI三端界面及用户旧稳定安装等门槛仍待完成。
+统一候选版本为4.0.0-rc.9，固定源码3749604的网站、插件ZIP与本地镜像已关联；正式稳定镜像仍是3.0.4。真实同ID插件升级、重复恢复、删除范围、匿名网站恢复/运行/历史与隔离Docker旧草稿保留已验证。C++编译运行、超时/恢复及插件离线证据来自rc.5；当前运行器及资源与已验收版本逐字节一致，许可NOTICE补充已随新包提供。公开预览网站为 https://acmcoder-unified-preview.pages.dev/；网站Python/C++在浏览器内运行，不把用户代码送到Cloudflare执行。候选插件自带离线Python/C++，无需本地部署；网站首次下载运行资源仍需联网。完整正式发布的真实AI三端界面及用户旧稳定安装等门槛仍待完成。
 
 源码部署先 `npm ci --ignore-scripts`，再 `node scripts/build-clients.mjs all`，`npm start`；默认127.0.0.1:43117。发布构建提供 `ACMCODER_BUILD_COMMIT` 完整Git SHA，各客户端version.json必须一致。WSL镜像不含.git，使用Mac固定commit归档并传入该SHA构建。
 

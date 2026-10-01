@@ -1,8 +1,8 @@
 # 升级、备份与恢复
 
-当前统一候选版为 **4.0.0-rc.8**，网站、插件ZIP及已验收的本地候选镜像对应固定源码 **e38df559db3f1e16c19dd81bed2b00febf68ce75**。稳定3.0.4及原有数据应先保留。候选包不是商店自动更新或正式稳定发布；后续文档提交不改变这个已保存候选的源码标识。
+当前统一候选版为 **4.0.0-rc.9**，网站、插件ZIP及已验收的本地候选镜像对应固定源码 **374960477b71effb869732fcfd130ab28bd25cde**。稳定3.0.4及原有数据应先保留。候选包不是商店自动更新或正式稳定发布；后续文档提交不改变这个已保存候选的源码标识。
 
-本机已保存的候选目录为 `dist/releases/4.0.0-rc.8/`。先核对 `SHA256SUMS`：插件ZIP为 `23a3b7de340cc857e2d365ff6ea41b85c505af150a2ae9781c84ec0c1162f4bf`，源码包为 `9ffd5ae010a0fc735e9753cf207097f992a3408c73a6f76634f25b0f65fbf3f2`。公网预览为 https://acmcoder-unified-preview.pages.dev/ ，固定部署为 https://4f2af202.acmcoder-unified-preview.pages.dev/ 。当前候选尚未发布稳定GitHub Release/GHCR；没有可直接拉取的正式4.0.0镜像。
+本机已保存的候选目录为 `dist/releases/4.0.0-rc.9/`。先核对 `SHA256SUMS`：插件ZIP为 `4d9d0460bcba93eb6d24cd1ff15ead7ffe9a6a3a2f516d785378c2f62ae71b9b`，源码包为 `b08ff874af01ea2119bc4b7314c767d8532d6f475c45954f99b5f91008f443f6`。公网预览为 https://acmcoder-unified-preview.pages.dev/ ，固定部署为 https://a605b5f7.acmcoder-unified-preview.pages.dev/ 。当前候选尚未发布稳定GitHub Release/GHCR；没有可直接拉取的正式4.0.0镜像。
 
 ## 升级前
 
@@ -28,16 +28,16 @@
 
 旧AI接口首次读取配置时，将 settings.json 中的明文Key迁入独立凭据文件；设置页、问答和今日计划沿用该配置。默认凭据目录是 ~/.local/share/acmcoder/credentials，可用 ACMCODER_CREDENTIAL_DIR 指定，Docker Compose 已使用独立 credentials 挂载。凭据文件0600、新建目录0700，先原子写入并确认持久化，再移除普通设置文件中的Key；失败保留原配置，下次读取重试。定制 settingsFile 的调用方应明确指定独立 credentialDir；测试默认放在该临时目录的 .credentials 子目录。统一练习页仍需要在其自带API设置里自行配置或解锁Key，不会自动将旧服务器Key返回浏览器或同步。
 
-Docker保持原数据挂载路径；不用新空卷替换旧卷。从上述已核对摘要的 **rc.8源码包** 解压出的独立目录构建候选镜像，命令为：
+Docker保持原数据挂载路径；不用新空卷替换旧卷。从上述已核对摘要的 **rc.9源码包** 解压出的独立目录构建候选镜像，命令为：
 
 ```sh
-docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.8 --build-arg ACMCODER_BUILD_COMMIT=e38df559db3f1e16c19dd81bed2b00febf68ce75 .
+docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.9 --build-arg ACMCODER_BUILD_COMMIT=374960477b71effb869732fcfd130ab28bd25cde .
 ```
 
 准备好原数据导出后停止旧容器，再使用相同数据挂载启动新镜像。需要回退时先保留升级后的记录，使用旧镜像及升级前独立备份；不要删除新记录或降级迁移表来“回滚”。协议不兼容时停止云写入，先升级客户端，设备草稿与队列保留。
 
-上述固定标识只适用于该源码包，不可对不同分支源码强行填入e38df55冒充同一构建。本项目的构建/运行仍在登记的WSL环境执行；不要在运行镜像里改Git工作树。当前工作区与常驻服务的静态构建须作为同一批升级，不要仅重启旧进程就假定三端版本一致。
+上述固定标识只适用于该源码包，不可对不同分支源码强行填入3749604冒充同一构建。本项目的构建/运行仍在登记的WSL环境执行；不要在运行镜像里改Git工作树。当前工作区与常驻服务的静态构建须作为同一批升级，不要仅重启旧进程就假定三端版本一致。
 
-实际已验收镜像为 `acmcoder-app:unified-rc8-e38df55`，本地image ID `sha256:58c03097b17c826ed012aa1de916682fe58e2ad4c3296b1c74270e05785041e1`。它保留了隔离测试卷的原草稿；这是本地linux/amd64候选镜像，不是GHCR registry digest，也不是用户稳定安装升级完成的证据。
+实际已验收镜像为 `acmcoder-app:unified-rc9-3749604`，本地image ID `sha256:033a8465260631c11c09aac90f2cb6d8be71c21e6cd598d342ba8d9eecb75d48`。它保留了隔离测试卷的原草稿；这是本地linux/amd64候选镜像，不是GHCR registry digest，也不是用户稳定安装升级完成的证据。
 
 正式WSL服务 acmcoder-v3.service 需要 sudo 重启才会使用新服务代码。用户现有服务实机升级尚未验收。源码25814b7的隔离真实3.0.4镜像同卷升级已验证题面/样例、原文件与旧自测次数保留；次数已迁入新版progress、随完整备份恢复，题库和练习可见，重启不会重复累计。ce34f0e又验证合成旧Key迁移与容器重启后实际HTTP问答。rc.2候选产物与公开预览固定源码041e198，已包含这些修复；先前12b5217的rc.1固定部署和包保留。隔离演练、新Docker卷重建和预览更新不能代替用户旧服务及旧卷完整升级。
