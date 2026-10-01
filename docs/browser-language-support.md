@@ -1,11 +1,11 @@
 # 浏览器语言支持与实验状态
 
-截至 2026-10-01，公开统一 rc.5 网站提供 **Python 与 C++17**，C++ 已在真实公网浏览器重新编译并运行。插件 Python 离线实装已验收，rc.5 ZIP 内置 C++ 资源但离线实装仍待验证。本地与 Docker 仍提供 **Python、C++、Java**。候选状态不等于稳定版完整发布。
+截至 2026-10-01，公开统一 rc.5 网站提供 **Python 与 C++17**，C++ 已在真实公网浏览器重新编译并运行。rc.5 同源码 ZIP 的 Python/C++ 均已真实安装并离线运行。本地与 Docker 仍提供 **Python、C++、Java**。候选状态不等于稳定版完整发布。
 
 | 语言 / 候选 | 证据 | 当前判定 |
 | --- | --- | --- |
 | C++ / binji wasm-clang，固定 commit 648c4a89997a351eef75cdaec3ef5b89d4937dec | 真实 Chrome 编译含 vector/string/map/sort 的新代码，链接缺 `__lttf2`；中文源码有编码警告 | 原发行不能直接达标，停止该候选 |
-| C++ / cppstudio Clang 22.1.8、wasi-sdk 33 | 修正同版本教学 iostream 和 UTF-8 I/O 后，真实 Chromium 与无网络隔离帧九项实验均通过 | 产品已接入 rc.5 网站与扩展包；公网实际运行通过，离线扩展实装待验证 |
+| C++ / cppstudio Clang 22.1.8、wasi-sdk 33 | 修正同版本教学 iostream 和 UTF-8 I/O 后，真实 Chromium 与无网络隔离帧九项实验均通过 | 产品已接入 rc.5 网站与扩展包；公网及真实离线扩展实装通过 |
 | Java / CheerpJ 4.3 | 社区许可支持官方 CDN 使用；自托管/再分发另需商业许可 | 不符合当前离线插件与零新增运营费用方案，停止该候选 |
 | Java / DoppioJVM 0.5.0 + JCL v3.2 | 真实 Chromium 用 javac 编译新 Main；8/9 项通过，80 MiB 数组成功突破实验的 64 MiB 预算，标注的 20 MiB 堆不限制托管对象总分配 | 未证明可执行的用户总内存上限，不进入本次浏览器正式支持，停止该候选 |
 
@@ -19,13 +19,13 @@
 
 本地回环环境首次普通 Worker 编译执行 3.81 秒，隔离 Worker 在资源已准备后为 2.24 秒；同 Worker 的 20 次热运行约 0.74–0.86 秒。主线程心跳最大间隔 159 ms，页面保持响应。这个时间不能代表公网首次下载，取消数字也包含编译阶段。
 
-运行资源原始约 95 MB，gzip 合计 28,005,315 字节，最大单文件 13,504,973 字节。按独立 gzip 静态文件可满足 [Pages 单文件 25 MiB 限制](https://developers.cloudflare.com/pages/platform/limits/)，不内嵌于 API Worker。rc.5 已完成实际 Pages 静态分发及公开网站执行，候选网站提供 C++ 选项；离线扩展实装仍是正式发布门槛。
+运行资源原始约 95 MB，gzip 合计 28,005,315 字节，最大单文件 13,504,973 字节。按独立 gzip 静态文件可满足 [Pages 单文件 25 MiB 限制](https://developers.cloudflare.com/pages/platform/limits/)，不内嵌于 API Worker。rc.5 已完成实际 Pages 静态分发及公开网站执行，候选网站提供 C++ 选项；同源码扩展的首次离线编译与运行也已验证。
 
 rc.4 工作区已接入统一练习页及插件适配器，采用 C++17；用户 WASM 64 MiB，clang/lld 各 512 MiB，memfs 128 MiB，JS 虚拟文件共 32 MiB，编译 30 秒、执行 5 秒。源码和 stdin 各最多 200,000 字符（仍须满足记录的整体大小限制），输出共 32,768 字符。产品上限与之前探针的 1 MiB 输入范围分开；没有宣称产品保存/同步支持 1 MiB 的 stdin。标准库采用 noeh，不承诺 C++ 异常或所有系统库。
 
 实际本地网站构建在不透明、禁止网络的帧中运行新源码，精确 stdout/stderr（没有额外换行）、中文/emoji、vector/map/sort/getline、20次重复、编译错误、80MiB分配拒绝、死循环5秒自动停止、加载中/执行中手动停止、恢复后128KiB源码+200,000字符输入均通过。刷新后草稿仍在。重复耗时约3.21–3.97秒，含自动化观察间隔，不能与实验同Worker热运行或公网下载时间直接比较。见产品证据 `../experiments/browser-languages/evidence/cpp-product-local-2026-10-01.json`。
 
-构建输出压缩资源约28.2MB，全部内置插件包；运行资源分别校验压缩/解压摘要，缓存仅保存公共运行字节。rc.5 固定源码 e9a318f 通过 GitHub→Pages 实际部署，主网址与固定网址的5个资源摘要一致；真实公网标准库、中文/emoji、独立错误流、5秒自动停止、停止后恢复及刷新草稿通过。真实离线扩展 C++ 实装仍待验证。正式稳定版新增 browser-cpp-two-clients 验收门槛，不能以网站成功代替扩展验收。
+构建输出压缩资源约28.2MB，全部内置插件包；运行资源分别校验压缩/解压摘要，缓存仅保存公共运行字节。rc.5 固定源码 e9a318f 通过 GitHub→Pages 实际部署，主网址与固定网址的5个资源摘要一致；真实公网标准库、中文/emoji、独立错误流、5秒自动停止、停止后恢复及刷新草稿通过。真实 Chrome for Testing 安装该ZIP后，在DevTools Offline下首次编译、标准库/中文/独立stderr、5秒超时、编译错误及恢复通过；同一标签页外网请求返回ERR_INTERNET_DISCONNECTED，返回插件后语言草稿仍在。证据 `../experiments/browser-languages/evidence/cpp-product-extension-2026-10-01.json`。两端 C++ 门槛通过；其他正式发布门槛继续保留。
 
 ## Java 的边界
 
@@ -39,4 +39,4 @@ Doppio 实际用浏览器 javac 编译了含数组/集合/字符串的新 Main�
 
 ## 交付状态
 
-L1 的 Java 有界评估已有结论，C++ 产品接入和公网运行已通过，仍需要真实已安装插件的离线执行，因此 L1 整项仍未完成。网站现已提供 C++17，浏览器 Java 未交付。统一 18 项目标继续保留。
+L1 的 Java 有界评估已有结论，C++ 产品接入、公网与真实插件离线运行均已通过，L1 的两种语言已有完整判定：Python/C++17提供浏览器运行，Java本次不进入浏览器支持。统一 18 项目标继续保留。

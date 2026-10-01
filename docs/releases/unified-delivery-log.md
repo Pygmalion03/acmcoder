@@ -257,3 +257,11 @@
 - e9a318f固定归档在WSL隔离目录构建三端、Pages、品牌素材和候选包，一致性通过；Mac `dist/releases/4.0.0-rc.5` 现对应该源码，8fd45ad移入 `dist/candidates/4.0.0-rc.5/8fd45ad`，96fe868及所有旧候选仍保留。源码805,840字节，SHA256 `a9174a67e265de28b585e1e471aa0c1f436f0e18520c383433429560950a9ca3`；插件33,765,503字节，SHA256 `47c812e36e2b742e6c2a1fa5f33cf19f460c4bcb456dca300210a20908410d6e`。实际ZIP CRC、源commit、数字版本、图标/隐私/C++资源与Git归档pax commit核对通过，不包含.env/node_modules/.git。
 - 同源码本地amd64 app镜像 `acmcoder-app:unified-rc5-e9a318f` ID `sha256:fe03326a0f17ccf78e54e3d087f9b31195b6cc4b07c44d05e33b66ea405e5539` 构建成功。仅替换会话自建测试容器，沿用自建96fe868学习卷；只读确认原Python草稿及输入仍在、版本/commit准确、隐私200。容器 `acmcoder-rc5-smoke-e9a318f` 回环36439；旧镜像/容器/卷保留，正式43117未重启。这次读验证未测试设备授权，不用它替代真实同步验收。
 - 发行manifest关联实际部署和本地image ID，GHCR registry digest仍空、稳定渠道未发布；Pages构建清单中的not-deployed仅表示构建时状态，未篡改成部署证据。更新README/矩阵/语言/商店材料与实际公开状态一致。原18任务及真实AI、两个真实账号、旧稳定安装升级、根许可证和商店身份门槛继续保留。
+
+## L1 — 真实插件离线 C++ 验收，2026-10-01
+
+- 未重复调用超时的普通Chrome连接；改用CUA本机窗口操作Chrome for Testing151.0.7922.34，保持未登录，不打开普通Chrome中等待用户配置AI的页面。测试浏览器原来没有扩展；从已校验e9a318f ZIP解到Mac `dist/extension-acceptance/e9a318f`，真实加载未打包插件，界面确认rc.5与实际ID `jmdplnhlhdhcaaefllfndokbcmhbpmdb`。它是测试路径产生的ID，不登记为商店ID。
+- 真实扩展工作区在首次C++加载前设置DevTools Offline并刷新，5个编译资源/隔离桥接均从该chrome-extension来源读取；新源码vector/sort、中文/emoji、独立stderr实际编译运行通过。同一标签页访问公网主网址明确net::ERR_INTERNET_DISCONNECTED，返回扩展后C++代码/stdin/expected保持；不是只根据Offline菜单猜测网络被阻断。
+- 无限循环5秒自动停止，未定义标识符编译错误清楚显示源行；新C++编译运行恢复通过。切回Python后原独立草稿仍为a+b，并在仍Offline时自测通过。这里的断网是测试目标的DevTools网络阻断，不宣称已关闭整机网络；运行器自身隔离及内存/大输入/20次重复仍引用同源码共享实现及此前真实产品证据，不杜撰本轮测量。
+- 保留4份真实原生PNG：`dist/releases/4.0.0-rc.5/extension-evidence/{offline,network-blocked,recovery,python-offline}.png`；摘要 `experiments/browser-languages/evidence/cpp-product-extension-2026-10-01.json`。这些是实装验收证据，尚未裁定为符合商店尺寸的最终截图；LeetCode侧栏与其余商店画面继续准备。
+- 结束后恢复No throttling并关闭DevTools，测试安装与学习数据保留。结合技术有界实验、产品全用例及网站/插件两端真实运行，L1现有完整判定：Python/C++17交付浏览器运行；Java两个候选按既定许可/内存原因不进入本次支持，本地Java保留。browser-cpp-two-clients更新passed，网站/包版本不递增；其余原18任务门槛不因此完成。此前文档相关最小7/7通过，无新增运行代码，不重复未受影响全量回归。

@@ -1,6 +1,6 @@
 # ACMCoder部署：统一候选版与稳定版
 
-统一候选源码版本为4.0.0-rc.5，正式稳定镜像仍是3.0.4。公开 rc.5 已验证浏览器 C++17 编译运行、超时与恢复，离线扩展 C++ 实装仍待验收。公开预览网站为 https://acmcoder-unified-preview.pages.dev/；网站Python/C++在浏览器内运行，不把用户代码送到Cloudflare执行。候选插件自带离线Python，不需要本地部署。
+统一候选源码版本为4.0.0-rc.5，正式稳定镜像仍是3.0.4。公开网站及真实已安装插件均已验证 C++17 编译运行、超时与恢复。公开预览网站为 https://acmcoder-unified-preview.pages.dev/；网站Python/C++在浏览器内运行，不把用户代码送到Cloudflare执行。候选插件自带离线Python/C++，无需本地部署；网站首次下载运行资源仍需联网。
 
 源码部署先 `npm ci --ignore-scripts`，再 `node scripts/build-clients.mjs all`，`npm start`；默认127.0.0.1:43117。发布构建提供 `ACMCODER_BUILD_COMMIT` 完整Git SHA，各客户端version.json必须一致。WSL镜像不含.git，使用Mac固定commit归档并传入该SHA构建。
 

@@ -1,0 +1,32 @@
+{
+  "version": "4.0.0-rc.5",
+  "commit": "e9a318f8a535936b4f184ad7f4daa0891c5a21ca",
+  "extensionId": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+  "browser": "Real installed Chrome for Testing 151.0.7922.34, native CUA controls",
+  "packageSHA256": "47c812e36e2b742e6c2a1fa5f33cf19f460c4bcb456dca300210a20908410d6e",
+  "profile": "Chrome for Testing unsigned profile; no extensions before this install, own demo fixture only",
+  "installPath": "dist/extension-acceptance/e9a318f",
+  "offlineScope": "DevTools Offline on this real extension tab; applied before first C++ resource load and retained across navigation/reload. Not a machine-wide network shutdown.",
+  "checks": {
+    "coldCpp": "passed: new C++ source compiled under Offline, vector/sort, UTF-8 emoji and separate stderr",
+    "runtimeOrigins": "five compiler assets and bridge loaded from chrome-extension://jmdplnhlhdhcaaefllfndokbcmhbpmdb/, opaque blob:null Worker",
+    "externalHTTPS": "same tab canonical website request failed net::ERR_INTERNET_DISCONNECTED",
+    "draftRecovery": "returned to extension while still Offline; C++ code/stdin/expected retained",
+    "timeout": "infinite loop automatically stopped after 5 seconds",
+    "compileError": "undeclared identifier missing_name shown with source line",
+    "recovery": "new C++ compile/run passed after timeout and compile error",
+    "python": "language switch retained independent Python draft; offline Python sample passed"
+  },
+  "cleanup": "Throttling restored to No throttling, DevTools closed. Test extension, source package and data retained.",
+  "limitations": [
+    "No new actual provider AI request or account authorization",
+    "No claim of store publication",
+    "Native captures are proof, not yet sized and selected store screenshots"
+  ],
+  "screenshots": [
+    "dist/releases/4.0.0-rc.5/extension-evidence/offline.png",
+    "dist/releases/4.0.0-rc.5/extension-evidence/network-blocked.png",
+    "dist/releases/4.0.0-rc.5/extension-evidence/recovery.png",
+    "dist/releases/4.0.0-rc.5/extension-evidence/python-offline.png"
+  ]
+}
