@@ -2,10 +2,12 @@
 
 ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地/Docker版共用题库、今日安排、自动保存、重新手撕和长期历史；代码由你编写，自测只代表当前样例通过。
 
-当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.13`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。rc.12修正设置API卡片和题库找题区排版；AI对话使用固定高度的滚动区，每页最多显示20条，完整历史继续保存、备份与同步。203条隔离测试历史已在实际浏览器翻到最早并返回最新，保存及备份数量保持203条，问题草稿在翻页与刷新后保留。旧候选与数据备份继续保留。[公开候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.13)已提供源码、插件ZIP和校验和；GHCR双架构镜像已匿名拉取并验证amd64三语言。原18节点逐项证据见[需求核对](docs/releases/unified-requirement-audit.md)；实装插件最终验收及真实离线删除重连仍未完成，尚非完整稳定发布。
+当前稳定版为 `v3.0.4`。源码中的统一候选版为 `v4.0.0-rc.14`（待实装验收、未公开），源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。rc.12修正设置API卡片和题库找题区排版；AI对话使用固定高度的滚动区，每页最多显示20条，完整历史继续保存、备份与同步。203条隔离测试历史已在实际浏览器翻到最早并返回最新，保存及备份数量保持203条，问题草稿在翻页与刷新后保留。旧候选与数据备份继续保留。[公开候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.13)已提供源码、插件ZIP和校验和；GHCR双架构镜像已匿名拉取并验证amd64三语言。原18节点逐项证据见[需求核对](docs/releases/unified-requirement-audit.md)；实装插件最终验收及真实离线删除重连仍未完成，尚非完整稳定发布。
+
+rc.13公开ZIP在新目录安装后，未登记插件ID会被账号连接拒绝；匿名练习正常。rc.14新增网站设备确认路径，仍待真实插件安装/登录验证，详见[待验说明](docs/releases/v4.0.0-rc.14.md)。
 
 - **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python与C++17；登录GitHub可跨设备同步。
-- **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python，不需要本地服务或网站打开。商店未上架。
+- **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python/C++17，不需要本地服务或网站打开。商店未上架。
 - **本地 / Docker**：保留Python、C++、Java工具链运行和离线数据。候选源码构建后使用相同共享界面。
 
 版本、真实能力和限制见 [功能矩阵](docs/releases/unified-feature-matrix.md)。升级前请先阅读 [升级与恢复](docs/upgrade.md)；API Key去向、长期记录与账号删除见 [数据与隐私](docs/data-and-privacy.md)。

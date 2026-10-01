@@ -1,12 +1,13 @@
 const SITE='https://acmcoder-unified-preview.pages.dev';
 const SESSION_KEY='acmcoder.device.session',PERSIST_KEY='acmcoder.device.refresh';
+const PENDING_KEY='acmcoder.device.pending';
 const allowedPath=path=>path==='records/migrate'||path==='sync/push'||/^sync\/pull\?cursor=\d+&limit=50$/.test(path);
 const random=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
 async function challenge(value){return btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))))).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');}
 
 // Called only by the service worker. Neither the content script nor sandbox receives tokens.
 export function installDeviceAuth(){
-  let refreshWork=null,connectWork=null,epoch=0,credentialWork=Promise.resolve();
+  let refreshWork=null,connectWork=null,pollWork=null,epoch=0,credentialWork=Promise.resolve();
   function serialize(work){const result=credentialWork.then(work);credentialWork=result.catch(()=>{});return result;}
   const failure=(message,code)=>Object.assign(new Error(message),{code});
   const ready=Promise.all([chrome.storage.local.setAccessLevel({accessLevel:'TRUSTED_CONTEXTS'}),chrome.storage.session.setAccessLevel({accessLevel:'TRUSTED_CONTEXTS'})]);
@@ -17,7 +18,7 @@ export function installDeviceAuth(){
     if(value.remember)await chrome.storage.local.set({[PERSIST_KEY]:{refreshToken:value.refreshToken,refreshExpiresAt:value.refreshExpiresAt,user:value.user,deviceId:value.deviceId,remember:true}});
     else await chrome.storage.local.remove(PERSIST_KEY);
   });}
-  function clear(){epoch++;return serialize(async()=>{await ready;await Promise.all([chrome.storage.session.remove(SESSION_KEY),chrome.storage.local.remove(PERSIST_KEY)]);});}
+  function clear(){epoch++;return serialize(async()=>{await ready;await Promise.all([chrome.storage.session.remove([SESSION_KEY,PENDING_KEY]),chrome.storage.local.remove(PERSIST_KEY)]);});}
   async function request(path,data,token){
     const response=await fetch(`${SITE}/api/${path}`,{method:data?'POST':'GET',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{...(data?{'content-type':'application/json'}:{}),...(token?{authorization:`Bearer ${token}`}:{})},...(data?{body:JSON.stringify(data)}:{})});
     return {status:response.status,data:await response.json()};
@@ -32,17 +33,62 @@ export function installDeviceAuth(){
     })().finally(()=>{refreshWork=null;});}
     return refreshWork;
   }
+  async function saveGrant(data,remember,expectedEpoch){
+    try{await write({...data,remember:!!remember,expiresAt:Date.now()+data.expiresIn*1000},expectedEpoch);}
+    catch(error){
+      // Logout can race the exchange. Do not leave its newly issued grant active.
+      if(expectedEpoch!==epoch)try{await request('devices/revoke',{},data.accessToken);}catch{}
+      throw error;
+    }
+    return {user:data.user};
+  }
   async function connect(remember){
+    await ready;await credentialWork;
+    const pending=(await chrome.storage.session.get(PENDING_KEY))[PENDING_KEY];
+    if(pending&&pending.expiresAt>Date.now())return {pending:true,interval:5};
+    await chrome.storage.session.remove(PENDING_KEY);
     const expectedEpoch=epoch,verifier=random(),state=random();
     const start=await request('devices/start',{name:'ACMCoder 浏览器插件',mode:'pkce',codeChallengeMethod:'S256',codeChallenge:await challenge(verifier),state,redirectUri:chrome.identity.getRedirectURL('connect')});
-    if(start.status!==200)throw new Error(start.data.code==='unregistered_extension'?'此插件 ID 尚未配置授权回调，请使用已登记的安装版本。':'暂时无法发起账号连接，请稍后重试。');
+    // Unpacked ZIP installations have path-dependent IDs, so use explicit device
+    // approval when this ID has no registered PKCE callback. Never widen callbacks.
+    if(start.status===403&&start.data.code==='unregistered_extension'){
+      const device=await request('devices/start',{name:'ACMCoder 浏览器插件（ZIP 安装）',mode:'device'});
+      if(device.status!==200)throw new Error('暂时无法发起账号连接，请稍后重试。');
+      const tab=await chrome.tabs.create({url:device.data.verificationUrl});
+      await serialize(async()=>{
+        if(expectedEpoch!==epoch)throw new Error('账号连接已取消。');
+        await chrome.storage.session.set({[PENDING_KEY]:{deviceCode:device.data.deviceCode,tabId:tab.id,remember:!!remember,expiresAt:Date.now()+device.data.expiresIn*1000,nextPollAt:Date.now()+5000}});
+      });
+      return {pending:true,interval:5};
+    }
+    if(start.status!==200)throw new Error('暂时无法发起账号连接，请稍后重试。');
     const returned=await chrome.identity.launchWebAuthFlow({url:start.data.verificationUrl,interactive:true});
     const url=new URL(returned||'https://invalid.local');
     if(url.origin+url.pathname!==chrome.identity.getRedirectURL('connect')||url.searchParams.get('state')!==state)throw new Error('授权回调无效，未连接账号。');
     const result=await request('devices/token',{deviceCode:url.searchParams.get('code'),codeVerifier:verifier});
     if(result.status!==200)throw new Error('授权已过期或被使用，请重新连接。');
-    await write({...result.data,remember:!!remember,expiresAt:Date.now()+result.data.expiresIn*1000},expectedEpoch);
-    return {user:result.data.user};
+    return saveGrant(result.data,remember,expectedEpoch);
+  }
+  async function poll(){
+    await ready;await credentialWork;
+    const expectedEpoch=epoch,pending=(await chrome.storage.session.get(PENDING_KEY))[PENDING_KEY];
+    if(!pending)throw new Error('账号连接已取消，请重新连接。');
+    if(pending.expiresAt<=Date.now()){await chrome.storage.session.remove(PENDING_KEY);throw new Error('授权已过期，请重新连接。');}
+    if(pending.nextPollAt>Date.now())return {pending:true,interval:Math.ceil((pending.nextPollAt-Date.now())/1000)};
+    await serialize(async()=>{
+      if(expectedEpoch!==epoch)throw new Error('账号连接已取消。');
+      await chrome.storage.session.set({[PENDING_KEY]:{...pending,nextPollAt:Date.now()+5000}});
+    });
+    const result=await request('devices/token',{deviceCode:pending.deviceCode});
+    if(result.status===428&&result.data.code==='authorization_pending'){
+      try{await chrome.tabs.get(pending.tabId);}catch{await chrome.storage.session.remove(PENDING_KEY);throw new Error('确认页面已关闭，账号未连接。');}
+      return {pending:true,interval:5};
+    }
+    if(result.status===429&&result.data.code==='slow_down')return {pending:true,interval:5};
+    if(result.status!==200){await chrome.storage.session.remove(PENDING_KEY);throw new Error('授权已过期或被使用，请重新连接。');}
+    const connected=await saveGrant(result.data,pending.remember,expectedEpoch);
+    await chrome.storage.session.remove(PENDING_KEY);
+    return connected;
   }
   chrome.runtime.onMessage.addListener((message,sender,respond)=>{
     if(!String(message?.type||'').startsWith('ACMCODER_AUTH_'))return false;
@@ -53,6 +99,9 @@ export function installDeviceAuth(){
       if(message.type==='ACMCODER_AUTH_CONNECT'){
         if(connectWork)throw new Error('连接窗口已打开，请在该窗口完成确认。');
         connectWork=connect(message.remember).finally(()=>{connectWork=null;});return connectWork;
+      }
+      if(message.type==='ACMCODER_AUTH_POLL'){
+        if(!pollWork)pollWork=poll().finally(()=>{pollWork=null;});return pollWork;
       }
       if(message.type==='ACMCODER_AUTH_LOGOUT'){
         const value=await read();if(value){try{const grant=await active();const result=await request('devices/revoke',{},grant.accessToken);if(result.status!==200&&result.status!==401)throw new Error('云端撤销暂未完成，请联网后重试。');}catch(error){if(error.code!=='401')throw error;}}
@@ -70,7 +119,13 @@ export function installDeviceAuth(){
 
 export function createExtensionAuth(){
   async function send(type,values={}){const reply=await chrome.runtime.sendMessage({type:`ACMCODER_AUTH_${type}`,...values});if(!reply?.ok)throw Object.assign(new Error(reply?.error||'账号连接不可用。'),{code:reply?.code});return reply.result;}
-  return {status:()=>send('STATUS'),connect:remember=>send('CONNECT',{remember}),logout:()=>send('LOGOUT'),transport:accountId=>{
+  return {status:()=>send('STATUS'),async connect(remember){
+    let result=await send('CONNECT',{remember});
+    // Each poll is a short worker message; no ten-minute MV3 event is held open.
+    // The device secret stays in trusted session storage across worker restarts.
+    while(result.pending){await new Promise(resolve=>setTimeout(resolve,result.interval*1000));result=await send('POLL');}
+    return result;
+  },logout:()=>send('LOGOUT'),transport:accountId=>{
     async function call(path,data){const response=await send('API',{path,data,accountId});if(response.status!==200){const error=new Error(response.data.error||'同步暂不可用');error.code=response.data.code||String(response.status);throw error;}return response.data;}
     return {async migrate(){let cursor=null;do{({nextCursor:cursor}=await call('records/migrate',{protocolVersion:1,cursor}));}while(cursor);},push:mutations=>call('sync/push',{protocolVersion:1,mutations}),pull:cursor=>call(`sync/pull?cursor=${cursor}&limit=50`)};
   }};

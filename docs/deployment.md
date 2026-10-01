@@ -20,6 +20,8 @@ Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删
 
 # ACMCoder 部署现状
 
+源码待验候选rc.14的拟发布镜像名称为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.14` 和 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.14`，尚未发布，不要把拟定名称当作可拉取产物。下面的已公开安装路径仍锁定rc.13；插件新目录账号连接限制见[插件说明](edge-extension.md)。
+
 ## 先分清入口和运行模式
 
 ACMCoder 现在有两个 Web 启动入口：
