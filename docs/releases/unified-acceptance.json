@@ -39,7 +39,7 @@
     },
     "ai-real-three-clients": {
       "status": "blocked",
-      "evidence": "Authorized Bitwarden key consumption and real qwen3.7-flash-2026-07-15 shared transport request passed HTTP 200, plus real original candidate validated. Website/installed extension/local UI question, cancel and recovery with provider remain pending; direct transport success is not three-client acceptance. evidence/ai-provider-chat-2026-10-01.json."
+      "evidence": "Authorized Bitwarden key consumption and real qwen3.7-flash-2026-07-15 shared transport request passed HTTP 200, plus real original candidate validated. Website/installed extension/local UI question, cancel and recovery with provider remain pending; direct transport success is not three-client acceptance. evidence/ai-provider-chat-2026-10-01.json. Real RC9 Docker local HTTP API plus shared createAIClient now passed question, post-dispatch cancellation, same-request retry, real invalid-model error/recovery, no duplicate question, unchanged code/input/expected and key-free learning backup: evidence/ai-local-http-client-2026-10-01.json; this is not browser UI."
     },
     "ai-original-import": {
       "status": "blocked",
@@ -47,7 +47,7 @@
     },
     "old-install-upgrade": {
       "status": "blocked",
-      "evidence": "Commits 25814b7 and ce34f0e: real v3.0.4 fixture volumes retained questions, samples and self-test count; migrated synthetic old Key supports real HTTP requests after container restart and stays out of learning backup. User stable WSL upgrade still needs sudo restart; this fixture does not replace it."
+      "evidence": "Commits 25814b7 and ce34f0e: real v3.0.4 fixture volumes retained questions, samples and self-test count; migrated synthetic old Key supports real HTTP requests after container restart and stays out of learning backup. User stable WSL upgrade still needs sudo restart; this fixture does not replace it. Actual 43117 API learning exports/progress copied and hashed in WSL and Mac; prepared fixed rc9 static directory and syntax-checked activation script, existing service/static untouched. evidence/stable-upgrade-preparation-2026-10-01.json; user sudo still required."
     }
   }
 }

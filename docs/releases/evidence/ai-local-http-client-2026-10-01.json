@@ -1,0 +1,16 @@
+{
+  "testedAt": "2026-10-01T14:55:00.886Z",
+  "version": "4.0.0-rc.9",
+  "commit": "374960477b71effb869732fcfd130ab28bd25cde",
+  "scope": "Real shared AI client through Docker local HTTP API; not browser UI",
+  "model": "qwen3.7-flash-2026-07-15",
+  "passed": true,
+  "questionAnswered": true,
+  "cancelAfterHTTPRequestDispatch": true,
+  "retryAfterCancel": true,
+  "realProviderErrorObserved": true,
+  "errorRecovery": true,
+  "retriesDidNotDuplicateQuestions": true,
+  "codeInputExpectedUnchanged": true,
+  "learningBackupContainsNoAPIKey": true
+}

@@ -9,7 +9,8 @@
 | OpenAI | `https://api.openai.com/v1` | 待用户自行配置 |
 | DeepSeek | `https://api.deepseek.com` 或 `/v1` | 待用户自行配置 |
 | SiliconFlow | `https://api.siliconflow.cn/v1` | 待用户自行配置 |
-| 阿里云兼容入口 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | 待用户自行配置 |
+| 阿里云兼容入口 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | 通用入口未实测 |
+| 阿里云北京工作空间 | `https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`，WorkspaceId以ws-开头 | qwen3.7-flash-2026-07-15真实共享传输、relayAI、本地HTTP问答/取消重试/错误恢复通过；三端界面待验收 |
 
 该表是转发允许范围，不是全部提供商已经实测的声明。网站不能做任意 URL 代理，不跟随重定向，不落库密钥。现有网站问答读取限额是每账号每日 20 次、至少间隔 10 秒；本地和插件仍受提供商自己的额度约束。模型费用由用户选定服务收取，没有共享付费模型回退。
 
@@ -19,6 +20,8 @@
 
 题目和语言各有独立对话记录。发送不会修改代码；“附带当前题面、代码和输入”默认关闭，选中才发送。限制模型上下文不删除历史，失败或取消保留问题，重试同一次请求不重复记录。网站转发接口只允许已登录网页账号，设备同步令牌不能调用。
 
-目前已验证共享核心、本地 HTTP 兼容测试服务的真实网络与界面链路；测试服务只验证协议和取消/错误行为，不替代真实提供商验收。旧版本明文 AI 配置迁移、插件实装权限/联网、用户真实 Key 三端问答仍待完成，A1 暂不能标整体完成。
+目前已验证共享核心、本地 HTTP 兼容测试服务的真实网络与界面链路；测试服务只验证协议和取消/错误行为，不替代真实提供商验收。合成旧版本配置迁移与实际HTTP已通过；真实密码库授权的提供商共享传输、relayAI及本地HTTP问答/取消重试/错误恢复通过，代码/stdin/expected未变且学习备份不含Key。插件实装权限/联网和用户真实Key三端界面问答仍待完成，A1 暂不能标整体完成。
 
 协议参考：[Chat Completions API](https://developers.openai.com/api/reference/resources/chat)。
+
+北京工作空间地址以[阿里云官方Base URL说明](https://help.aliyun.com/zh/model-studio/base-url)为依据，rc.9加入网站允许范围；不允许其他路径、端口、仿冒后缀或Token Plan接口。实际验收收据见`docs/releases/evidence/ai-local-http-client-2026-10-01.json`，该收据明确仅为本地HTTP和产品共享client，不替代浏览器设置或完整找题界面。

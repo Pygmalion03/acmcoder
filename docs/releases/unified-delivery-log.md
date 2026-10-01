@@ -356,3 +356,11 @@
 - Mac候选包源码847,137字节/SHA256 b08ff874af01ea2119bc4b7314c767d8532d6f475c45954f99b5f91008f443f6；插件ZIP33,769,932字节/SHA256 4d9d0460bcba93eb6d24cd1ff15ead7ffe9a6a3a2f516d785378c2f62ae71b9b。实际ZIP CRC、manifest版本、源码pax commit和完整MIT随包通过。运行资源比较初次因C++ NOTICE新增说明而中止；排除许可文本后实际20份运行器/资源逐字节一致，NOTICE完整保留并补充。旧rc.8产物未重写，旧测试安装复制e9a318f-rc8-preserved后从新ZIP更新同路径；实际管理页rc.9/ID不变，题库三题、原负数草稿与17行/7行历史对照可见。不称商店自动更新或本轮再次导出18条等值。
 - Docker镜像acmcoder-app:unified-rc9-3749604，本地ID sha256:033a8465260631c11c09aac90f2cb6d8be71c21e6cd598d342ba8d9eecb75d48，amd64。仅停止保留会话自建rc.8测试容器，rc.9沿用原四测试卷与安全限制回环36440；先读取原Python代码及10 32输入准确，再核对版本/commit、MIT/隐私200。未写回数据制造持久化证据；稳定43117未重启。实际关联更新本地发行manifest和rc9-release-acceptance.json，registryDigest为空，未更新latest/稳定tag/商店。
 - 发布文档同步后最小命名/发行检查8/8通过；不重复固定源码已通过的374项或构建。该批仅更新实际交付记录，不替换3749604产物。
+
+## A1/R1 — 真实本地AI生命周期与用户旧安装升级准备，2026-10-01
+
+- 本机bw-codex授权仍有效。仅通过其venv执行凭据脚本，内部注入Key并经SSH stdin交给隔离测试进程，不通过参数、日志、文件或模型展示秘密。最初使用系统python缺少密码库依赖而中止，改用入口venv后执行完成退出0。
+- 固定rc.9 Docker36440真实/api/unified-ai/chat与共享createAIClient，真实qwen3.7-flash-2026-07-15问答返回42；请求发出后取消、同requestId重试、真实无效模型报错/恢复均通过。重试两组各保留一个用户问题，草稿代码/stdin/expected与调用前完全相等，实际学习备份不含Key。仅新增会话自建测试卷中的验收题/对话，不改用户43117学习记录。收据ai-local-http-client-2026-10-01.json；不是浏览器UI取消、插件权限或三端全部通过。
+- 实际用户43117服务尚未重启，sudo -n要求密码；旧进程unified/session为404而静态包为rc.6，未冒称已有真实升级。只读导出原memory/problems及progress：memory0页、问题5条、progress2条。WSL独立备份/home/pygmalion/backups/acmcoder/before-stable-upgrade-20261001T145002与Mac长期Backups目录均保留，所有文件尺寸/SHA256一致；settings/Key与认证令牌没有进入学习备份。
+- 固定3749604本地静态文件复制到dist/local-web-rc9-prepared，未切换旧静态或重启服务。Mac编写activation脚本再传到WSL，bash -n通过：先校验version/commit，再sudo -v；取得授权后保留旧静态目录、切换预备目录并restart/is-active。已交接用户在自己的Terminal运行，用户密码不进入Agent。
+- 网站设置只预填用户已指定的非秘密地址/模型，未读取密钥框；当前状态尚未设置密钥，已交接手动填写并保存，保持不刷新。自动脚本能取用密码库并不等于浏览器有直接凭据注入接口；不建立临时无认证密钥服务绕过这一限制。截图dist/releases/4.0.0-rc.9/ai-configuration-handoff.jpg。上述真实AI与升级完整门槛继续未完成，未递增版本、重建候选或发布稳定渠道。

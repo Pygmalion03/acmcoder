@@ -1,0 +1,41 @@
+{
+  "createdAt": "2026-10-01T14:50:02.594Z",
+  "source": "Existing user 43117 service; read-only API export",
+  "folder": "/home/pygmalion/backups/acmcoder/before-stable-upgrade-20261001T145002",
+  "files": [
+    {
+      "name": "memory-export.json",
+      "bytes": 96,
+      "sha256": "63e10aa756661c406a502ea6c0fb312a9cd6e9fcb77e4064187d94136da24efb"
+    },
+    {
+      "name": "problems-export.json",
+      "bytes": 7911,
+      "sha256": "436ace3794d8228ded15488a4aedaa5ed712c35a2c37717339b2ee7ad6dfe4b4"
+    },
+    {
+      "name": "progress.json",
+      "bytes": 378,
+      "sha256": "dc981c8d9312811e74c5aa4d0e9690949545d7966db7b4bd1d667c9298d1d1f6"
+    }
+  ],
+  "staticVersionBefore": "4.0.0-rc.6",
+  "unifiedAvailable": false,
+  "memoryPages": 0,
+  "exportedProblemCount": 5,
+  "progressCount": 2,
+  "unifiedSessionStatus": 404,
+  "macBackupVerified": true,
+  "preparedClient": {
+    "version": "4.0.0-rc.9",
+    "commit": "374960477b71effb869732fcfd130ab28bd25cde",
+    "directory": "/home/pygmalion/runs/002-acmcoder/v3/dist/local-web-rc9-prepared"
+  },
+  "activation": {
+    "script": "/home/pygmalion/runs/002-acmcoder/v3/dist/activate-rc9.sh",
+    "shellSyntaxCheck": "passed",
+    "status": "awaiting-user-sudo",
+    "existingServiceRestarted": false,
+    "existingStaticChanged": false
+  }
+}
