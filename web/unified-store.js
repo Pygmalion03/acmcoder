@@ -6,7 +6,7 @@ export async function createLocalClient(){
     const listeners=new Set();const journal=`acmcoder-local-recovery:${namespace}`;let queue=Promise.resolve();let pending=new Map();let state={state:'saved'};
     const write=()=>pending.size?localStorage.setItem(journal,JSON.stringify([...pending.values()])):localStorage.removeItem(journal);
     function perform(method,args){const result=queue.then(()=>call('store',{namespace,method,args}));queue=result.catch(()=>{});return result;}
-    const methods=['getDraft','startRewrite','finishRewrite','discardRewrite','listAttempts','getRecord','listRecords','putRecord','getMeta','setMeta','archiveProblem','restoreProblem','deleteProblem','exportBackup','restoreBackup','syncConflicts','syncResolve','syncCopyConflict','backupCopyConflict'];
+    const methods=['getDraft','startRewrite','finishRewrite','discardRewrite','listAttempts','getRecord','listRecords','putRecord','getMeta','setMeta','archiveProblem','restoreProblem','deleteProblem','exportBackup','previewBackup','restoreBackup','syncConflicts','syncResolve','syncCopyConflict','backupCopyConflict'];
     const store={namespace,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);},getSaveState:()=>state};
     for(const method of methods)store[method]=(...args)=>perform(method,args);
     store.saveDraft=async input=>{
