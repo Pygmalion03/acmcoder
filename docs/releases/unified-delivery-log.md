@@ -231,3 +231,10 @@
 - 固定源码 `19cb17b9cdccaddf0ba9a14159a383694990dd71` 已推送；Mac Git archive 在WSL `/tmp/acmcoder-brand-19cb17b` 构建三端、素材和候选包，一致性检查通过。Mac独立保存于 `dist/brand-candidates/19cb17b`，不替换 `dist/releases/4.0.0-rc.4` 或宣称新正式版本。新ZIP33,761,229字节，SHA256 `d34a17479ba87a14eb99c98e8a62476ddd7afa68faa5200a81a49ecb017cf74e`；源码793,568字节，SHA256 `eae8044f17dae7da5de346274a5721a61ce7f07a80a6333a3e245860040b7e14`。
 - 真实生成的5张PNG逐chunk CRC、像素尺寸、摘要/体积、128透明留白检查通过；ZIP完整性和manifest所有图标路径通过，包内图标与素材PNG逐字节一致，无渲染器二进制。Mac再次核对新包摘要与原ef688b8 ZIP摘要不变。独立只安装生产依赖的源码目录 `/tmp/acmcoder-brand-prod-19cb17b` 构建local-web通过，证实新增开发渲染器不阻塞Docker的omit-dev路径。
 - 补随包共享数据与隐私HTML、无脚本样式及设置入口；题目/记录、AI传输和Key、设备授权、云容量/日额度、归档/删除/备份与联系说明均对应现有实现。支持Issues及政策源码的匿名HTTP访问200。页面随三端构建复制；浏览器渲染、公开隐私URL和真实插件截图仍待验收。候选Actions流程同时生成并保存品牌素材，但本轮没有触发云构建或商店提交。
+
+## rc.5 — 完整 Pages 静态资源与 API 构建，2026-10-01
+
+- 重新核对预览项目，GitHub来源仍为Pygmalion03/acmcoder、生产分支codex/unified-product、输出dist/site；最新4bda5ad部署明确因commit_message跳过，不是仍在运行的任务。Wrangler4.144.0 whoami仍未认证，但已有Git集成提供不同的受支持部署路径，不继续重复403上传探针。原公开rc.3、稳定43117、旧候选和回退点保留。
+- build-pages改为编译现有cloudflare/functions到小型_worker.js，运行资源全部作为静态文件；首页切换统一workspace，原入口保存在legacy.html。固定Wrangler4.144.0，本地不读OAuth/D1仪表盘秘密或把旧正式配置带到输出。_routes.json只有/api/*，静态请求不消耗Functions调用额度。
+- 新增Pages产物检查：已知源码提交、共享首页、隐私/图标、Worker免费压缩预算、25MiB单文件/20,000文件、C++资源尺寸/摘要/总量及不允许符号链接。新增4项失败边界检查；第一次23项相关检查中仅测试夹具体积写错失败，改为核对实际stat后完整回归361/361通过，日志/tmp/acmcoder-rc5-milestone-tests.log。WSL完整Pages实际构建通过，64静态文件、API Worker110,107字节；该本地检查不冒称已公开部署。
+- 根版本统一递增4.0.0-rc.5，插件数字4.0.0.5；增加发行说明、部署步骤与候选Actions的Pages构建清单。接下来从固定提交触发已有Git集成并核对公开资源/API；不更新稳定tag/GHCR/latest，不做数据库迁移或清理用户数据。

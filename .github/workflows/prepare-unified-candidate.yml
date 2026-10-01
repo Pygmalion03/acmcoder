@@ -23,6 +23,7 @@ jobs:
         run: |
           npm test
           npm run build:clients
+          npm run build:pages
           npm run build:store-assets
           npm run check:release -- --candidate
           npm run pack:release -- --candidate
@@ -33,5 +34,6 @@ jobs:
           path: |
             dist/releases/
             dist/store-assets/
+            dist/pages-build/
           if-no-files-found: error
       # This job does not create a Release, publish images, deploy or change latest.
