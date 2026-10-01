@@ -42,7 +42,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   function tomorrow(){const [y,m,d]=day().split('-').map(Number);return new Date(Date.UTC(y,m-1,d+1)).toISOString().slice(0,10);}
   root.innerHTML=`<header class="glass"><div class="brand"><b>✦</b>ACMCoder</div><nav aria-label="工作区">${['today','library','practice'].map((name,i)=>button(`nav-${name}`,['☀ 今日','▤ 题库','⌘ 练习'][i])).join('')}</nav><div class="head-actions">${button('theme','◐','quiet')}${button('nav-settings','设置与数据','quiet')}</div></header><main id="content"></main><div id="notice" class="status-message" role="status" hidden></div>
     <dialog id="import-dialog"><div class="dialog-title"><h2>导入题目</h2>${button('close-import','✕','quiet')}</div><p class="muted">保留题面和原始样例，ACM 输入由你自行调整。</p><label>原题链接<input id="import-url" type="url" placeholder="https://leetcode.cn/problems/…/"></label>${button('fetch-import','读取公开题面','quiet')}<label>题目名称<input id="import-title" maxlength="160" placeholder="例如：两数之和"></label><label>题面<textarea id="import-statement" placeholder="粘贴题面，或从原题链接读取"></textarea></label><label>原始样例<textarea id="import-samples" placeholder="保留原平台样例，不自动转换函数参数"></textarea></label><label>ACM 样例输入（可选）<textarea id="import-stdin"></textarea></label><label>ACM 样例期望输出（可选）<textarea id="import-expected"></textarea></label><p id="import-note" class="muted" role="status"></p><footer>${button('close-import','取消','quiet')}${button('save-import','导入并开始练习','primary')}</footer></dialog>
-    <dialog id="delete-dialog"><h2>彻底删除这道题？</h2><p>本机的题面、草稿、重写记录与复习安排将一并删除。此操作无法撤销；需要保留时请先导出备份。</p><footer>${button('cancel-delete','取消')}${button('confirm-delete','彻底删除','danger')}</footer></dialog>`;
+    <dialog id="delete-dialog"><h2>彻底删除这道题？</h2><p id="delete-scope"></p><p>本机的题面、草稿、历史、对话与复习安排将一并删除，每日计划中移除该题；已连接账号时会同步删除。此操作无法撤销；需要保留时请先导出备份。</p><footer>${button('cancel-delete','取消')}${button('confirm-delete','彻底删除','danger')}</footer></dialog>`;
   async function persistLocation(){await store.setMeta('location',{view,problemId:selected,language});}
   async function fetchSource(url){
     if(client.fetchProblem)return client.fetchProblem(url);
@@ -253,9 +253,12 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       if(action==='more-history')await compare($('history-version')?.value,true);
       if(action==='archive'){await store.archiveProblem(id);await refresh();await render();toast('已归档，记录完整保留。');}
       if(action==='restore'){await store.restoreProblem(id);await refresh();await render();}
-      if(action==='delete'){deleting=id;$('delete-dialog').showModal();}
+      if(action==='delete'){
+        const preview=await store.previewDeleteProblem(id),labels={problem:'题目',draft:'草稿',attempt:'重写快照',run:'自测记录',review:'复习安排',plan:'每日计划中的引用',progress:'进度',conversation:'AI 对话'};
+        deleting=id;$('delete-scope').textContent=`${preview.title}：${Object.entries(preview.counts).map(([kind,count])=>`${labels[kind]||kind} ${count} 条`).join(' · ')}`;$('delete-dialog').showModal();
+      }
       if(action==='cancel-delete')$('delete-dialog').close();
-      if(action==='confirm-delete'){await store.deleteProblem(deleting,{confirmed:true});$('delete-dialog').close();await refresh();await render();}
+      if(action==='confirm-delete'){target.disabled=true;try{await store.deleteProblem(deleting,{confirmed:true});$('delete-dialog').close();await refresh();await render();}finally{target.disabled=false;}}
       if(action==='review'){await store.putRecord({kind:'review',id:`review-${selected}`,problemId:selected,payload:{dueDay:tomorrow(),completedAt:null}});toast(`已加入 ${tomorrow()} 的复习安排。`);}
       if(action==='complete-plan'){const key=`plan-${day()}`;const plans=(await store.getRecord({kind:'plan',id:key}))?.payload.completed||{};plans[id]=!plans[id];await store.putRecord({kind:'plan',id:key,payload:{day:day(),timezone:settings.timezone,completed:plans}});const review=await store.getRecord({kind:'review',id:`review-${id}`});if(review){review.payload.completedAt=plans[id]?Date.now():null;await store.putRecord(review);}await render();}
       if(action==='export'){downloadJSON(await store.exportBackup(),`acmcoder-${day()}.json`);toast('完整备份已导出。');}

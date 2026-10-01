@@ -3,6 +3,29 @@ import assert from 'node:assert/strict';
 import {IDBFactory} from 'fake-indexeddb';
 import {createBrowserStore} from '../shared/browser-store.js';
 const create=()=>createBrowserStore({namespace:crypto.randomUUID(),indexedDB:new IDBFactory(),storage:null});
+test('permanent deletion previews the full scope and removes plan references while preserving other questions',async()=>{
+ const store=create();for(const id of ['one','two'])await store.putRecord({kind:'problem',id,payload:{title:id}});
+ await store.saveDraft({problemId:'one',language:'python',code:'old',stdin:'1',expected:'2'});await store.startRewrite({problemId:'one',language:'python',template:''});
+ for(const kind of ['run','review','conversation'])await store.putRecord({kind,id:kind,problemId:'one',payload:kind==='conversation'?{messages:[]}:{}});
+ await store.putRecord({kind:'plan',id:'day',payload:{completed:{one:true,two:false}}});
+ await store.putRecord({kind:'plan',id:'legacy-day',payload:{items:[{problemId:'one',completed:true},{problemId:'two',completed:false}]}});
+ const before=await store.exportBackup(),preview=await store.previewDeleteProblem('one');
+ assert.equal(preview.title,'one');assert.deepEqual(preview.counts,{problem:1,run:1,review:1,conversation:1,plan:2,draft:1,attempt:1});
+ assert.deepEqual((await store.exportBackup()).records,before.records);
+ await store.deleteProblem('one',{confirmed:true});
+ assert.deepEqual((await store.getRecord({kind:'plan',id:'day'})).payload.completed,{two:false});
+ assert.deepEqual((await store.getRecord({kind:'plan',id:'legacy-day'})).payload.items,[{problemId:'two',completed:false}]);
+ const after=await store.exportBackup();assert.equal(after.records.some(r=>r.problemId==='one'||r.kind==='problem'&&r.id==='one'),false);
+ assert.equal((await store.getRecord({kind:'problem',id:'two'})).payload.title,'two');assert.ok(await store.getMeta('deleted:one'));
+});
+test('permanent deletion removes matching pending backup versions but retains unrelated conflicts',async()=>{
+ const store=create();for(const id of ['one','two'])await store.putRecord({kind:'problem',id,payload:{title:id}});
+ const incoming={version:3,records:['one','two'].map(id=>({kind:'problem',id,payload:{title:`incoming-${id}`}}))};
+ await store.restoreBackup(incoming);assert.equal((await store.getMeta('backup:pending'))[0].conflicts.length,2);
+ await store.deleteProblem('one',{confirmed:true});
+ const pending=(await store.exportBackup()).pendingRestores;assert.equal(pending.length,1);
+ assert.deepEqual(pending[0].conflicts.map(c=>c.id),['two']);assert.deepEqual(pending[0].backup.records.map(r=>r.id),['two']);
+});
 test('backup preview validates references and reports conflicts without writing; confirmation rechecks newer edits',async()=>{
   const store=create();
   await store.putRecord({kind:'problem',id:'one',payload:{title:'One'}});

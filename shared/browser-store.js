@@ -3,6 +3,7 @@ import { normalizeDraft, draftId, snapshot } from './practice.js';
 import { validateRecord } from './records.js';
 import { normalizeBackup } from './backup.js';
 import {createBrowserSyncAdapter,toSyncRecord} from './browser-sync-store.js';
+import {withoutProblemInPlan} from './problem-references.js';
 
 const requestValue = request => new Promise((resolve,reject) => {
   request.onsuccess = () => resolve(request.result);
@@ -190,12 +191,31 @@ export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,s
     setMeta:(key,value)=>enqueue(()=>transaction(['meta'],'readwrite',async s=>{s('meta').put(value,key);})),
     archiveProblem:id=>archive(id,Date.now()),
     restoreProblem:id=>archive(id,null),
+    previewDeleteProblem:id=>read(allStores,async s=>{
+      const records=await requestValue(s('records').getAll()),parent=records.find(r=>r.kind==='problem'&&r.id===id);
+      if(!parent)throw new Error('题目不存在。');
+      const counts={};
+      for(const record of records)if(record.problemId===id||record===parent||withoutProblemInPlan(record,id)!==record)counts[record.kind]=(counts[record.kind]||0)+1;
+      for(const name of ['drafts','attempts']){const count=(await requestValue(s(name).getAll())).filter(row=>row.problemId===id).length;if(count)counts[name==='drafts'?'draft':'attempt']=count;}
+      return {title:parent.payload.title,counts};
+    }),
     deleteProblem:(id,{confirmed}={})=>enqueue(async()=>{
       if(confirmed!==true)throw new Error('需要明确确认彻底删除。');
       await transaction(allStores,'readwrite',async s=>{
         const records=await requestValue(s('records').getAll());
-        for(const record of records)if(record.problemId===id || (record.kind==='problem'&&record.id===id))s('records').delete([record.kind,record.id]);
+        for(const record of records){
+          if(record.problemId===id || (record.kind==='problem'&&record.id===id))s('records').delete([record.kind,record.id]);
+          else{const next=withoutProblemInPlan(record,id);if(next!==record)s('records').put(next);}
+        }
         for(const name of ['drafts','attempts'])for(const row of await requestValue(s(name).getAll()))if(row.problemId===id)s(name).delete(row.id);
+        const pending=await requestValue(s('meta').get('backup:pending'))||[];
+        for(const entry of pending){
+          const removed=new Set(entry.backup.records.filter(r=>r.problemId===id||r.kind==='problem'&&r.id===id).map(r=>`${r.kind}:${r.id}`));
+          entry.backup.records=entry.backup.records.filter(r=>!removed.has(`${r.kind}:${r.id}`)).map(r=>withoutProblemInPlan(r,id));
+          entry.conflicts=entry.conflicts.filter(c=>!removed.has(`${c.kind}:${c.id}`));
+        }
+        s('meta').put(pending.filter(entry=>entry.conflicts.length),'backup:pending');
+        s('meta').delete(`sync:recovery:${id}`);
         s('meta').put({deletedAt:Date.now()},`deleted:${id}`);
       });
     }),
