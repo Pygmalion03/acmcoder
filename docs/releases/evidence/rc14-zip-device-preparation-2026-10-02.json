@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-02",
+  "version": "4.0.0-rc.14",
+  "commit": "33cd7c543a2298d498a5ccae785ff3c883ddd8dd",
+  "status": "prepared-not-native-accepted-not-release-published",
+  "sourceBranch": "https://github.com/Pygmalion03/acmcoder/tree/codex/zip-device-connect",
+  "publicBaseline": {
+    "version": "4.0.0-rc.13",
+    "commit": "e844d9e5a1810db27b8d601e3763f24727fc9de7",
+    "unchanged": true,
+    "releaseNotesDiscloseFreshIdFailure": true
+  },
+  "fixedSourceVerification": {
+    "tests": {
+      "passed": 393,
+      "failed": 0
+    },
+    "builds": [
+      "site",
+      "extension",
+      "local-web",
+      "pages",
+      "store-brand"
+    ],
+    "candidateConsistency": "passed",
+    "sourcePaxCommit": "matched",
+    "zipCRC": "passed",
+    "extensionChangedFiles": [
+      "auth.js",
+      "manifest.json",
+      "version.json"
+    ],
+    "permissionsAndCSP": "unchanged"
+  },
+  "artifacts": [
+    {
+      "name": "acmcoder-source-v4.0.0-rc.14.tar.gz",
+      "bytes": 878670,
+      "sha256": "51499e03f5c91094bcce1ba0c4308b944bd434332645f9321c618de9fef659ad"
+    },
+    {
+      "name": "acmcoder-extension-v4.0.0-rc.14.zip",
+      "bytes": 33772436,
+      "sha256": "91c12e2c908db5044c224f8420bb2596efca86c761c80e41a4a8c78d3f459b93"
+    }
+  ],
+  "liveUnapprovedDevice": {
+    "version": "4.0.0-rc.14",
+    "commit": "33cd7c543a2298d498a5ccae785ff3c883ddd8dd",
+    "time": "2026-10-01T19:17:49.681Z",
+    "scope": "Actual extension auth module with a Chrome API shim and live public HTTPS transport; not native installation or GitHub approval",
+    "traces": [
+      {
+        "path": "/api/devices/start",
+        "status": 403,
+        "mode": "pkce"
+      },
+      {
+        "path": "/api/devices/start",
+        "status": 200,
+        "mode": "device"
+      },
+      {
+        "path": "/api/devices/token",
+        "status": 428,
+        "mode": null
+      }
+    ],
+    "unapprovedUser": null,
+    "verificationDetailsRequireLogin": true,
+    "pendingSecretReturnedToUI": false,
+    "logoutClearsPending": true,
+    "learningFixtureRetained": true,
+    "nativeInstall": false,
+    "githubApproval": false
+  },
+  "storeReviewKit": {
+    "name": "acmcoder-store-review-v4.0.0-rc.14.zip",
+    "bytes": 152511,
+    "sha256": "478a74ad8c8cc004f73b8438b1c36c30a96ec607415a004ac3049886e739d41f",
+    "pngCRC": "passed",
+    "currentNativeScreenshots": 0,
+    "submissionReady": false
+  },
+  "nativeBlocker": {
+    "state": "Mac locked; automatic unlock could not unlock",
+    "recheckedThisGoalTurn": true,
+    "noUserPromptWhileSleeping": true
+  },
+  "remaining": [
+    "actual fresh ZIP installation",
+    "real GitHub extension approve/sync/revoke and draft retention",
+    "extension same-directory upgrade/restart/rollback",
+    "independent client offline edit / permanent delete / reconnect",
+    "five current installed extension screenshots"
+  ],
+  "scopeLimits": [
+    "Chrome APIs in integration fixture are simulated; live transport cannot prove native installation or GitHub approval",
+    "An initial live-helper assertion assumed anonymous request details, corrected to actual 401 without changing product code",
+    "393 fixed-source tests exclude pre-existing unrelated dirty files",
+    "No tag, public RC14 Release, registry image or production website deployment was created"
+  ]
+}

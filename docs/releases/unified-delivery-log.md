@@ -12,7 +12,7 @@
 
 ## 执行状态
 
-当前状态以[原始18节点核对](unified-requirement-audit.md)为准。rc.12功能/UI收据保留；原功能表中的同步删除项因真实独立客户端离线删除重连证据不完整已改为pending。rc.13公开候选分发、新安装/升级/回退和对应商店材料正在推进，尚不能宣布完整计划完成。以下按时间保留历史实施记录。
+当前状态以[原始18节点核对](unified-requirement-audit.md)为准。rc.13公开分发及源码/Docker新安装、升级、回退已完成；新用户ZIP账号连接缺口在rc.14源码中修正，候选包及商店准备包已生成但仍待真实实装。同步删除的真实独立客户端证据、插件最终安装回归及当前截图仍未完成，尚不能宣布完整计划完成。以下按时间保留历史实施记录。
 
 ## W1 — 统一记录与保留策略
 
@@ -408,3 +408,15 @@
 - 实际IAB网站rc13/galatea0315，1440×900和1280×800无横溢，finder/rows同1188；自建中文题Python输出中文42样例通过，Tab插入四空格不运行，刷新代码/input准确，结束重写两份历史对照，明暗主题可读，减弱动态模拟匹配/按钮transition0s并恢复。测试题归档保留历史；视口/媒体模拟复原，测试标签关闭，没有额外真实AI消耗。OS输入法composition未单独测试。
 - Mac原生Chrome for Testing提示锁屏，停止原生操作；不把IAB当插件实装。S1实装真实GitHub授权/撤销、S2真实离线删除重连、新用户插件安装/回退、当前版本五张插件截图仍待完成。商店文案/权限/隐私/审核流程改为当前事实，MIT/三端AI已完成，历史rc6图片仍明确历史，未改标签冒充最终。Chrome/Edge官方图片及提交要求复查，未接受条款/登记/代付/提交审核。
 - 证据见rc13-public-distribution-2026-10-02.json；关联清单已上传Release，旧rc12、私有学习备份及所有原测试卷保留。公开候选完成不等于完整目标或稳定4.0.0完成。
+
+
+## rc14 — ZIP新目录账号连接修正与候选准备，2026-10-02
+
+- 本轮重新确认Mac锁屏；不要求睡眠中的用户解锁，不把CLI/Chrome API夹具当作实装。公开rc13 manifest没有固定key，未登记ID的真实公网PKCE start返回403/unregistered_extension；发现新用户账号连接缺口，S1与插件新安装保持待验。
+- 仅明确的未登记ID拒绝改走既有设备确认，登记ID继续PKCE；不放宽回调、不新增manifest权限、不修改学习存储。pending放可信session，短消息轮询跨后台重启接续；关闭未确认页面/过期清理，批准后关闭页面仍可兑换。退出与兑换并发时不恢复连接并撤销刚签发授权。9个新增回归使用实际设备授权实现及SQLite夹具，不冒称真实GitHub批准。
+- 初次测试夹具使用mock.property创建不存在的chrome属性、头像空值预期不一致，分别修正夹具；首轮整套检查还发现README版本指引未同步，补源码待验版本与公开版本区别。固定源码33cd7c543a2298d498a5ccae785ff3c883ddd8dd从Mac归档到WSL隔离目录，393/393、三端/Pages/品牌构建及候选包一致性通过，不纳入用户原有无关未提交文件。
+- 候选源码878670字节/SHA256 51499e03f5c91094bcce1ba0c4308b944bd434332645f9321c618de9fef659ad；ZIP33772436字节/SHA256 91c12e2c908db5044c224f8420bb2596efca86c761c80e41a4a8c78d3f459b93。ZIP CRC通过，与rc13文件集合相等，只有auth.js/manifest.json/version.json变化，权限/CSP/运行资源保持。产物复制回Mac dist/releases/4.0.0-rc.14，旧包和安装目录保留。
+- 代码推送独立GitHub分支codex/zip-device-connect，远端SHA匹配33cd7c5；没有推送生产分支、创建rc14 tag/Release或发布新镜像。实际主网站仍rc13/e844d9e。GitHub现有rc13发行说明已补新目录账号连接限制，公开二进制未覆盖。
+- 固定auth.js实际调用公网API，Chrome API仅为进程夹具：PKCE403→device start200→未批准token428，STATUS无用户；退出清pending并保留自建learningFixture，没有网站会话或真实批准。初次helper错误把设备详情当作匿名可读，实际要求登录401；修正helper后完整路径通过，产品源码未改。设备秘密仅留进程内，不输出、不进收据。收据明确nativeInstall/githubApproval为false。
+- 当前源码品牌PNG已生成，尺寸/CRC/摘要通过，与rc13品牌像素逐字节相同；商店文案/权限/隐私/审核流程和品牌组成审核准备ZIP，152511字节/SHA256 478a74ad8c8cc004f73b8438b1c36c30a96ec607415a004ac3049886e739d41f。包内清单明确当前原生截图0、submissionReady=false，不以旧rc6画面冒充当前版本，不提交商店。
+- [完整收据](evidence/rc14-zip-device-preparation-2026-10-02.json)。待用户醒来解锁后继续实际插件新安装/真实GitHub授权及撤销/更新重启与回退、真实离线删除重连和五张当前截图；Goal不标完成。Chrome身份固定与MV3生命周期依据分别为[manifest key](https://developer.chrome.com/docs/extensions/reference/manifest/key)及[后台生命周期](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)，未使用长期保持后台存活的额外权限。
