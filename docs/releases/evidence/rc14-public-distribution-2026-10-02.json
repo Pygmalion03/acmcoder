@@ -181,11 +181,13 @@
   },
   "storeReviewKit": {
     "file": "acmcoder-store-review-v4.0.0-rc.14.zip",
-    "bytes": 152739,
-    "sha256": "37c6860947b19ec18aba4bcc20da40a180af772548a36fbae302446b07399e2e",
+    "bytes": 153741,
+    "sha256": "8a6c3fe91c97ba14c7cc26332c84a2bc8fc4ebf4a7b906dd4c1b14b69c05deb7",
     "nativeScreenshots": 0,
     "submissionReady": false,
-    "publicAsset": false
+    "publicAsset": false,
+    "documentationCommit": "9fc4f398d8dd9a4f95e6497c1aadfb5c5b4fdb14",
+    "previousDraftPreservedAs": "acmcoder-store-review-v4.0.0-rc.14-pre-receipt-37c6860.zip"
   },
   "stillUnproven": [
     "new public ZIP actual native installation and upgrade/restart/rollback",
@@ -199,5 +201,22 @@
     "Live device transport receipt used a Chrome API shim, not native installation",
     "No store submission, new terms acceptance or payment",
     "Old user service remains prior installed version and was not restarted"
-  ]
+  ],
+  "blockedAudit": {
+    "checkedAt": "2026-10-01T19:51:13.163215+00:00",
+    "condition": "Mac locked; native browser tool automatic unlock failed",
+    "observedAcrossConsecutiveGoalStages": [
+      "rc13-public-distribution",
+      "rc14-zip-device-preparation",
+      "rc14-public-distribution"
+    ],
+    "revalidatedAfterIndependentWork": true,
+    "independentPublicDistributionAndDockerInstallWork": "completed",
+    "previousGoalTurn": "progress",
+    "currentGoalTurn": "progress-then-native-impasse",
+    "remainingRequireNativeOrHumanInteraction": true,
+    "liveBuildOrTerminalJobsRemaining": false,
+    "requiredUserActionAfterWaking": "Unlock the Mac, then resume this goal; any actual login or irreversible test deletion prompt is handled at its action time",
+    "fullObjectiveComplete": false
+  }
 }
