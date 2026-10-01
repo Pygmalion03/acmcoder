@@ -376,3 +376,14 @@
 - 真实galatea0315账号界面导出期间，在第二标签页约0.315秒后完成编辑。为稳定观察，临时延迟IndexedDB事务完成通知10秒，保留实际存储事务及下载链路；17条导出payload/引用均与编辑前完整快照相等，另一标签页刷新确认后续编辑已保存。实际备份不含Key，临时通知钩子移除、测试注释恢复。证据backup-ui-concurrency-2026-10-02.json明确记录仪器范围，未将之前窄范围存储探针冒充产品UI验收。
 - 正式功能验收表12/12通过，实际版本/部署/本地image及产物摘要记于rc10-release-acceptance.json和本地发行manifest。原18任务的GitHub Release/GHCR分发、最终需求审计及对应版本商店材料仍需完成；未更新稳定tag/latest或提交商店。最初回退点、旧候选及私有学习备份全部保留。
 - 文档同步后WSL最小命名/发行检查8/8通过，Git diff空白检查通过；本批仅保存验收与发布指引，不重复未受影响的375项全量或构建。文档提交使用[CF-Pages-Skip]，保持e587产物及当前部署关联；临时备份标签已关闭，网站/本地Key会话保留。
+
+## rc.11 — 已确认的新排版同步到三端，2026-10-02
+
+- 用户确认786像素排版预览。共享界面收紧页头/面板间距、代码区默认高度和输入输出留白；运行/停止按钮不再折行，AI用原生details展开/收起，问答挂载及设置逻辑继续复用。预览Python输出8通过，AI展开后输入可访问；786像素页面宽与视口均为786，没有横向溢出。预览使用独立/tmp工作目录及数据目录，旧网站/本地Key标签不刷新。
+- 固定源码e24b73abba912ce26314929e4a9f3ef87ba0c6f3，归档到WSL/tmp/acmcoder-rc11-e24b73a，不带其他未提交文件。375/375全量、三端/Pages构建、候选checker/package全部通过。版本4.0.0-rc.11/数字4.0.0.11；源码包857402字节/SHA256 c5e65a62ea02852e9a4407635e6de87e598e31d86d025714147b681ada228966，插件33770702字节/SHA256 741bf49d6f6e057a53cda96e63511bbcaa6a94d83d0e290eff9e31799494b118。实际摘要/ZIP CRC/MIT/数字版本核对通过，旧rc.10包不覆盖。
+- Cloudflare Git部署966ef595-f9c5-415c-af2e-ef4318800d17实际success，固定网址https://966ef595.acmcoder-unified-preview.pages.dev/。主网址version.json为11/e24；实际website及43117返回的共享JS/CSS逐字节等于本批源码。新IAB网站标签原极光计数代码和7/4输入保持，实际Python输出4、样例通过。截图dist/releases/4.0.0-rc.11/website-layout.jpg；原Key会话保留，没有强制刷新用户编辑页。
+- 43117旧静态界面另存dist/local-web-before-rc11-20261002T0110，再切换完整rc.11静态目录。没有服务端变动，没有sudo重启；后端仍为已验收的rc.9。实际新本地标签显示11/e24，原两整数代码/3 5/期望8保持，自测8通过。旧本地Key页保留，新验收标签关闭，截图local-layout.jpg。
+- 测试插件安装目录另存e9a318f-rc10-preserved，再从实际rc.11 ZIP更新同一路径并重载。管理页显示rc.11/原ID jmdplnhlhdhcaaefllfndokbcmhbpmdb；重载关闭旧扩展页面后，在同一测试profile打开扩展自身workspace.html，初始化完成。原7行代码及2 -1/-1 0输入保持，真实离线包Python输出1 2通过；历史对照保留17行原代码和7行重写。截图extension-history.jpg。新标签最初原生键入漏掉冒号落入搜索，改用完整粘贴地址后进入真实chrome-extension页面，不把网站或搜索页当作插件验收。
+- Docker镜像acmcoder-app:unified-rc11-e24b73a，本地ID sha256:0d315711d933cc8b7235c8377f1698f72cd47c9ebb14b371170ff4a63d713905。只停止保留会话自建rc.10容器，rc.11沿用原四测试卷与回环36440安全限制；只读原草稿代码/10 32准确保留，版本/commit、MIT与隐私200通过。未先写回数据制造证据，未发布GHCR/latest。
+- 实际版本/产物/部署/image/回退位置登记rc11-layout-acceptance.json与本地发行manifest。原12项验收证据保留，本轮不重复未受排版影响的真实AI和语言实验；完整18任务的公开分发、最终需求审计及最终版本商店材料仍待完成。
+- 文档同步后最小命名/发行8/8通过，Git diff空白检查通过。收据/指引作为[CF-Pages-Skip]文档提交，不改变e24固定产物；网站新排版标签保留供用户查看，本地验收及旧布局预览标签关闭，原网站/本地Key会话保留。

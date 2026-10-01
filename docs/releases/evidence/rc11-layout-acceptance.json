@@ -1,0 +1,69 @@
+{
+  "version": "4.0.0-rc.11",
+  "commit": "e24b73abba912ce26314929e4a9f3ef87ba0c6f3",
+  "tests": {
+    "passed": 375,
+    "total": 375,
+    "failed": 0
+  },
+  "artifacts": [
+    {
+      "name": "acmcoder-source-v4.0.0-rc.11.tar.gz",
+      "bytes": 857402,
+      "sha256": "c5e65a62ea02852e9a4407635e6de87e598e31d86d025714147b681ada228966"
+    },
+    {
+      "name": "acmcoder-extension-v4.0.0-rc.11.zip",
+      "bytes": 33770702,
+      "sha256": "741bf49d6f6e057a53cda96e63511bbcaa6a94d83d0e290eff9e31799494b118"
+    }
+  ],
+  "website": {
+    "deploymentId": "966ef595-f9c5-415c-af2e-ef4318800d17",
+    "url": "https://966ef595.acmcoder-unified-preview.pages.dev/",
+    "status": "success"
+  },
+  "images": {
+    "app": {
+      "localTag": "acmcoder-app:unified-rc11-e24b73a",
+      "localId": "sha256:0d315711d933cc8b7235c8377f1698f72cd47c9ebb14b371170ff4a63d713905",
+      "registryDigest": null
+    },
+    "runner": null,
+    "status": "local-only"
+  },
+  "actualUI": {
+    "website": {
+      "samplePassed": true,
+      "stdout": "4",
+      "priorCodeAndInputRetained": true
+    },
+    "local": {
+      "staticVersion": "4.0.0-rc.11",
+      "backendRemains": "RC9/3749604",
+      "samplePassed": true,
+      "stdout": "8",
+      "serverRestartRequired": false,
+      "priorCodeAndInputRetained": true
+    },
+    "extension": {
+      "id": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+      "versionObserved": "4.0.0-rc.11",
+      "sameInstallPath": true,
+      "samplePassed": true,
+      "stdout": "1 2",
+      "old17LineAndNew7LineComparisonObserved": true
+    }
+  },
+  "rollback": {
+    "website": "8b62cdff-2997-4b54-9b4e-455692cee573",
+    "localStatic": "/home/pygmalion/runs/002-acmcoder/v3/dist/local-web-before-rc11-20261002T0110",
+    "extensionDirectory": "dist/extension-acceptance/e9a318f-rc10-preserved",
+    "oldPackages": "dist/releases/4.0.0-rc.10"
+  },
+  "boundaries": [
+    "No GitHub Release/GHCR or marketplace publication",
+    "Prior AI and language acceptance reused; no new real-provider claim",
+    "Existing user backend not restarted for this static-only layout update"
+  ]
+}
