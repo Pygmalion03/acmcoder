@@ -10,7 +10,7 @@ const origin = 'https://acmcoder.example';
 test('BYOK relay accepts Beijing workspace OpenAI endpoints and rejects lookalikes before sending credentials',async()=>{
  const {call}=fixture(),previous=globalThis.fetch;let requests=0;
  const baseUrl='https://ws-acceptance20261001.cn-beijing.maas.aliyuncs.com/compatible-mode/v1';
- globalThis.fetch=async(url,options)=>{requests++;assert.equal(url,`${baseUrl}/chat/completions`);assert.equal(options.redirect,'error');return Response.json({choices:[{message:{content:'workspace answer'}}]});};
+ globalThis.fetch=async(url,options)=>{requests++;assert.equal(url,`${baseUrl}/chat/completions`);assert.equal(options.redirect,'manual');return Response.json({choices:[{message:{content:'workspace answer'}}]});};
  const data={provider:{baseUrl,model:'test-model'},key:'synthetic-workspace-key',messages:[{role:'user',content:'hi'}]};
  try{
   const accepted=await call('a','ai/chat','POST',data);assert.equal(accepted.status,200);assert.equal(accepted.data.message,'workspace answer');assert.equal(requests,1);
@@ -28,7 +28,7 @@ test('BYOK relay accepts Beijing workspace OpenAI endpoints and rejects lookalik
 
 test('BYOK relay requires login and origin, rejects arbitrary targets and stores no key',async()=>{
  const {call,sqlite,db}=fixture(),previous=globalThis.fetch;let requests=0;
- globalThis.fetch=async(url,options)=>{requests++;assert.equal(url,'https://api.deepseek.com/v1/chat/completions');assert.equal(options.redirect,'error');return Response.json({choices:[{message:{content:'answer test-key'}}]});};
+ globalThis.fetch=async(url,options)=>{requests++;assert.equal(url,'https://api.deepseek.com/v1/chat/completions');assert.equal(options.redirect,'manual');return Response.json({choices:[{message:{content:'answer test-key'}}]});};
  const data={provider:{baseUrl:'https://api.deepseek.com/v1',model:'chat'},key:'test-key',messages:[{role:'user',content:'自由提问'}]};
  try{
   const anonymous=await onRequest({request:new Request(`${origin}/api/ai/chat`,{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(data)}),env:{DB:db}});assert.equal(anonymous.status,401);

@@ -1,16 +1,16 @@
 # ACMCoder部署：统一候选版与稳定版
 
-统一候选版本为4.0.0-rc.9，固定源码3749604的网站、插件ZIP与本地镜像已关联；正式稳定镜像仍是3.0.4。真实同ID插件升级、重复恢复、删除范围、匿名网站恢复/运行/历史与隔离Docker旧草稿保留已验证。C++编译运行、超时/恢复及插件离线证据来自rc.5；当前运行器及资源与已验收版本逐字节一致，许可NOTICE补充已随新包提供。公开预览网站为 https://acmcoder-unified-preview.pages.dev/；网站Python/C++在浏览器内运行，不把用户代码送到Cloudflare执行。候选插件自带离线Python/C++，无需本地部署；网站首次下载运行资源仍需联网。完整正式发布的真实AI三端界面及用户旧稳定安装等门槛仍待完成。
+统一候选版本为4.0.0-rc.10，rc.10修正Cloudflare的AI重定向兼容问题，正在构建验收；固定源码3749604的rc.9网站、插件ZIP与本地镜像继续保留；正式稳定镜像仍是3.0.4。真实同ID插件升级、重复恢复、删除范围、匿名网站恢复/运行/历史与隔离Docker旧草稿保留已验证。C++编译运行、超时/恢复及插件离线证据来自rc.5；当前运行器及资源与已验收版本逐字节一致，许可NOTICE补充已随新包提供。公开预览网站为 https://acmcoder-unified-preview.pages.dev/；网站Python/C++在浏览器内运行，不把用户代码送到Cloudflare执行。候选插件自带离线Python/C++，无需本地部署；网站首次下载运行资源仍需联网。完整正式发布的真实AI三端界面等门槛仍待完成；用户旧本地安装升级到rc.9已保留原题目和统计并通过Python自测。
 
 源码部署先 `npm ci --ignore-scripts`，再 `node scripts/build-clients.mjs all`，`npm start`；默认127.0.0.1:43117。发布构建提供 `ACMCODER_BUILD_COMMIT` 完整Git SHA，各客户端version.json必须一致。WSL镜像不含.git，使用Mac固定commit归档并传入该SHA构建。
 
 候选Docker app从同一源码构建，生成共享本地界面，保留三语言工具链：
 
 ```sh
-docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.9 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
+docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.10 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
 ```
 
-候选镜像发布后的版本引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.9`，runner对应 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.9`；这两者目前是拟发布名称，尚未有公开digest，不应用“拟发布”命令代替已可下载证明。稳定镜像latest不会随候选构建更新。
+候选镜像发布后的版本引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.10`，runner对应 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.10`；这两者目前是拟发布名称，尚未有公开digest，不应用“拟发布”命令代替已可下载证明。稳定镜像latest不会随候选构建更新。
 
 Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删除迁移表；网站删除与旧设备写入遵循协议1墓碑。数据库、学习数据与credentials不放入源码包或源码同步。完整升级路径见 [升级](upgrade.md)，实际能力见 [矩阵](releases/unified-feature-matrix.md)。
 
