@@ -1,0 +1,30 @@
+{
+  "commit": "e9a318f8a535936b4f184ad7f4daa0891c5a21ca",
+  "version": "4.0.0-rc.5",
+  "deploymentId": "55de2797-05f5-44ca-849a-76db500e7993",
+  "browser": "Codex in-app Chromium",
+  "origin": "https://55de2797.acmcoder-unified-preview.pages.dev",
+  "account": "anonymous, isolated fixed-deployment origin; demo fixture only",
+  "publicHTTP": [
+    "fixed and canonical version/commit",
+    "anonymous auth API 200; canonical loginAvailable=true",
+    "protected records API 401",
+    "privacy 200 with script-src none",
+    "both cpp bridge paths retain connect-src none and worker-src blob",
+    "five gzip resources exact size and SHA256"
+  ],
+  "browserChecks": {
+    "standardLibrary": "vector, sort; compile new source",
+    "utf8": "中文🙂 8\n",
+    "stderr": "stderr ok\n, separate from stdout",
+    "loopTimeout": "5 seconds, UI confirms stopped",
+    "recovery": "new compile/run passed after timeout",
+    "reloadDraft": "C++ language/code/stdin/expected retained"
+  },
+  "limitations": [
+    "canonical HTTP proves same artifact; browser execution tested fixed public URL",
+    "real installed offline extension C++ still pending",
+    "not a full OAuth round trip or a second-account test"
+  ],
+  "screenshot": "dist/releases/4.0.0-rc.5/public-cpp.jpg"
+}

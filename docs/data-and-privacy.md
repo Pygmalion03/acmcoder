@@ -25,4 +25,4 @@ GitHub登录用于识别账号；本站使用公开资料权限，不要求私�
 
 清除网站数据、卸载插件或删除本地数据目录可能移除未同步、未备份内容。完整导出是独立恢复手段，云端同步不能代替个人备份。网站不保证首次加载、运行资源下载或断网重新打开可用；完整离线长期使用请先安装插件包或本地工具链/镜像。
 
-产品设置中的“阅读数据与隐私说明”打开随包 `shared/privacy.html`，无需登录或外部脚本。公共网站地址在实际部署与匿名访问确认后登记；准备好页面不代表地址已经发布。功能或隐私请求可通过[项目 Issues](https://github.com/Pygmalion03/acmcoder/issues)提出，公开提交时不要附上Key、授权值或个人学习备份。
+产品设置中的“阅读数据与隐私说明”打开随包 `shared/privacy.html`，无需登录或外部脚本。[公开隐私说明](https://acmcoder-unified-preview.pages.dev/shared/privacy)已在 rc.5 验证匿名200响应、无脚本策略与真实浏览器排版。功能或隐私请求可通过[项目 Issues](https://github.com/Pygmalion03/acmcoder/issues)提出，公开提交时不要附上Key、授权值或个人学习备份。

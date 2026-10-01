@@ -11,7 +11,7 @@
     },
     "browser-cpp-two-clients": {
       "status": "pending",
-      "evidence": "rc.4 worktree: real local website workspace passed C++17 standard library/UTF-8/separate streams/20 repeats/memory bound/cancel/recovery/128KiB code/200000-char input. Public distribution and real installed offline extension remain unverified."
+      "evidence": "Local product full C++17 cases passed; rc.5/e9a318f public HTTPS compile/run, vector/sort, UTF-8 emoji, independent stderr, 5s timeout, recovery and refreshed draft passed (cpp-product-public-2026-10-01.json). Real installed offline C++ extension remains pending."
     },
     "local-docker": {
       "status": "passed",

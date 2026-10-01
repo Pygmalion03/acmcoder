@@ -247,3 +247,13 @@
 - 8fd45ad的Git部署edbb5244已成功上传64个静态文件，发布Function时因生成工具注入node:stream失败；项目原配置为2026-01-01且无Node标志。仅预览production兼容日期更新2026-09-30并增加nodejs_compat，OAuth变量名称、预览D1和Git来源保留。重试5dc22b81进入Function初始化后因注入兼容层的Object.defineProperty失败；同源码加构建标志的离线探针仍生成完全相同摘要，因此没有再次盲目推送同一Worker。
 - 改为官方Advanced-mode的小型模块入口：复用原onRequest，非API请求转给env.ASSETS；固定esbuild0.28.1中性平台打包，不注入Node/unenv兼容层。Worker87,812字节，构建图没有剩余模块导入；检查拒绝Node专用运行模块。入口/产物/API相关24/24通过，本地真正Pages运行时无Node标志的HTTP联调再次通过。检索当前官方Advanced-mode/最佳实践与Workers类型；新入口无全局请求状态、不读取正文、不打印凭据，保留waitUntil的对象调用。
 - 8fd45ad同源码的修正候选包在Mac dist/releases/4.0.0-rc.5；此前96fe868包移到dist/candidates/4.0.0-rc.5/96fe868独立保留。8fd45ad本地镜像ID sha256:33afc82ef1bc593de26ff639e403e84216d286ddf4c1b62570274c8e6fe49529，在同一自建96fe868学习卷替换测试容器后，只读确认原草稿仍为10 32、源commit/版本正确及隐私HTML200，没有先写回原草稿制造证据；容器acmcoder-rc5-smoke-8fd45ad回环36438。两者是过程候选，最终须另关联实际成功网站提交，不作为GHCR/stable发布证据。
+
+## rc.5 — 公网 C++ 执行与同源码产物关联，2026-10-01
+
+- 重新核对 Mac HEAD、中央映射、未提交修改及上一构建句柄；固定源码 `e9a318f8a535936b4f184ad7f4daa0891c5a21ca` 的构建进程正常完成。Cloudflare API确认部署 `55de2797-05f5-44ca-849a-76db500e7993` success，同commit固定网址 `https://55de2797.acmcoder-unified-preview.pages.dev/`。已有Git连接已完成真实上传，不再要求本机Wrangler登录。预览production兼容日期2026-09-30、nodejs_compat保留；正式项目和D1未修改。
+- WSL同源码脚本分别检查固定网址和主网址：共享首页/版本/commit、匿名auth/session200、受保护records401、公开隐私页与无脚本CSP、C++桥接规范路径与.html重定向后的严格CSP，以及5个gzip资源的实际尺寸/摘要全部通过。主网址匿名loginAvailable为true；这不是新的完整OAuth登录或双账号验收。
+- 真实公网IAB在固定部署独立匿名空间，用演示题编译新C++源码，vector/sort、中文/emoji和独立stderr通过；死循环5秒自动停止，随后新编译运行再次通过，刷新后C++语言/code/stdin/expected保留。没有改写主网址原账号的题目或AI配置。证据 `experiments/browser-languages/evidence/cpp-product-public-2026-10-01.json`，截图 `dist/releases/4.0.0-rc.5/public-cpp.jpg`。网站成功不代替真实已安装扩展C++离线验收，browser-cpp-two-clients保持pending。
+- 主网址公开隐私页 `https://acmcoder-unified-preview.pages.dev/shared/privacy` 匿名访问、实际浏览器完整正文及桌面排版通过，图标/渐变/玻璃卡片与正文无重叠。政策及商店草稿登记实际地址；真实插件截图仍待捕获。
+- e9a318f固定归档在WSL隔离目录构建三端、Pages、品牌素材和候选包，一致性通过；Mac `dist/releases/4.0.0-rc.5` 现对应该源码，8fd45ad移入 `dist/candidates/4.0.0-rc.5/8fd45ad`，96fe868及所有旧候选仍保留。源码805,840字节，SHA256 `a9174a67e265de28b585e1e471aa0c1f436f0e18520c383433429560950a9ca3`；插件33,765,503字节，SHA256 `47c812e36e2b742e6c2a1fa5f33cf19f460c4bcb456dca300210a20908410d6e`。实际ZIP CRC、源commit、数字版本、图标/隐私/C++资源与Git归档pax commit核对通过，不包含.env/node_modules/.git。
+- 同源码本地amd64 app镜像 `acmcoder-app:unified-rc5-e9a318f` ID `sha256:fe03326a0f17ccf78e54e3d087f9b31195b6cc4b07c44d05e33b66ea405e5539` 构建成功。仅替换会话自建测试容器，沿用自建96fe868学习卷；只读确认原Python草稿及输入仍在、版本/commit准确、隐私200。容器 `acmcoder-rc5-smoke-e9a318f` 回环36439；旧镜像/容器/卷保留，正式43117未重启。这次读验证未测试设备授权，不用它替代真实同步验收。
+- 发行manifest关联实际部署和本地image ID，GHCR registry digest仍空、稳定渠道未发布；Pages构建清单中的not-deployed仅表示构建时状态，未篡改成部署证据。更新README/矩阵/语言/商店材料与实际公开状态一致。原18任务及真实AI、两个真实账号、旧稳定安装升级、根许可证和商店身份门槛继续保留。
