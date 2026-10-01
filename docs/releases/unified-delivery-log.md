@@ -238,3 +238,8 @@
 - build-pages改为编译现有cloudflare/functions到小型_worker.js，运行资源全部作为静态文件；首页切换统一workspace，原入口保存在legacy.html。固定Wrangler4.144.0，本地不读OAuth/D1仪表盘秘密或把旧正式配置带到输出。_routes.json只有/api/*，静态请求不消耗Functions调用额度。
 - 新增Pages产物检查：已知源码提交、共享首页、隐私/图标、Worker免费压缩预算、25MiB单文件/20,000文件、C++资源尺寸/摘要/总量及不允许符号链接。新增4项失败边界检查；第一次23项相关检查中仅测试夹具体积写错失败，改为核对实际stat后完整回归361/361通过，日志/tmp/acmcoder-rc5-milestone-tests.log。WSL完整Pages实际构建通过，64静态文件、API Worker110,107字节；该本地检查不冒称已公开部署。
 - 根版本统一递增4.0.0-rc.5，插件数字4.0.0.5；增加发行说明、部署步骤与候选Actions的Pages构建清单。接下来从固定提交触发已有Git集成并核对公开资源/API；不更新稳定tag/GHCR/latest，不做数据库迁移或清理用户数据。
+
+- 固定源码 `96fe8684bf29885e2aab2353652f0c0af9338867` 推送后，真实Git部署 `999d9c9f-99dd-410e-8d0e-8a4cabe122ec` 已clone/build，随后失败：Wrangler4.144.0的弃用outfile生成multipart上传封装，平台将其当_worker.js解析时在Content-Disposition冒号报错。公开rc.3未替换。根据云端错误改用outdir的纯index.js，并在产物检查增加ES模块语法解析；新增封装回归先失败，修复后API/产物21/21通过。不是盲目重试同一失败部署。
+- 该首次rc.5源码仍独立保存：三端/素材/包构建一致性通过，Mac dist/releases/4.0.0-rc.5暂对应96fe868；需要在校正源码包关联时另保留该目录，不能覆盖原包。其本地amd64 app镜像 `acmcoder-app:unified-rc5-96fe868` ID `sha256:ba4117fdb02598502244d915767e8cb7b1b9c93c2829d3e5a9640d0631efbb4e` 已构建，独立新卷/只读/cap-drop环境真实smoke通过：统一界面、同commit、草稿/备份、Java/C++/Python执行。它不是已部署网站或公开GHCR镜像的证据。容器 `acmcoder-rc5-smoke-96fe868` 随机回环36437，旧容器/卷/镜像保留。
+
+- 使用真正本地Pages运行时与独立local-DB（不是远程预览/正式D1）发现`.html`会308到无后缀路径；原cpp-bridge.html上的CSP没有进入最终200响应。补workspace/cpp-bridge规范路径及隐私页策略，重启仅会话自建43118 tmux读取新_headers。HTTP联调通过：统一首页、匿名auth/session200、records401、隐私页200、两种C++桥接入口的最终connect-src none/worker-src blob及5份gzip实际摘要。脚本smoke-pages明确不把HTTP检查标为C++执行或离线插件证明。

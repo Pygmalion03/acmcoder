@@ -41,3 +41,8 @@ test('deployment rejects oversized static files without loading them into memory
   await file.truncate(25*1024*1024+1);await file.close();
   await assert.rejects(inspectPagesArtifact(root),/exceeds 25 MiB/);
 });
+test('deployment rejects a multipart upload envelope named as _worker.js',async t=>{
+  const {root,put}=await fixture(t);
+  await put('_worker.js','------formdata-test\r\nContent-Disposition: form-data; name="metadata"\r\n\r\n{"main_module":"worker.js"}\r\n');
+  await assert.rejects(inspectPagesArtifact(root),/JavaScript module/);
+});

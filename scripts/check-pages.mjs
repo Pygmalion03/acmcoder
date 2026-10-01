@@ -3,6 +3,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {gzipSync} from 'node:zlib';
+import {execFileSync} from 'node:child_process';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const reserved=new Set(['_worker.js','_headers','_redirects','_routes.json']);
@@ -13,6 +14,8 @@ export async function inspectPagesArtifact(directory){
   if(routes.version!==1||JSON.stringify(routes.include)!=='["/api/*"]'||JSON.stringify(routes.exclude)!=='[]')throw new Error('Pages routes must invoke the Worker only for /api/*');
   const worker=await fs.readFile(path.join(root,'_worker.js'));
   if(!worker.length||gzipSync(worker).length>3*1024*1024)throw new Error('API Worker exceeds the free compressed script budget');
+  try{execFileSync(process.execPath,['--input-type=module','--check'],{input:worker,stdio:['pipe','ignore','pipe']});}
+  catch{throw new Error('Pages Worker must be a JavaScript module, not an upload envelope');}
   const index=await fs.readFile(path.join(root,'index.html')),workspace=await fs.readFile(path.join(root,'workspace.html'));
   if(!index.equals(workspace))throw new Error('Pages root must open the unified workspace');
   for(const file of ['legacy.html','_headers','shared/privacy.html','shared/ui/privacy.css','shared/ui/brand-mark.svg'])await fs.access(path.join(root,file));
