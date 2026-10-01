@@ -26,8 +26,18 @@ test('no key never calls a shared model; cancellation keeps the question and ena
 });
 test('transport rejects redirects and unsafe URLs and does not expose provider errors',async()=>{
  let requested;const transport=createChatTransport({fetch:async (url,options)=>{requested={url,options};return new Response(JSON.stringify({error:{message:'secret-key'}}),{status:401});}});
- await assert.rejects(transport({provider,key:'secret-key',messages:[{role:'user',content:'hi'}]}),/401/);assert.equal(requested.options.redirect,'error');assert.equal(requested.url,'https://provider.test/v1/chat/completions');
+ await assert.rejects(transport({provider,key:'secret-key',messages:[{role:'user',content:'hi'}]}),/401/);assert.equal(requested.options.redirect,'manual');assert.equal(requested.url,'https://provider.test/v1/chat/completions');
  for(const baseUrl of ['http://evil.test/v1','https://user:pass@provider.test/v1','https://provider.test/v1?key=secret'])await assert.rejects(transport({provider:{...provider,baseUrl},key:'secret-key',messages:[]}),/API 地址/);
+});
+test('manual redirects never send the key to the redirect target',async()=>{
+ for(const response of [new Response(null,{status:302,headers:{location:'https://another-provider.test/v1'}}),{status:0,type:'opaqueredirect'}]){
+  let calls=0;
+  const transport=createChatTransport({fetch:async(url,options)=>{
+   calls++;assert.equal(url,'https://provider.test/v1/chat/completions');assert.equal(options.redirect,'manual');return response;
+  }});
+  await assert.rejects(transport({provider,key:'test-only-key',messages:[{role:'user',content:'hi'}]}),/重定向/);
+  assert.equal(calls,1);
+ }
 });
 
 test('switching problems does not redirect an answer and clearing credentials cancels persistence',async()=>{

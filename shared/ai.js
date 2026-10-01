@@ -20,8 +20,9 @@ export function createChatTransport({fetch:request=globalThis.fetch,allowLoopbac
   const normalized=normalizeProvider(provider,{allowLoopback});
   if(allowedBases&&!allowedBases.includes(normalized.baseUrl))throw new Error('网站暂不支持转发此 API 地址，请使用插件或本地版。');
   let response;
-  try{response=await request(`${normalized.baseUrl}/chat/completions`,{method:'POST',redirect:'error',headers:{'content-type':'application/json',authorization:`Bearer ${key}`},body:JSON.stringify({model:normalized.model,messages,stream:false}),signal});}
+  try{response=await request(`${normalized.baseUrl}/chat/completions`,{method:'POST',redirect:'manual',headers:{'content-type':'application/json',authorization:`Bearer ${key}`},body:JSON.stringify({model:normalized.model,messages,stream:false}),signal});}
   catch(error){if(signal?.aborted)throw new Error('问答已取消。');throw new Error('模型连接失败，请检查 API 地址和网络。');}
+  if(response.type==='opaqueredirect'||response.status>=300&&response.status<400){await response.body?.cancel();throw new Error('模型 API 地址发生重定向，请填写最终 API 地址。');}
   if(!response.ok){await response.body?.cancel();throw new Error(`模型服务返回 ${response.status}，请检查密钥、模型或服务额度。`);}
   const reader=response.body.getReader();let bytes=0,text='';const decoder=new TextDecoder();
   while(true){const {done,value}=await reader.read();if(done)break;bytes+=value.length;if(bytes>1024*1024){await reader.cancel();throw new Error('模型回复超过上限。');}text+=decoder.decode(value,{stream:true});}
