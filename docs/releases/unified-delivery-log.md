@@ -306,3 +306,11 @@
 - 同一自建CFT匿名浏览器打开公开站，实际文件选择器导入原插件备份，预览并确认新增16/相同2/零冲突。Python负数ACM输入实际输出1 2、自测通过；17行旧程序/7行重写对照及刷新恢复通过。随后原生下载的 `site-restored-backup.json` 为19条：原18条payload逐字段相等，另1条真实网站自测，待处理恢复0。输出14,173字节/SHA256 6e7521ff0cacdd7ee184afd85f0ea32a44bd88ade859103040007305e7a9179d；这不是云账号到新浏览器验收。
 - rc.8本地镜像真实localImageId为sha256:58c03097b17c826ed012aa1de916682fe58e2ad4c3296b1c74270e05785041e1，linux/amd64、本地标识而非GHCR digest。停留存的自建rc.6容器，用相同4个测试卷启动rc.8容器acmcoder-rc8-smoke-e38df55（回环36440）；read-only/cap-drop/no-new-privileges等约束保留，凭据独立目录用正确单数变量。原image-smoke-problem程序/stdin 10 32先读取且一致，两个只读预览通过；未冒称本次重新跑三语言或用户稳定安装升级。稳定43117未重启。构建日志 `/tmp/acmcoder-rc8-docker-build.log`。
 - 四张真实原生JPEG、实际输入/输出备份和结构化 `rc8-data-acceptance.json` 保留；发行manifest关联实际部署/镜像。品牌构建收据not-captured保留构建时含义，rc.6五张商店PNG作为历史材料留存，不冒充rc.8最终商店提交图片。真实AI/原创导题、第二真实账号、用户旧安装、许可证/正式分发仍待完成，原18任务范围不缩小。
+
+## R1 — 可审阅的许可证选择与实际包许可清单，2026-10-01
+
+- 当前远端分支核对为815f792e0b24e8c642835e08533111c06204620e，最初checkpoint标签仍在远端。原有五个用户文件修改、工具目录与未跟踪旧计划保留。本轮没有重建或覆写任何RC包、部署或用户数据。
+- 当前内置浏览器公开站为匿名空间，实际点击连接入口进入GitHub登录页，尚无会话；已返回网站设置，rc.8/e38df55可见。自己的CFT测试浏览器也为匿名且尚未设置Key。真实云账号导出到新浏览器/导出期间编辑的验收继续保持待完成，不用匿名恢复或登录入口可达代替。
+- 新增 `docs/releases/license-decision.md`，给出MIT建议、Apache专利及NOTICE差别、未定状态，以及版权署名所需输入。依据MIT文本、Apache官方第3/4节及Mozilla MPL FAQ核对，未创建根LICENSE。此为完整计划R1要求的具体选择材料，不是许可证已决定或完整法律义务已完成的证明。
+- 对已保存rc.8实际插件ZIP核对CRC、version.json及15份许可/NOTICE，记录逐份体积/摘要和资源清单摘要于 `docs/releases/evidence/rc8-license-inventory.json`；ZIP SHA256仍为23a3b7de340cc857e2d365ff6ea41b85c505af150a2ae9781c84ec0c1162f4bf，未改动。核对上游C++ NOTICE原内容逐字节保留，源码补充实际内存/文件预算、头文件、worker和gzip调整说明；第三方总说明补充固定Pyodide源码获取入口及C++来源/修改脚本。同步完成，源码diff空白检查通过；只有文档/许可声明变动，不重复运行器测试或全量构建。
+- 补充说明尚未进入历史rc.8网站/ZIP/镜像，下一发行构建统一带入。Docker系统软件包的源码获取义务仍需在公开镜像前按实际包确认，不能凭原版权文件存在宣称已完成。真实提供商、第二真实账号、稳定安装升级及正式分发等原18任务门槛保持。

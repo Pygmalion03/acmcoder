@@ -18,3 +18,20 @@ src/memfs/memfs.c is derived from wasm-clang's memfs (Apache 2.0),
 recompiled with an increased node limit.
 src/memfs/stb_sprintf.h is by Sean Barrett, public domain / MIT
 (see file header).
+
+ACMCoder integration changes (2026), relative to the fixed upstream
+wasm-clang-runtime revision df1180d80184733c6a01599f76b92b4001d20f87:
+- clang22 and lld22 WASM: added 512 MiB linear-memory maximums.
+- memfs WASM: rebuilt using wasi-sdk 33 and added a 128 MiB
+  linear-memory maximum.
+- sysroot archive: replaced its iostream header with the wasi-sdk 33
+  noeh header from LLVM revision 4434dabb69916856b824f68a64b029c67175e532.
+- generated worker.js: adapted upstream shared.js method binding and
+  virtual-file allocation limits, then appended ACMCoder's worker bridge.
+- runtime files are gzip-compressed for distribution.
+
+The source scripts and fixed-resource provenance are in the ACMCoder
+source release: scripts/bundle-cpp.mjs, scripts/wasm-memory-limit.mjs,
+shared/runners/cpp-worker.js, third_party/cpp/README.md and
+experiments/browser-languages/prepare.py.
+Original upstream notices and licenses above remain applicable.

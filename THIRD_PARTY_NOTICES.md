@@ -2,6 +2,8 @@
 
 根仓库许可证尚待用户选择；本文件不替用户赋予项目MIT、Apache或其他授权。发行前可选择MIT（宽松简洁）、Apache-2.0（包含专利条款）或其他适合的许可证；最终选择后保存完整LICENSE文本。
 
+供仓库所有者审阅的具体选择与当前产物核对范围见 `docs/releases/license-decision.md`。
+
 | 组件 | 固定版本 / 来源 | 许可与使用 |
 | --- | --- | --- |
 | Pyodide | npm pyodide 0.29.3，锁文件固定摘要 | MPL-2.0；插件随包包含未修改运行文件，许可证位于 extension/licenses/Pyodide.txt |
@@ -18,6 +20,9 @@
 
 插件构建生成 vendor/python/manifest.json，记录运行文件体积、SHA256和来源。构建再次校验Pyodide版本及npm锁定摘要。发行包应保留随包许可，不将自己的根仓库许可覆盖到这些第三方组件。
 
-rc.4 工作区构建另生成 vendor/cpp/manifest.json；记录压缩和解压后的 SHA256、固定来源、C++17 与执行限制。网站和插件随包分发 gzip 公共资源，下载资源校验后才传给禁止网络的隔离运行器；公开 rc.3 的能力不因此自动改变。巨型 LLVM 与 sysroot 不进入 Git。
+随包 Pyodide 0.29.3 对应的源码按 MPL-2.0 提供，获取地址：
+https://github.com/pyodide/pyodide/tree/0.29.3 。该许可及接收者获取、修改和分发其覆盖源码的权利不受 ACMCoder 根许可限制。这里分发的 Pyodide 运行文件没有被 ACMCoder 修改。
+
+构建另生成 vendor/cpp/manifest.json；记录压缩和解压后的 SHA256、固定来源、C++17 与执行限制。网站和插件随包分发 gzip 公共资源，下载资源校验后才传给禁止网络的隔离运行器。巨型 LLVM 与 sysroot 不进入 Git。固定来源为 https://github.com/cppstudio-io/wasm-clang-runtime/tree/df1180d80184733c6a01599f76b92b4001d20f87 ；ACMCoder 的调整由 scripts/bundle-cpp.mjs、scripts/wasm-memory-limit.mjs 和 shared/runners/cpp-worker.js 实现，随包 vendor/cpp/licenses/NOTICE 标明调整范围，third_party/cpp/README.md 保留 LLVM/wasi-libc 固定源码标识及重建入口。
 
 Docker依赖通过发行版包管理器安装，保留 /usr/share/doc 中的版权文件。多架构镜像是否已公开发布，以发行清单中的实际digest为准，不以构建流程存在代替公开产物。

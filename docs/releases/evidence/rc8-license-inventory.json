@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-01",
+  "artifact": {
+    "path": "dist/releases/4.0.0-rc.8/acmcoder-extension-v4.0.0-rc.8.zip",
+    "bytes": 33768371,
+    "sha256": "23a3b7de340cc857e2d365ff6ea41b85c505af150a2ae9781c84ec0c1162f4bf",
+    "version": "4.0.0-rc.8",
+    "commit": "e38df559db3f1e16c19dd81bed2b00febf68ce75"
+  },
+  "checkedLicenseFiles": [
+    {
+      "path": "licenses/CPython.txt",
+      "bytes": 13809,
+      "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb"
+    },
+    {
+      "path": "licenses/Pyodide.txt",
+      "bytes": 16725,
+      "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+    },
+    {
+      "path": "vendor/cpp/licenses/LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "vendor/cpp/licenses/LICENSE.llvm",
+      "bytes": 15140,
+      "sha256": "ebcd9bbf783a73d05c53ba4d586b8d5813dcdf3bbec50265860ccc885e606f47"
+    },
+    {
+      "path": "vendor/cpp/licenses/NOTICE",
+      "bytes": 755,
+      "sha256": "b5d7bcfb23672141736fee1289c7cdc265c42a29bb47a153d37ec85a7a950a7f"
+    },
+    {
+      "path": "vendor/cpp/licenses/stb_sprintf-LICENSE.txt",
+      "bytes": 2674,
+      "sha256": "7587efcca32db8f95bf5860dea6dfa4be410ee723e1964db3689c8ddf2a2e4a9"
+    },
+    {
+      "path": "vendor/cpp/licenses/wasi-libc-LICENSE",
+      "bytes": 910,
+      "sha256": "2711a8b5a5cdfef0e639f96c1aca12ae23d7d64a02d0507f1bdf14d2b27bbc3a"
+    },
+    {
+      "path": "vendor/cpp/licenses/wasi-libc-LICENSE-APACHE",
+      "bytes": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "vendor/cpp/licenses/wasi-libc-LICENSE-APACHE-LLVM",
+      "bytes": 12243,
+      "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+    },
+    {
+      "path": "vendor/cpp/licenses/wasi-libc-LICENSE-MIT",
+      "bytes": 1023,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "vendor/cpp/licenses/wasi-libc-dlmalloc-NOTICE.txt",
+      "bytes": 481,
+      "sha256": "be60c4eb5f24ed4cb7da83fa62fc85210f45642f58ee32f95da9f03288a1c1d5"
+    },
+    {
+      "path": "vendor/cpp/licenses/wasi-libc-emmalloc-NOTICE.txt",
+      "bytes": 1697,
+      "sha256": "7183e99e2e38682c7c602c86ada92c686a84eb99aea346fc8ba8a44f3b3684f6"
+    },
+    {
+      "path": "vendor/cpp/licenses/wasi-libc-fts-musl-fts-COPYING",
+      "bytes": 1514,
+      "sha256": "55af87e4017668f54467a3380e7ebbac5e672d8c763bfe95e6fc882a6fdc4046"
+    },
+    {
+      "path": "vendor/cpp/licenses/wasi-libc-libc-bottom-half-cloudlibc-LICENSE",
+      "bytes": 1292,
+      "sha256": "c8b789cf5a746611e6300a0cc7750dbf92b61912a709d04e639245f7290656d0"
+    },
+    {
+      "path": "vendor/cpp/licenses/wasi-libc-libc-top-half-musl-COPYRIGHT",
+      "bytes": 6204,
+      "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af"
+    }
+  ],
+  "resourceManifests": [
+    {
+      "path": "vendor/python/manifest.json",
+      "version": "0.29.3",
+      "sha256": "3392978352c1eb8baf2bc8324e09f498272c36b99bbf596daf97f41ac53a20db",
+      "source": null,
+      "licenses": [
+        {
+          "name": "Pyodide",
+          "license": "MPL-2.0",
+          "url": "https://github.com/pyodide/pyodide/blob/0.29.3/LICENSE"
+        },
+        {
+          "name": "CPython",
+          "license": "Python-2.0",
+          "url": "https://docs.python.org/3/license.html"
+        }
+      ]
+    },
+    {
+      "path": "vendor/cpp/manifest.json",
+      "version": "clang22-wasi33-acmcoder.1",
+      "sha256": "a21f884844f579eaee3b9c57907a0cef72975b2afb4f5a8a8dc2461a0c310ef4",
+      "source": "df1180d80184733c6a01599f76b92b4001d20f87",
+      "licenses": []
+    }
+  ],
+  "thirdPartyNotices": {
+    "path": "THIRD_PARTY_NOTICES.md",
+    "bytes": 2971,
+    "sha256": "ca70ada8167bb386e58222185be17152cf91a3bb8d24d2b47c0b0da22c76f1fa"
+  },
+  "sourceUpdate": {
+    "scope": "Original C++ NOTICE retained byte for byte; appended integration changes, source provenance, and root decision material",
+    "newCppNoticeSha256": "76ff03da06a477ef321ab8b06c2e1b9b6eccccc36f154ba508e399c0e19de18e",
+    "alreadyInRc8": false
+  },
+  "rootLicense": "not-selected",
+  "limits": [
+    "Inventory of actual RC8 extension, not a declaration of completed legal obligations",
+    "Updated notices pending next release build; original RC8 artifacts unchanged",
+    "Docker package source provision review pending before public registry publication"
+  ]
+}
