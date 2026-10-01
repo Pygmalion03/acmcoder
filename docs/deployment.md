@@ -1,16 +1,16 @@
 # ACMCoder部署：统一候选版与稳定版
 
-统一候选版本为4.0.0-rc.8，固定源码e38df55的网站、插件ZIP与本地镜像已关联；正式稳定镜像仍是3.0.4。真实同ID插件升级、重复恢复、删除范围、匿名网站恢复/运行/历史与隔离Docker旧草稿保留已验证。C++编译运行、超时/恢复及插件离线证据来自rc.5；当前34份运行器及资源与已验收版本逐字节一致。公开预览网站为 https://acmcoder-unified-preview.pages.dev/；网站Python/C++在浏览器内运行，不把用户代码送到Cloudflare执行。候选插件自带离线Python/C++，无需本地部署；网站首次下载运行资源仍需联网。完整正式发布的真实AI、双账号及用户旧稳定安装等门槛仍待完成。
+统一候选版本为4.0.0-rc.9，当前公开部署仍为rc.8，固定源码e38df55的网站、插件ZIP与本地镜像已关联；正式稳定镜像仍是3.0.4。真实同ID插件升级、重复恢复、删除范围、匿名网站恢复/运行/历史与隔离Docker旧草稿保留已验证。C++编译运行、超时/恢复及插件离线证据来自rc.5；当前34份运行器及资源与已验收版本逐字节一致。公开预览网站为 https://acmcoder-unified-preview.pages.dev/；网站Python/C++在浏览器内运行，不把用户代码送到Cloudflare执行。候选插件自带离线Python/C++，无需本地部署；网站首次下载运行资源仍需联网。完整正式发布的真实AI三端界面及用户旧稳定安装等门槛仍待完成。
 
 源码部署先 `npm ci --ignore-scripts`，再 `node scripts/build-clients.mjs all`，`npm start`；默认127.0.0.1:43117。发布构建提供 `ACMCODER_BUILD_COMMIT` 完整Git SHA，各客户端version.json必须一致。WSL镜像不含.git，使用Mac固定commit归档并传入该SHA构建。
 
 候选Docker app从同一源码构建，生成共享本地界面，保留三语言工具链：
 
 ```sh
-docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.8 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
+docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.9 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
 ```
 
-候选镜像发布后的版本引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.8`，runner对应 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.8`；这两者目前是拟发布名称，尚未有公开digest，不应用“拟发布”命令代替已可下载证明。稳定镜像latest不会随候选构建更新。
+候选镜像发布后的版本引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.9`，runner对应 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.9`；这两者目前是拟发布名称，尚未有公开digest，不应用“拟发布”命令代替已可下载证明。稳定镜像latest不会随候选构建更新。
 
 Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删除迁移表；网站删除与旧设备写入遵循协议1墓碑。数据库、学习数据与credentials不放入源码包或源码同步。完整升级路径见 [升级](upgrade.md)，实际能力见 [矩阵](releases/unified-feature-matrix.md)。
 
@@ -193,3 +193,5 @@ Mac/WSL源码同步需额外排除`data/unified`、`credentials`、`.wrangler`�
 `prepare-unified-candidate.yml` 仅手动构建候选源码、插件 ZIP 和校验和，上传为 Actions artifact，不发布镜像或更改网站。`publish-images.yml` 在完整稳定版验收、许可证和版本校验通过后才发布 `v版本` / `sha-提交` 镜像；固定源码提交写入 app 的 version.json，两个架构的实际 digest 作为 artifact 保存。不会自动更改 `latest`。所有端的公开产物关联齐全后再单独提升稳定渠道，不能让候选版或半次失败的镜像发布影响旧用户。当前 RC 的正式发行检查会因尚未完成的验收而拒绝发布。
 
 工作流配置依据：[Docker metadata-action flavor](https://github.com/docker/metadata-action#flavor-input)、[GitHub Actions artifacts](https://docs.github.com/en/actions/how-tos/store-and-share-data)。流程存在不代表这些镜像已经公开发布。
+
+网站AI转发支持阿里云北京工作空间的OpenAI接口：`https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`，WorkspaceId须为ws-开头的工作空间ID。仅此官方主机模式、HTTPS默认端口及完整路径可用，不接受任意主机、其他路径或Token Plan接口。依据[阿里云Base URL说明](https://help.aliyun.com/zh/model-studio/base-url)；实际提供商调用及受限地址回归已通过，三端真实界面验收仍单独记录。

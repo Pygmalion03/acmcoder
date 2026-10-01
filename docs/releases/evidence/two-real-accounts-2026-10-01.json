@@ -1,0 +1,28 @@
+{
+  "productVersion": "4.0.0-rc.8",
+  "commit": "e38df559db3f1e16c19dd81bed2b00febf68ce75",
+  "accounts": [
+    {
+      "login": "Pygmalion03",
+      "client": "Google Chrome",
+      "beforeRecords": 13,
+      "afterRecords": 14,
+      "originalPayloadsPreserved": true
+    },
+    {
+      "login": "galatea0315",
+      "client": "Codex in-app browser",
+      "beforeRecords": 10,
+      "afterRecords": 10,
+      "allPayloadsPreservedAfterOtherAccountWriteAndRefresh": true
+    }
+  ],
+  "sameProblemId": "acceptance-ai-stars-20261001",
+  "distinctPayloadsRetained": true,
+  "bothAuthenticatedAndCloudSavedObserved": true,
+  "passed": true,
+  "boundaries": [
+    "Verifies real account namespaces and exports after same-ID writes and second-account refresh; adversarial cross-user API requests were not performed in this browser acceptance.",
+    "Only own acceptance problem added; pre-existing first-account payloads unchanged."
+  ]
+}

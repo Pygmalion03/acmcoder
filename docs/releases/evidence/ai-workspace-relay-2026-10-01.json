@@ -1,0 +1,8 @@
+{
+  "testedAt": "2026-10-01T14:24:35.567Z",
+  "model": "qwen3.7-flash-2026-07-15",
+  "implementation": "cloudflare/lib/ai-relay.js relayAI",
+  "passed": true,
+  "expectedAnswerMatched": true,
+  "httpStatus": 200
+}

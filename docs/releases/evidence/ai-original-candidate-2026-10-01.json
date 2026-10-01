@@ -1,0 +1,9 @@
+{
+  "testedAt": "2026-10-01T13:51:54.610Z",
+  "model": "qwen3.7-flash-2026-07-15",
+  "sourceKind": "ai-original",
+  "passed": true,
+  "caseCount": 3,
+  "allSampleSumsMatched": true,
+  "candidateValidatedBy": "shared/ai-import.js resolveProblemRequest"
+}

@@ -22,8 +22,8 @@
       "evidence": "unified-delivery-log.md: history, backup and recovery milestone 5416774"
     },
     "cloud-backup-roundtrip": {
-      "status": "blocked",
-      "evidence": "W5 requires real account export to a fresh browser with code, plans and rewrite history comparison. RC8 anonymous extension/site/local backup recovery passed, but is not this account acceptance. Current available IAB/CFT sessions are anonymous."
+      "status": "passed",
+      "evidence": "Real galatea0315 website account, cloud-saved observed: exported 10 records, restored through native file chooser into a new Chrome for Testing incognito browser space, preview 8 new/2 identical/0 conflicts; today completed, 7/3-line rewrite history and refreshed draft/input observed; re-exported all 10 payloads exactly equal including 2026-10-02 review. evidence/cloud-account-backup-2026-10-01.json. Destination local restore is not destination-account synchronization."
     },
     "backup-edit-during-export": {
       "status": "blocked",
@@ -34,16 +34,16 @@
       "evidence": "unified-delivery-log.md: independent real GitHub local/web conflict copying; SQLite deletion coverage"
     },
     "two-real-accounts": {
-      "status": "blocked",
-      "evidence": "Only one real GitHub account tested; synthetic account isolation is not this acceptance."
+      "status": "passed",
+      "evidence": "Pygmalion03 in ordinary Chrome and galatea0315 in IAB simultaneously authenticated/cloud-saved. Same problem ID added with distinct payloads; first account export kept all 13 old payloads plus its own record, second account refresh/export retained all 10 original payloads including its distinct same-ID problem. evidence/two-real-accounts-2026-10-01.json; adversarial API isolation remains covered by existing server tests, not claimed as this browser exercise."
     },
     "ai-real-three-clients": {
       "status": "blocked",
-      "evidence": "Provider Key must be configured by user; only controlled compatibility service accepted."
+      "evidence": "Authorized Bitwarden key consumption and real qwen3.7-flash-2026-07-15 shared transport request passed HTTP 200, plus real original candidate validated. Website/installed extension/local UI question, cancel and recovery with provider remain pending; direct transport success is not three-client acceptance. evidence/ai-provider-chat-2026-10-01.json."
     },
     "ai-original-import": {
       "status": "blocked",
-      "evidence": "Source/catalog path accepted; a real model original problem still pending."
+      "evidence": "Real qwen3.7-flash-2026-07-15 original candidate passed shared resolveProblemRequest and all three sample sums verified. V3 file UI imported it as AI original into real account, actual Python self-tests and rewrite history passed; evidence/ai-original-candidate-2026-10-01.json. Website natural-language finder with real configured provider remains pending; file import is not that full UI path."
     },
     "old-install-upgrade": {
       "status": "blocked",
