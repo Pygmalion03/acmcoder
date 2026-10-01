@@ -101,7 +101,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
     root.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.action===`nav-${view}`?'page':'false'));
     $('content').innerHTML=view==='today'?await today():view==='library'?library():view==='practice'?await practice():settingsPage();
     if(view==='library'){
-      const finder=document.createElement('section');finder.className='glass ai-panel';finder.innerHTML=`<h3>想练哪道题？</h3><label>找题描述<input id="problem-request" maxlength="2000" value="${escape(findText)}" placeholder="例如：导入 LeetCode 二分查找，或生成一道原创求和题"></label><div class="actions">${button('find-problems','查找题目','primary')}</div><p id="finder-status" role="status" class="muted">优先找已有题目和目录；AI 建议在读取原题前保持未验证。</p><div id="finder-candidates"></div>`;$('content').querySelector('.hero').after(finder);
+      const finder=document.createElement('section');finder.className='glass finder-panel';finder.innerHTML=`<h3>想练哪道题？</h3><div class="finder-form"><label>找题描述<input id="problem-request" maxlength="2000" value="${escape(findText)}" placeholder="例如：导入 LeetCode 二分查找，或生成一道原创求和题"></label><div class="actions">${button('find-problems','查找题目','primary')}</div></div><p id="finder-status" role="status" class="muted">优先找已有题目和目录；AI 建议在读取原题前保持未验证。</p><div id="finder-candidates"></div>`;$('content').querySelector('.hero').after(finder);
     }
     if(ai&&['settings','practice'].includes(view)){
       if(view==='settings')$('content').querySelector('.settings>section:last-child').remove();
@@ -110,7 +110,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
         const drawer=document.createElement('details');drawer.className='glass practice-ai';
         const summary=document.createElement('summary');summary.textContent='✦ AI 问答';drawer.append(summary,panel);
         $('content').append(drawer);
-      }else $('content').append(panel);
+      }else $('content').querySelector('.settings').append(panel);
       await ai.mount(panel,view==='practice'?{problemId:selected,language,context:()=>({title:problem()?.payload.title,statement:problem()?.payload.statement,code:$('code')?.value,stdin:$('stdin')?.value,language})}:{});
     }
     if(view==='practice'){$('code').addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();const el=event.target;el.setRangeText('    ',el.selectionStart,el.selectionEnd,'end');saveEditor().catch(e=>toast(e.message));}});}

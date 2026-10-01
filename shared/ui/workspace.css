@@ -39,3 +39,31 @@
 @media(max-width:1050px){#app[data-view=practice]{padding:14px 18px 24px}.workspace{grid-template-columns:minmax(230px,.7fr) minmax(0,1.3fr)}}
 @media(max-width:760px){#app[data-view=practice]{padding:12px}.workspace{grid-template-columns:1fr}.workspace .statement-body{max-height:250px}.practice-heading{align-items:flex-start}.practice-heading h2{overflow-wrap:anywhere}.save-state{font-size:11px}.test-grid{grid-template-columns:1fr 1fr}.rewrite-note{flex-wrap:wrap}#app[data-view=practice] .section-heading>.muted{width:100%;margin-left:0}}
 @media(max-width:420px){.test-grid{grid-template-columns:1fr}.practice-heading{flex-wrap:wrap}.editor-tools{gap:5px}}
+
+/* Keep library and settings cards on one consistent content grid. */
+#app[data-view=library] #content{max-width:1200px;margin:auto;padding-top:24px}
+#app[data-view=library] .hero,.settings .hero{min-height:100px;margin:0 0 20px;gap:20px}
+#app[data-view=library] .hero h1,.settings h1{font-size:30px;margin:8px 0}
+.finder-panel{padding:20px 24px;margin:0 0 20px}
+.finder-form{display:flex;align-items:flex-end;gap:12px;margin:12px 0}
+.finder-form label{display:grid;gap:6px;flex:1;min-width:0;font-size:12px;color:var(--muted)}
+.finder-form input{width:100%;box-sizing:border-box;font-size:14px}
+.finder-form button{white-space:nowrap}
+.finder-panel>p{font-size:12px;line-height:1.7;margin:0}
+.finder-panel .setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid var(--line)}
+.finder-panel small{display:block;color:var(--muted)}
+.settings .ai-panel{max-width:none;margin:0 0 18px}
+.settings section{padding:22px}
+.settings .setting-row{margin:16px 0}
+.settings .actions,.ai-panel .actions{display:flex;gap:8px;flex-wrap:wrap}
+.settings .actions button{white-space:nowrap}
+.api-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ai-panel .muted{font-size:12px;line-height:1.7}
+.ai-history-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:14px 0 8px}
+.ai-history-toolbar button{font-size:12px;padding:6px 10px;white-space:nowrap}
+button:disabled{opacity:.5;cursor:default}
+#ai-messages{height:clamp(180px,32vh,360px);overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--solid)}
+#ai-messages:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.ai-message pre{margin:8px 0;line-height:1.75}
+.ai-empty{padding:18px 0}
+@media(max-width:760px){.finder-panel{padding:18px}.finder-form{flex-wrap:wrap}.finder-form label{flex-basis:100%}.api-fields{grid-template-columns:1fr;gap:0}#app[data-view=library] .hero{flex-wrap:wrap;min-height:0}.settings section{padding:18px}.settings .setting-row{flex-wrap:wrap;gap:10px}.settings input[type=file]{max-width:100%}}
