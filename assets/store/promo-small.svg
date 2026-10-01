@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="280" viewBox="0 0 440 280" role="img" aria-labelledby="promo-title">
+  <title id="promo-title">ACMCoder — ACM practice and rewrite history, brand illustration</title>
+  <defs>
+    <linearGradient id="promo-bg" x1="0" y1="0" x2="440" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#346caf"/><stop offset=".43" stop-color="#6a57b9"/><stop offset="1" stop-color="#9b54a5"/>
+    </linearGradient>
+    <radialGradient id="promo-glow" cx="36" cy="34" r="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5cd8ef" stop-opacity=".8"/><stop offset=".57" stop-color="#b5a4ff" stop-opacity=".14"/><stop offset="1" stop-color="#ffa6d4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="promo-glass" x1="190" y1="43" x2="402" y2="221" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" stop-opacity=".39"/><stop offset="1" stop-color="#efe8ff" stop-opacity=".16"/>
+    </linearGradient>
+    <linearGradient id="promo-edge" x1="190" y1="43" x2="405" y2="225" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" stop-opacity=".9"/><stop offset=".5" stop-color="#fff" stop-opacity=".23"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/>
+    </linearGradient>
+    <filter id="promo-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="13" stdDeviation="12" flood-color="#27235c" flood-opacity=".23"/></filter>
+  </defs>
+  <rect width="440" height="280" fill="url(#promo-bg)"/>
+  <rect width="440" height="280" fill="url(#promo-glow)"/>
+  <path d="M-20 40C80-10 161 1 229 59C293 113 366 86 460 34" fill="none" stroke="#fff" stroke-width="1" opacity=".13"/>
+  <path d="M-20 244C58 177 111 274 232 257C321 244 392 277 460 207" fill="none" stroke="#fff" stroke-width="2" opacity=".11"/>
+  <circle cx="355" cy="13" r="92" fill="#ffc2eb" opacity=".075"/>
+  <g filter="url(#promo-shadow)">
+    <rect x="214" y="67" width="187" height="165" rx="21" fill="#fff" opacity=".09" stroke="#fff" stroke-opacity=".24"/>
+    <rect x="202" y="56" width="187" height="165" rx="21" fill="#fff" opacity=".14" stroke="#fff" stroke-opacity=".4"/>
+    <rect x="190" y="44" width="187" height="165" rx="21" fill="url(#promo-glass)" stroke="url(#promo-edge)" stroke-width="1.2"/>
+  </g>
+  <circle cx="208" cy="62" r="3" fill="#ffc8e1"/><circle cx="219" cy="62" r="3" fill="#d9d1ff"/><circle cx="230" cy="62" r="3" fill="#b1f5e7"/>
+  <path d="M205 77H362" stroke="#fff" stroke-opacity=".23"/>
+  <g stroke-linecap="round" stroke-width="5">
+    <path d="M210 98H235M246 98H308" stroke="#fff" stroke-opacity=".9"/>
+    <path d="M220 114H253M263 114H335" stroke="#aef7ed" stroke-opacity=".9"/>
+    <path d="M220 130H275M286 130H316" stroke="#fff" stroke-opacity=".7"/>
+    <path d="M210 146H235" stroke="#fff" stroke-opacity=".9"/>
+  </g>
+  <rect x="205" y="165" width="93" height="28" rx="10" fill="#313466" fill-opacity=".25" stroke="#fff" stroke-opacity=".18"/>
+  <path d="M219 179L223 183L231 175" fill="none" stroke="#b6ffe8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M244 179H281" stroke="#d4fff0" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M328 166C344 157 357 168 352 181C348 191 335 196 325 185" fill="none" stroke="#fff" stroke-width="2.7" stroke-opacity=".85" stroke-linecap="round"/>
+  <path d="M327 166L329 156M327 166L337 167" fill="none" stroke="#fff" stroke-width="2.7" stroke-opacity=".85" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 193C145 222 185 235 215 221" fill="none" stroke="#d1f8ff" stroke-opacity=".7" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M212 216L215 221L209 227" fill="none" stroke="#d1f8ff" stroke-opacity=".7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <svg x="31" y="67" width="156" height="156" viewBox="0 0 128 128"> <!-- BRAND_MARK --> </svg>
+</svg>

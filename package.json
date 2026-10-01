@@ -13,12 +13,14 @@
     "start": "node src/server/server.js",
     "cli": "node bin/acmcoder.js",
     "build:clients": "node scripts/build-clients.mjs all",
+    "build:store-assets": "node scripts/build-brand.mjs",
     "check:release": "node scripts/check-release.mjs",
     "pack:release": "node scripts/package-release.mjs"
   },
   "devDependencies": {
     "fake-indexeddb": "6.2.5",
-    "pyodide": "0.29.3"
+    "pyodide": "0.29.3",
+    "@resvg/resvg-js": "2.6.2"
   },
   "engines": {
     "node": ">=20"

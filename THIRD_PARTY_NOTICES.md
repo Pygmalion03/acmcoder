@@ -10,6 +10,7 @@
 | 浏览器 memfs / stb_sprintf | cppstudio 固定 commit，SDK33 构建的小型 WASM 适配器 | Apache-2.0、stb MIT / public domain；来源和许可见 third_party/cpp |
 | wasi-libc 与 sysroot 组件 | SDK33 submodule 161b3195fc2558d2b1ba3eb9ffae3b2b47407623 | Apache / LLVM Exceptions / MIT 及组件 BSD、CC0；vendor/cpp/licenses 保留原文件，不覆盖为仓库许可 |
 | fake-indexeddb | 6.2.5 | Apache-2.0，仅开发测试依赖，不放入插件运行代码 |
+| @resvg/resvg-js | 2.6.2，npm 锁文件固定摘要 | MPL-2.0；仅构建图标/宣传图，渲染器及其原生二进制不进入插件运行代码；[原许可证](https://github.com/yisibl/resvg-js/blob/v2.6.2/LICENSE) |
 | Node.js | Docker node:22-bookworm-slim基础镜像 | 基础镜像与Node自带许可证；源码包不复制该运行时 |
 | GNU g++ / libstdc++ | Debian / Ubuntu基础镜像软件包 | GPL及GCC运行库例外等，以镜像中的软件包版权文件为准 |
 | OpenJDK | app镜像17 / runner镜像21 | GPL-2.0及Classpath Exception等，以镜像中的软件包版权文件为准 |
