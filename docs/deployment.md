@@ -10,7 +10,7 @@
 docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.10 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
 ```
 
-候选镜像发布后的版本引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.10`，runner对应 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.10`；这两者目前是拟发布名称，尚未有公开digest，不应用“拟发布”命令代替已可下载证明。稳定镜像latest不会随候选构建更新。
+候选镜像发布后的版本引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.11`，runner对应 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.11`；这两者目前是拟发布名称，尚未有公开digest，不应用“拟发布”命令代替已可下载证明。稳定镜像latest不会随候选构建更新。
 
 Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删除迁移表；网站删除与旧设备写入遵循协议1墓碑。数据库、学习数据与credentials不放入源码包或源码同步。完整升级路径见 [升级](upgrade.md)，实际能力见 [矩阵](releases/unified-feature-matrix.md)。
 

@@ -5,3 +5,37 @@
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 
 .ai-panel{padding:24px;margin:24px 0;max-width:960px}.ai-panel label{display:block;margin:12px 0}.ai-panel input:not([type=checkbox]),.ai-panel textarea{display:block;width:100%;box-sizing:border-box;margin-top:6px}.ai-panel input[type=checkbox]{width:auto}.ai-panel textarea{min-height:90px}.ai-message{padding:14px 0;border-bottom:1px solid var(--line)}.ai-message pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit}.ai-panel .actions{flex-wrap:wrap;gap:8px}
+
+/* The practice workspace uses a denser rhythm than the dashboard. */
+#app[data-view=practice]{padding:16px 24px 24px}
+#app[data-view=practice] header{padding:10px 18px;gap:20px;border-radius:20px}
+#app[data-view=practice] main{padding:18px 0 0}
+.practice-heading{gap:16px;margin-bottom:14px}
+.practice-heading h2{font-size:19px;margin:3px 0}
+.save-state{flex-shrink:0}
+.workspace{grid-template-columns:minmax(240px,.85fr) minmax(0,1.65fr);gap:14px;align-items:stretch}
+.workspace>section{min-width:0;border-radius:18px}
+.workspace .panel-head{padding:10px 14px;gap:12px;flex-wrap:wrap}
+.workspace .panel-head button,.editor-footer button{white-space:nowrap;flex-shrink:0}
+.workspace .statement-body{padding:16px;max-height:620px;line-height:1.8}
+.workspace .statement-body h3{margin:18px 0 10px}
+.workspace .code-editor{min-height:200px;height:clamp(200px,30vh,330px);padding:16px 18px;line-height:1.75}
+.editor-tools{flex-wrap:wrap}
+.editor-tools button{padding:6px 10px}
+.editor-footer{padding:10px 14px;align-items:center;flex-wrap:wrap;gap:8px}
+.editor-footer>.muted{font-size:11px;flex:1 1 160px}
+.editor-footer>div{flex-shrink:0;margin-left:auto}
+.test-grid{padding:12px 14px;gap:12px}
+.test-grid textarea{min-height:70px;height:70px}
+.result{margin:0 14px 14px;padding:10px 12px}
+#app[data-view=practice] .section-heading{justify-content:flex-start;flex-wrap:wrap;margin:12px 0;gap:10px}
+#app[data-view=practice] .section-heading>.muted{font-size:11px;margin-left:auto}
+.practice-ai{border-radius:18px;overflow:hidden;margin-top:14px}
+.practice-ai>summary{padding:12px 16px;cursor:pointer;font-weight:600;color:var(--primary)}
+.practice-ai>summary:focus-visible{outline:3px solid #8497ef;outline-offset:-3px}
+.practice-ai>.ai-panel{max-width:none;margin:0;padding:0 18px 18px;border:0;background:transparent;box-shadow:none;backdrop-filter:none;border-radius:0}
+.practice-ai .ai-message:last-child{border-bottom:0}
+@media(min-width:761px){.workspace>section:first-child{display:flex;flex-direction:column}.workspace .statement-body{flex:1}}
+@media(max-width:1050px){#app[data-view=practice]{padding:14px 18px 24px}.workspace{grid-template-columns:minmax(230px,.7fr) minmax(0,1.3fr)}}
+@media(max-width:760px){#app[data-view=practice]{padding:12px}.workspace{grid-template-columns:1fr}.workspace .statement-body{max-height:250px}.practice-heading{align-items:flex-start}.practice-heading h2{overflow-wrap:anywhere}.save-state{font-size:11px}.test-grid{grid-template-columns:1fr 1fr}.rewrite-note{flex-wrap:wrap}#app[data-view=practice] .section-heading>.muted{width:100%;margin-left:0}}
+@media(max-width:420px){.test-grid{grid-template-columns:1fr}.practice-heading{flex-wrap:wrap}.editor-tools{gap:5px}}
