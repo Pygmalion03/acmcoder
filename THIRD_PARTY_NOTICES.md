@@ -1,8 +1,8 @@
 # 第三方运行资源与许可证
 
-根仓库许可证尚待用户选择；本文件不替用户赋予项目MIT、Apache或其他授权。发行前可选择MIT（宽松简洁）、Apache-2.0（包含专利条款）或其他适合的许可证；最终选择后保存完整LICENSE文本。
+ACMCoder 自有源码采用 MIT，完整文本见根 LICENSE，版权署名为 Copyright (c) 2026 Pygmalion03。第三方组件保持各自许可，本文件不把它们改为 MIT。
 
-供仓库所有者审阅的具体选择与当前产物核对范围见 `docs/releases/license-decision.md`。
+许可决定记录与当前产物核对范围见 `docs/releases/license-decision.md`。
 
 | 组件 | 固定版本 / 来源 | 许可与使用 |
 | --- | --- | --- |

@@ -16,7 +16,7 @@ WASM 与 memfs 添加可执行的 linear-memory maximum。打包输出保留下�
 - `licenses`：该固定运行器的 Apache LICENSE、LLVM Exceptions、NOTICE 与
   stb 原许可段；SDK33 的 wasi-libc
   `161b3195fc2558d2b1ba3eb9ffae3b2b47407623` 许可和组件原始版权/许可段（不复制无关实现）。
-  C++ runtime 不使用根仓库尚未选定的许可证覆盖第三方授权。
+  C++ runtime 的第三方授权不被 ACMCoder 根 MIT 许可覆盖。
 
 现有 rc.8 网站/扩展随包分发，实际运行验收见
 `docs/releases/unified-delivery-log.md` 及对应固定源码的证据。许可与修改说明

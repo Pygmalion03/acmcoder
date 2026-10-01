@@ -10,6 +10,8 @@ ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地
 
 版本、真实能力和限制见 [功能矩阵](docs/releases/unified-feature-matrix.md)。升级前请先阅读 [升级与恢复](docs/upgrade.md)；API Key去向、长期记录与账号删除见 [数据与隐私](docs/data-and-privacy.md)。
 
+自有源码采用 [MIT 许可证](LICENSE)。随包 Python、LLVM 等组件保留自己的许可，见 [第三方声明](THIRD_PARTY_NOTICES.md)。
+
 ## 构建统一候选版
 
 ```sh
