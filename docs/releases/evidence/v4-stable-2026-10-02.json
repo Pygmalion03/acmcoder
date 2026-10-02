@@ -1,0 +1,194 @@
+{
+  "version": "4.0.0",
+  "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+  "status": "passed",
+  "completedAt": "2026-10-02",
+  "releaseUrl": "https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0",
+  "stableLatest": {
+    "github": true,
+    "workflow": "https://github.com/Pygmalion03/acmcoder/actions/runs/36975567829",
+    "images": {
+      "app": {
+        "previous": "sha256:4a2908ddd53766929c59f4efe2aa573ee058fa26a3e8c144ae34262b76698b57",
+        "current": "sha256:c3faed21bdfcfe2b2243a3c261ad8812d64094f3b83c693773bee00a6b8d7d9e",
+        "matchesVersionedImage": true
+      },
+      "runner": {
+        "previous": "sha256:74cf5004e3e0d6458327ee461a714d33b9ee3b385ad59f5ef4cbc77333f8acad",
+        "current": "sha256:d537a638d0c30e4cdfff4325c534132c57c54f6b386d40da7576d6e95c64fd78",
+        "matchesVersionedImage": true
+      }
+    }
+  },
+  "publicDownloads": {
+    "status": "passed",
+    "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+    "artifacts": [
+      {
+        "name": "acmcoder-source-v4.0.0.tar.gz",
+        "bytes": 894828,
+        "sha256": "50554c77f8ebfccf63466d629e957c78b7cc37cd36717ecdfa8a7ff7f3f0d59c",
+        "anonymousDownloadVerified": true
+      },
+      {
+        "name": "acmcoder-extension-v4.0.0.zip",
+        "bytes": 33772612,
+        "sha256": "94ee81cbe8900da8a84cd1c2bcb95f4e4ab27125d2ed602444cdea54ee88bd9f",
+        "anonymousDownloadVerified": true
+      }
+    ],
+    "zipCRC": "passed",
+    "sourceArchiveCommit": "passed",
+    "publishedManifestExactBytes": true
+  },
+  "verification": {
+    "ci": {
+      "url": "https://github.com/Pygmalion03/acmcoder/actions/runs/36973546577",
+      "tests": 395,
+      "passed": 395,
+      "appSmoke": "passed",
+      "architecturesPublished": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "actualExecutionArchitecture": "linux/amd64"
+    },
+    "local": {
+      "version": "4.0.0",
+      "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+      "recordsBefore": 13,
+      "recordsAfter": 13,
+      "allPayloadsAndReferencesEqual": true,
+      "pythonOutput": "42",
+      "sudoRestartCompletedByUser": true
+    },
+    "extension": {
+      "version": "4.0.0",
+      "numericVersion": "4.0.0.65535",
+      "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+      "sameInstalledId": true,
+      "recordsBefore": 22,
+      "recordsAfter": 22,
+      "allPayloadsAndReferencesEqual": true
+    },
+    "docker": {
+      "upgrade": {
+        "version": "4.0.0",
+        "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+        "recordsBefore": 13,
+        "recordsAfter": 13,
+        "allPayloadsAndReferencesEqual": true,
+        "languages": [
+          "python",
+          "cpp",
+          "java"
+        ],
+        "status": "passed"
+      },
+      "restart": {
+        "version": "4.0.0",
+        "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+        "recordsBefore": 13,
+        "recordsAfter": 13,
+        "allPayloadsAndReferencesEqual": true,
+        "languages": [
+          "python",
+          "cpp",
+          "java"
+        ],
+        "status": "passed"
+      },
+      "runtimeUser": "1000:1000 matches original Linux data owner",
+      "security": "read-only filesystem, all capabilities dropped, no-new-privileges, loopback port, resource limits",
+      "anonymousAppPull": "passed after transient registry token EOF",
+      "anonymousRunnerIndex": "amd64/arm64 retrieved"
+    },
+    "layout": {
+      "nativeDesktop": "library actions single line",
+      "sharedNarrow": {
+        "viewportWidth": 360,
+        "documentWidth": 360,
+        "buttonWhiteSpace": "nowrap",
+        "buttonHeight": 41.09375
+      },
+      "oldEmptyConflicts": "36 relevant lifecycle/sync/store/backup tests passed; true offline edit retained"
+    },
+    "rollback": {
+      "candidateTag": "v4.0.0-rc.14",
+      "candidateCommit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+      "candidateDeployment": "https://591372c0.acmcoder-unified-preview.pages.dev/",
+      "sourceAndDataBackups": "retained privately on Mac and WSL; never included in release assets"
+    }
+  },
+  "website": {
+    "deploymentId": "2ab6b547-96d5-42de-b4d0-e63055fc5046",
+    "url": "https://2ab6b547.acmcoder-unified-preview.pages.dev/",
+    "productionUrl": "https://acmcoder-unified-preview.pages.dev/",
+    "version": "4.0.0",
+    "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+    "status": "accepted",
+    "evidence": "Actual Cloudflare Git-connected production build success; full Pages artifact 67 static files/88864-byte Worker; actual canonical site UI 4.0.0/1e141a7 and existing account cloud-saved; actual fixed-origin anonymous Python and C++ self-test returned 8."
+  },
+  "images": {
+    "status": "accepted",
+    "app": {
+      "name": "app",
+      "version": "4.0.0",
+      "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+      "digest": "sha256:c3faed21bdfcfe2b2243a3c261ad8812d64094f3b83c693773bee00a6b8d7d9e"
+    },
+    "runner": {
+      "name": "runner",
+      "version": "4.0.0",
+      "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+      "digest": "sha256:d537a638d0c30e4cdfff4325c534132c57c54f6b386d40da7576d6e95c64fd78"
+    }
+  },
+  "defaultSourceBranch": "codex/unified-product",
+  "preExistingUncommittedChanges": "preserved; fixed Git archive used for every build",
+  "screenshots": [
+    {
+      "name": "library-360.jpg",
+      "bytes": 30169,
+      "sha256": "a059d30360b46c2e4aa1053d35dfed0c1b8c679e30a74dc47b460a6bd679dd17",
+      "sourceCommit": "1e141a74d77073dcef62bfeec39ef30224631203"
+    },
+    {
+      "name": "library-desktop.jpg",
+      "bytes": 319223,
+      "sha256": "d6944e4cafa28cbece2ba6735a542482b889cdb2dee349ff5670bc27f88556fb",
+      "sourceCommit": "1e141a74d77073dcef62bfeec39ef30224631203"
+    },
+    {
+      "name": "library-rows.jpg",
+      "bytes": 318978,
+      "sha256": "963c1a369ee06238dd3aa5d3a586becd66142f941fd2d475cd0eb98fa9628d82",
+      "sourceCommit": "1e141a74d77073dcef62bfeec39ef30224631203"
+    },
+    {
+      "name": "site-cpp.jpg",
+      "bytes": 51988,
+      "sha256": "f2b54cae2632f3fec288f7c2739a25569deaeca7b5ae7d4518984badb6421a49",
+      "sourceCommit": "1e141a74d77073dcef62bfeec39ef30224631203"
+    },
+    {
+      "name": "site-library.jpg",
+      "bytes": 59363,
+      "sha256": "891e32626a03ee362cf13dfa29d1309c22e42873e2c73ed2cc61da379e3ee94d",
+      "sourceCommit": "1e141a74d77073dcef62bfeec39ef30224631203"
+    },
+    {
+      "name": "site-settings.jpg",
+      "bytes": 43059,
+      "sha256": "d249afdadb0b51793ee24dac0323e54833388a9cdecb7524e3ad501e62a9a283",
+      "sourceCommit": "1e141a74d77073dcef62bfeec39ef30224631203"
+    }
+  ],
+  "limitations": [
+    "Browser Java is not supported in this release.",
+    "Website offline reload is not guaranteed.",
+    "Chrome/Edge marketplace submission is not performed.",
+    "arm64 manifests are published; actual execution proof is linux/amd64.",
+    "Prior real AI/account/offline/delete/rollback evidence keeps its original RC identifiers; it is not relabelled as fresh stable execution."
+  ]
+}

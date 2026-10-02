@@ -31,7 +31,7 @@
     },
     "sync-conflict-delete": {
       "status": "passed",
-      "evidence": "Actual public rc14 ZIP plugin with real GitHub device approval and independent authenticated incognito website. Native DevTools Offline blocked only website sync. Website code/stdin edited offline; online plugin permanently deleted the explicitly approved new problem/draft/run. After reconnect, original ID absent, offline draft retained in conflict and actual Copy as new problem preserved code/stdin plus remapped run history on both clients; all original 14 records unchanged. Two empty cascade tombstone conflicts required manual Keep cloud resolution. Revocation retained all 17 records. evidence/rc14-native-extension-2026-10-02.json. No storage/cookie/session injection; tab-level network emulation scope is explicit."
+      "evidence": "Actual public rc14 ZIP plugin with real GitHub device approval and independent authenticated incognito website. Native DevTools Offline blocked only website sync. Website code/stdin edited offline; online plugin permanently deleted the explicitly approved new problem/draft/run. After reconnect, original ID absent, offline draft retained in conflict and actual Copy as new problem preserved code/stdin plus remapped run history on both clients; all original 14 records unchanged. Two empty cascade tombstone conflicts required manual Keep cloud resolution. Revocation retained all 17 records. evidence/rc14-native-extension-2026-10-02.json. No storage/cookie/session injection; tab-level network emulation scope is explicit. Stable v4.0.0 resolves matching deletion-only conflicts, including persisted RC entries, with actual SQL/file-store lifecycle regression checks; true offline edits remain protected."
     },
     "two-real-accounts": {
       "status": "passed",
@@ -47,7 +47,13 @@
     },
     "old-install-upgrade": {
       "status": "passed",
-      "evidence": "Actual existing user acmcoder-v3.service activated RC9/3749604 with user sudo. Original 5-problem export, 2 old progress rows and raw files exactly unchanged; migration marker repeated read unchanged. Actual unified UI showed counts 2 and 1, Python self-test output 8 passed; actual 10-record learning export restored into an isolated file store with every payload/reference equal. Before/after learning backups retained in WSL and Mac, previous static directory retained. evidence/stable-upgrade-verification-2026-10-01.json. RC9 accepted here does not mean later candidates have been activated on this stable service."
+      "evidence": "Actual existing user acmcoder-v3.service activated RC9/3749604 with user sudo. Original 5-problem export, 2 old progress rows and raw files exactly unchanged; migration marker repeated read unchanged. Actual unified UI showed counts 2 and 1, Python self-test output 8 passed; actual 10-record learning export restored into an isolated file store with every payload/reference equal. Before/after learning backups retained in WSL and Mac, previous static directory retained. evidence/stable-upgrade-verification-2026-10-01.json. RC9 accepted here does not mean later candidates have been activated on this stable service. Stable v4.0.0 actual user sudo restart preserves all 13 existing payloads/references; same-ID extension update preserves 22; public Docker upgrade/restart of the independent original-data copy preserves 13 and executes Python/C++/Java. evidence/v4-stable-2026-10-02.json."
     }
+  },
+  "stableRelease": {
+    "version": "4.0.0",
+    "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+    "status": "passed",
+    "evidence": "evidence/v4-stable-2026-10-02.json; prior functional receipts retain original RC identifiers"
   }
 }
