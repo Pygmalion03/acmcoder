@@ -1,8 +1,8 @@
 # 浏览器插件：独立ACM侧栏
 
-浏览器插件是 ACMCoder 面向 LeetCode 日常练习的主要入口之一。统一正式版v4.0.0自带Python/C++17，网站、本地服务和登录都不是基本练习的前置条件。本地版另外保留Java。
+浏览器插件是 ACMCoder 面向 LeetCode 日常练习的主要入口之一。统一正式版v4.1.0自带Python/C++17/Java 8，网站、本地服务和登录都不是基本练习的前置条件。浏览器 Java 为 Java 8，编译时保持标签页可见；本地版使用原生工具链。
 
-从[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0)下载`acmcoder-extension-v4.0.0.zip`。商店上架留待以后；手动加载无需开发者注册或付款。ZIP安装的设备确认已通过真实GitHub授权、同步与撤销验收，见[需求核对](releases/unified-requirement-audit.md)。
+从[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.1.0)下载`acmcoder-extension-v4.1.0.zip`。商店上架留待以后；手动加载无需开发者注册或付款。ZIP安装的设备确认已通过真实GitHub授权、同步与撤销验收，见[需求核对](releases/unified-requirement-audit.md)。
 
 ## 安装与读取题目
 

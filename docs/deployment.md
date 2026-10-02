@@ -1,14 +1,8 @@
-# ACMCoder统一正式版部署
+# 部署 ACMCoder
 
-当前源码为 4.1.0-rc.3 候选。计划的固定镜像标签为 `ghcr.io/pygmalion03/acmcoder-app:v4.1.0-rc.3` 与 `ghcr.io/pygmalion03/acmcoder-runner:v4.1.0-rc.3`；是否已发布、对应摘要和验收状态以候选发行清单为准。v4 稳定版本及 latest 在候选验收期间保留。
+统一正式版为 **4.1.0**。[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.1.0)关联源码、插件ZIP、Java对应源码、网站与GHCR镜像；实际摘要以随包 release-manifest.json 为准。v4.0.0、rc.3 与旧版继续保留供回退。
 
-统一正式版为 **4.0.0**。[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0)关联固定源码、生成插件ZIP、校验和、网站及GHCR镜像；以随包 `release-manifest.json` 的实际摘要为准。rc.14及稳定3.0.4的旧版本仍保留供回退。
-
-固定Docker版本使用 `docker-compose.prebuilt.yml` 加 `docker-compose.release.yml`，app镜像为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0`，runner为 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0`。不要以拟定标签代替实际发布检查；当前发行验收见交付日志。候选覆盖文件继续锁定rc.14。
-
-网站执行 `npm run build:pages`，部署完整的 `dist/site`：共享工作区、C++静态运行资源、单文件 `_worker.js` API与仅 `/api/*` 路由。构建检查静态文件25MiB和20,000文件、压缩Worker3MiB免费预算，构建清单位于 `dist/pages-build/manifest.json`。已授权的 `acmcoder-unified-preview` 项目保持仪表盘OAuth/D1绑定，不上传源码中的旧正式配置；不得只上传静态页面而遗漏API。
-
-新版统一工作区以本机/镜像安装能力选择Python、C++和Java，仍只使用ACM标准输入输出；下面的旧入口运行方式供保留的legacy页面参考。
+固定Docker版本使用 `docker-compose.prebuilt.yml` 加 `docker-compose.release.yml`，app镜像为 `ghcr.io/pygmalion03/acmcoder-app:v4.1.0`，runner为 `ghcr.io/pygmalion03/acmcoder-runner:v4.1.0`。候选覆盖文件继续保留旧rc.14环境。
 
 ## 先分清入口和运行模式
 

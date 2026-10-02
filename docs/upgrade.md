@@ -1,6 +1,6 @@
 # 升级、备份与恢复
 
-统一正式版为 **4.0.0**。[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0)提供源码、生成插件ZIP、`SHA256SUMS` 与 `release-manifest.json`。先核对校验和，再按清单确认同一版本、源码commit、网站与镜像；不要使用不同源码而手工填写发行commit。
+统一正式版为 **4.1.0**。[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.1.0)提供源码、生成插件ZIP、`SHA256SUMS` 与 `release-manifest.json`。先核对校验和，再按清单确认同一版本、源码commit、网站与镜像；不要使用不同源码而手工填写发行commit。
 
 rc.14固定源码5adac6a、[旧Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)与 https://591372c0.acmcoder-unified-preview.pages.dev/ 继续保留。原rc13/rc14升级与回退记录见交付日志及对应收据，不把旧候选验收改名为正式版验收。
 
@@ -28,14 +28,14 @@ rc.14固定源码5adac6a、[旧Release](https://github.com/Pygmalion03/acmcoder/
 
 旧AI接口首次读取配置时，将 settings.json 中的明文Key迁入独立凭据文件；设置页、问答和今日计划沿用该配置。默认凭据目录是 ~/.local/share/acmcoder/credentials，可用 ACMCODER_CREDENTIAL_DIR 指定，Docker Compose 已使用独立 credentials 挂载。凭据文件0600、新建目录0700，先原子写入并确认持久化，再移除普通设置文件中的Key；失败保留原配置，下次读取重试。定制 settingsFile 的调用方应明确指定独立 credentialDir；测试默认放在该临时目录的 .credentials 子目录。统一练习页仍需要在其自带API设置里自行配置或解锁Key，不会自动将旧服务器Key返回浏览器或同步。
 
-Docker保持原数据挂载路径，在v4.0.0源码目录运行：
+Docker保持原数据挂载路径，在v4.1.0源码目录运行：
 
 ```sh
 docker compose -f docker-compose.prebuilt.yml -f docker-compose.release.yml pull
 docker compose -f docker-compose.prebuilt.yml -f docker-compose.release.yml up -d
 ```
 
-该覆盖文件锁定 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0`，与四个既有数据目录共用。`docker-compose.candidate.yml`仍锁定rc.14，供保留的候选环境使用。回退时先保留升级后的内容，另挂升级前独立副本，再启动旧版本镜像；不要删除新记录或修改迁移表来回滚。
+该覆盖文件锁定 `ghcr.io/pygmalion03/acmcoder-app:v4.1.0`，与四个既有数据目录共用。`docker-compose.candidate.yml`仍锁定rc.14，供保留的候选环境使用。回退时先保留升级后的内容，另挂升级前独立副本，再启动旧版本镜像；不要删除新记录或修改迁移表来回滚。
 
 本地源码与生成静态界面需成组更新；常驻 `acmcoder-v3.service` 需在用户自己的Terminal完成sudo重启。保留旧 `dist/local-web` 目录与数据副本，实际激活和数据核对结果另记交付日志，不以文件版本代替运行进程验收。
 
@@ -46,3 +46,5 @@ AI对话每页最多显示20条，在固定高度区域滚动；完整历史、�
 ## 当前实际验收
 
 v4.0.0常驻服务已由用户完成sudo重启；13条本机原内容与引用不变。原插件同ID更新后22条原内容与引用不变。公开Docker镜像用独立原数据副本升级、重启，13条原内容与引用不变，三语言均输出42。实际使用Linux数据所有者UID:GID 1000:1000运行受限容器，避免root在cap_drop ALL下不能写入既有0700目录；不用放宽活跃目录权限。其他宿主环境须使用其实际所有者/ACL，不机械套用1000。rc14固定包及旧界面、升级前独立副本保留，回退不删除升级后的记录。完整收据见[正式验收](releases/evidence/v4-stable-2026-10-02.json)。
+
+新增三项的实际 rc.3 验收见[增量回执](releases/evidence/v4.1-incremental-2026-10-02.json)。v4.1.0 仅调整版本与发行关联，保留原回执标识；正式版本与镜像以发行清单为准。

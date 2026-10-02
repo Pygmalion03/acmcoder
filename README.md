@@ -2,14 +2,12 @@
 
 ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地/Docker版共用题库、今日安排、自动保存、重新手撕和长期历史；代码由你编写，自测只代表当前样例通过。
 
-当前源码的统一候选版为 `v4.1.0-rc.3`：补齐网站离线重开及浏览器 Java 8。候选实现和已发布的 v4 稳定版分开记录，见[候选说明](docs/releases/v4.1.0-rc.3.md)；只有对应验收收据与发行清单确认后的产物才算已交付。
+统一正式版为 `v4.1.0`，默认源码分支为 `codex/unified-product`。本版在 v4.0.0 基础上增加网站离线重开、浏览器 Java 8，并完成日常 Chrome 插件真实账号与 AI 验收。网站、插件ZIP、本地/Docker使用同一产品版本，源码、网站部署与镜像摘要由随包发行清单关联。v4.0.0、旧候选和原 `v3` 分支继续保留，便于回退。
 
-统一正式版为 `v4.0.0`，默认源码分支为 `codex/unified-product`。网站、插件ZIP、本地/Docker使用同一产品版本；固定源码、网站部署与镜像摘要在随包发行清单中关联。原 `v3` 分支与 `v3.0.4`、`v4.0.0-rc.14` 发布继续保留，便于回退。
+[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.1.0)提供源码、插件ZIP、Java对应源码、校验和与发行清单。新增功能真实验收见[增量回执](docs/releases/evidence/v4.1-incremental-2026-10-02.json)，原18节点见[需求核对](docs/releases/unified-requirement-audit.md)，安装与限制见[本版说明](docs/releases/v4.1.0.md)。
 
-[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0)提供源码、生成插件ZIP、校验和与发行清单。相对rc.14，本版清理双方已删除记录的空同步冲突，同时保留真实离线修改；修复题库按钮换行与设置复选框宽度。AI对话每页显示20条，完整历史继续保存、备份与同步。原18节点的实际验收与版本边界见[需求核对](docs/releases/unified-requirement-audit.md)，正式版安装说明见[本版说明](docs/releases/v4.0.0.md)。
-
-- **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python与C++17；登录GitHub可跨设备同步。
-- **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python/C++17，不需要本地服务或网站打开。商店未上架。
+- **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python、C++17与Java 8；登录GitHub可跨设备同步。
+- **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python/C++17/Java 8，不需要本地服务或网站打开。商店未上架。
 - **本地 / Docker**：保留Python、C++、Java工具链运行和离线数据。源码构建后使用相同共享界面。
 
 版本、真实能力和限制见 [功能矩阵](docs/releases/unified-feature-matrix.md)。升级前请先阅读 [升级与恢复](docs/upgrade.md)；API Key去向、长期记录与账号删除见 [数据与隐私](docs/data-and-privacy.md)。
@@ -25,14 +23,14 @@ npm run check:release
 npm start
 ```
 
-浏览器插件安装目录为 `dist/extension/`。源码 `extension/` 缺少生成的共享文件和Python/C++运行资源，不能直接安装新版。发行包由 `npm run pack:release` 生成；在无Git的运行镜像中需提供固定源码归档和源commit。正式发行检查未通过前不生成稳定tag或更新镜像latest。
+浏览器插件安装目录为 `dist/extension/`。源码 `extension/` 缺少生成的共享文件和Python/C++/Java运行资源，不能直接安装新版。发行包由 `npm run pack:release` 生成；在无Git的运行镜像中需提供固定源码归档和源commit。正式发行检查未通过前不生成稳定tag或更新镜像latest。
 
 ## 正式版Docker安装
 
 普通用户优先使用 Docker app。只需要 Docker Desktop，不需要在本机另装 Node.js、Java、C++ 或 Python。
 
 ```bash
-git clone --branch v4.0.0 https://github.com/Pygmalion03/acmcoder.git
+git clone --branch v4.1.0 https://github.com/Pygmalion03/acmcoder.git
 cd acmcoder
 docker compose -f docker-compose.prebuilt.yml up -d
 ```
@@ -61,9 +59,9 @@ docker compose -f docker-compose.prebuilt.yml down
 
 ## 安装浏览器插件
 
-下载[正式版插件ZIP](https://github.com/Pygmalion03/acmcoder/releases/download/v4.0.0/acmcoder-extension-v4.0.0.zip)，解压到固定目录。Edge打开 `edge://extensions/`；Chrome打开 `chrome://extensions/`，启用 `Developer mode` / 开发者模式，点击 `Load unpacked` / 加载已解压的扩展程序，选择含manifest.json的目录。无需注册商店开发者账号或支付注册费；当前使用免费手动安装，商店上架留待以后。
+下载[正式版插件ZIP](https://github.com/Pygmalion03/acmcoder/releases/download/v4.1.0/acmcoder-extension-v4.1.0.zip)，解压到固定目录。Edge打开 `edge://extensions/`；Chrome打开 `chrome://extensions/`，启用 `Developer mode` / 开发者模式，点击 `Load unpacked` / 加载已解压的扩展程序，选择含manifest.json的目录。无需注册商店开发者账号或支付注册费；当前使用免费手动安装，商店上架留待以后。
 
-打开LeetCode题目页，点击ACMCoder图标，在浏览器插件侧栏读取当前题目，即可直接编写ACM程序和标准输入；默认Python可断网运行。关闭网站和本地服务不会影响插件练习。旧本地侧栏从设置进入，仍可连接稳定版服务。
+打开LeetCode题目页，点击ACMCoder图标，在浏览器插件侧栏读取当前题目，即可直接编写ACM程序和标准输入；Python/C++17/Java 8可断网运行。关闭网站和本地服务不会影响插件练习。旧本地侧栏从设置进入，仍可连接稳定版服务。
 
 同一安装目录升级并重新加载，先导出备份再操作。不要卸载旧插件或更换解压路径导致身份变化而丢失旧存储。完整说明见 [插件使用](docs/edge-extension.md) 和 [升级](docs/upgrade.md)。
 
@@ -78,26 +76,26 @@ docker compose -f docker-compose.prebuilt.yml -f docker-compose.release.yml pull
 docker compose -f docker-compose.prebuilt.yml -f docker-compose.release.yml up -d
 ```
 
-`docker-compose.release.yml`锁定正式v4.0.0；`docker-compose.candidate.yml`保留给rc.14候选环境，不用于本次正式版安装。
+`docker-compose.release.yml`锁定正式v4.1.0；`docker-compose.candidate.yml`保留给rc.14候选环境，不用于本次正式版安装。
 
 覆盖文件仅更换镜像，沿用四个数据/凭据路径和回环端口。升级前先导出并另存数据目录；不要运行带删除卷的命令。降级先保留当前数据，按[升级与回退](docs/upgrade.md)使用升级前副本；旧服务不会显示全部V3记录。
 
 如果你在 Compose 文件里固定了镜像 tag，把 tag 更新到当前版本：
 
 ```text
-ghcr.io/pygmalion03/acmcoder-app:v4.0.0
-ghcr.io/pygmalion03/acmcoder-runner:v4.0.0
+ghcr.io/pygmalion03/acmcoder-app:v4.1.0
+ghcr.io/pygmalion03/acmcoder-runner:v4.1.0
 ```
 
 ## 日常使用流程
 
 1. 打开 LeetCode 题目页，点击 ACMCoder 扩展图标打开侧栏。
-2. 点击读取当前题目，选择Python或C++17，编写完整ACM程序。
+2. 点击读取当前题目，选择Python、C++17或Java 8，编写完整ACM程序。
 3. 填写标准输入和期望输出，点击「运行自测」。
 4. 完成后可「重新手撕」，原代码和历史继续保留。
 5. 在「设置与数据」主动连接GitHub，可同步到[网站](https://acmcoder-unified-preview.pages.dev/)和其他设备。基本练习无需登录或本地服务。
 
-需要Java或本地完整环境时，启动本地/Docker服务并打开 `http://127.0.0.1:43117`。
+需要本地原生工具链环境时，启动本地/Docker服务并打开 `http://127.0.0.1:43117`。
 
 ## 即时巩固练习
 
@@ -181,7 +179,7 @@ ACMCODER_DOCKER_AUTO_BUILD=0
 
 这个项目有三类发布物：
 
-- **源码分支**：默认 `codex/unified-product`，正式版源码固定于 `v4.0.0`；旧 `v3` 分支保留。
+- **源码分支**：默认 `codex/unified-product`，正式版源码固定于 `v4.1.0`；旧 `v3` 分支保留。
 - **GitHub Release**：面向用户看的版本页，说明 tag、变更和启动方式。
 - **GHCR Docker 镜像**：Docker 用户实际拉取的预构建镜像。
 
@@ -194,8 +192,8 @@ ghcr.io/pygmalion03/acmcoder-app:latest
 需要锁版本时使用当前 Release tag：
 
 ```text
-ghcr.io/pygmalion03/acmcoder-app:v4.0.0
-ghcr.io/pygmalion03/acmcoder-runner:v4.0.0
+ghcr.io/pygmalion03/acmcoder-app:v4.1.0
+ghcr.io/pygmalion03/acmcoder-runner:v4.1.0
 ```
 
 更多部署边界见 [`docs/deployment.md`](docs/deployment.md)。
