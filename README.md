@@ -4,7 +4,7 @@ ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地
 
 当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.14`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。rc.14为新目录ZIP安装增加明确设备确认，已登记插件继续使用PKCE。设置/题库排版与AI历史分页沿用rc.12，历史每页最多显示20条，完整记录继续保存、备份与同步；203条实际浏览器历史回归已通过。
 
-[候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)提供源码、插件ZIP及校验和；网站与镜像关联状态以该Release的清单为准。rc.13公开分发与Docker新安装/升级/重启/回退已验收；rc.14的9项授权回归及393项固定源码检查通过，但新插件真实GitHub授权、最终实装安装/回退与真实离线删除重连仍待完成。不能把候选发布或模拟Chrome API检查当作这些路径已通过。旧候选与数据备份保留，见[需求核对](docs/releases/unified-requirement-audit.md)和[本版说明](docs/releases/v4.0.0-rc.14.md)。
+[候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)提供固定5adac6a源码、插件ZIP、校验和及最终验收补充。393项固定源码检查、公开Docker首次安装/升级/重启/回退，以及真实插件新安装/GitHub授权/双向同步/撤销、同ID升级/回退和完整浏览器重启已通过。两独立客户端离线编辑→另一端彻底删除→重连另存已实测，原记录未变；当前五张插件截图及商店材料已完成，可安装未上架。删除级联目前可能产生两条空冲突，需要手动保留云端。旧候选与备份保留，见[18节点核对](docs/releases/unified-requirement-audit.md)和[本版说明](docs/releases/v4.0.0-rc.14.md)。
 
 - **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python与C++17；登录GitHub可跨设备同步。
 - **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python/C++17，不需要本地服务或网站打开。商店未上架。

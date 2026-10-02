@@ -2,7 +2,7 @@
   "date": "2026-10-02",
   "version": "4.0.0-rc.14",
   "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
-  "status": "in-progress-awaiting-new-device-approval",
+  "status": "passed-with-recorded-scope-and-usability-limit",
   "browser": "Google Chrome for Testing 151.0.7922.34",
   "macLock": "resolved-by-fresh-native-observation",
   "freshInstall": {
@@ -15,13 +15,25 @@
     "newIndependentGuestSpace": true,
     "deviceConfirmationPageOpened": true,
     "githubLoginPageReached": true,
-    "realGithubApproval": false,
+    "realGithubApproval": true,
     "authenticatedWebsiteAccount": "Pygmalion03",
     "websiteSessionVerifiedIn": "Chrome for Testing incognito, website settings",
     "expiredRequestHandled": "Website reports request expired; new plugin request opened successfully",
     "currentApprovalPageVerified": true,
     "approvalDeviceLabel": "ACMCoder 浏览器插件（ZIP 安装）",
-    "accountSyncGrant": "pending action-time user confirmation"
+    "accountSyncGrant": "approved by user at action time; default session, remember30Days false",
+    "realGithubSync": true,
+    "nativeSettingsObserved": "Pygmalion03 / 已同步到云端",
+    "realPythonRun": "17 25 -> 42, sample passed",
+    "bidirectionalDraftSync": "Plugin-created problem/code/stdin appeared in independent website; website roundtrip marker appeared in plugin",
+    "revocation": {
+      "status": "passed",
+      "deviceRevokedInWebsite": true,
+      "pluginNativeStatus": "连接已暂停，请重新连接账号",
+      "retainedRecords": 17,
+      "recordArrayAndPendingRestoresExact": true,
+      "backupSha256": "93f16d2cb24bc67ca43363d8de12f51d35ea33e54d8be94290b75928f6da70e9"
+    }
   },
   "existingInstall": {
     "extensionId": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
@@ -47,23 +59,195 @@
     "returnUpgradeRetentionVerified": true,
     "currentObservedVersion": "4.0.0-rc.14 / 5adac6a",
     "allThreeExportedRecordArraysExact": true,
-    "fullBrowserRestart": "pending; extension reload and new workspace page tested"
+    "fullBrowserRestart": {
+      "status": "passed",
+      "observedVersion": "4.0.0-rc.14 / 5adac6a",
+      "nativeRestart": "Chrome application Quit menu, followed by restored normal windows and explicit Chromium restart notice; incognito window not restored",
+      "oldExtensionId": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+      "records": 21,
+      "payloadsReferencesIdsRevisionsAndPendingRestoresExact": true,
+      "metadataNote": "Current draft updatedAt changed after restored practice focus; all contents and other fields unchanged.",
+      "freshExtensionSession": "Returned to anonymous practice after restart; default grant was previously revoked",
+      "backupSha256": "f71428b006b723984a7336a125e48a330ae149ed692b05b5a9a9d988d2301b12"
+    }
   },
   "screenshots": {
     "installProof": "dist/releases/4.0.0-rc.14/native-evidence/01-fresh-installed.jpg",
-    "finalStoreScreenshots": 0,
-    "approvalProof": "dist/releases/4.0.0-rc.14/native-evidence/02-device-approval.jpg"
+    "finalStoreScreenshots": 5,
+    "approvalProof": "dist/releases/4.0.0-rc.14/native-evidence/02-device-approval.jpg",
+    "approvedProof": "dist/releases/4.0.0-rc.14/native-evidence/05-device-approved.jpg",
+    "realSyncProof": "dist/releases/4.0.0-rc.14/native-evidence/06-real-account-synced.jpg",
+    "offlineProof": "dist/releases/4.0.0-rc.14/native-evidence/07-website-offline-confirmed.jpg",
+    "independentClientProof": "dist/releases/4.0.0-rc.14/native-evidence/08-online-plugin-excludes-offline-edit.jpg",
+    "deleteScopeProof": "dist/releases/4.0.0-rc.14/native-evidence/09-owned-test-delete-confirmation.jpg",
+    "finalStoreManifest": "dist/releases/4.0.0-rc.14/store-screenshots/screenshot-manifest.json",
+    "reconnectConflictProof": "dist/releases/4.0.0-rc.14/native-evidence/10-reconnect-preserves-offline-conflict.jpg",
+    "newCopyProof": "dist/releases/4.0.0-rc.14/native-evidence/11-offline-copy-practice.jpg",
+    "revocationProof": "dist/releases/4.0.0-rc.14/native-evidence/12-device-revoked.jpg",
+    "revokedPluginProof": "dist/releases/4.0.0-rc.14/native-evidence/13-revoked-plugin-retains-data.jpg",
+    "restartProof": "dist/releases/4.0.0-rc.14/native-evidence/14-full-browser-restart.jpg"
   },
-  "stillPending": [
-    "Real GitHub approval, sync and revocation",
-    "Independent-client offline edit, permanent delete, reconnect receipt",
-    "Five current native extension store screenshots",
-    "Full browser restart, with current website login no longer needed"
-  ],
+  "stillPending": [],
   "notes": [
     "No website OAuth or API Key reconfiguration is requested.",
-    "Current existing extension browser version remains rc12 until native reload; staged files alone are not activation.",
     "Private learning backups and authentication data are not publication assets.",
-    "Approval uses the existing real GitHub-authenticated website session in an independent browser window; no cookie/session/token extraction or injection."
-  ]
+    "Approval uses the existing real GitHub-authenticated website session in an independent browser window; no cookie/session/token extraction or injection.",
+    "Same-ID upgrade/rollback/return exports matched all 21 original records exactly. Full browser restart retained every payload/reference/ID/revision; only current-draft updatedAt changed on restored practice focus.",
+    "The original 14 real-account records remained byte-value equal through deletion and conflict-copy; new copied records retain payloads and remapped references, while local/server metadata may differ.",
+    "The separately copied offline question remains as an acceptance receipt. No unrelated question was deleted.",
+    "Chrome developer-mode installation and update were tested; store automatic update, listing and approval have not occurred.",
+    "Five public screenshots use anonymous learning space and public demonstration content; private learning backups and authentication screenshots are not included.",
+    "Real grant and revoke were completed in the same normal browser session; no claim of new credentials surviving browser restart."
+  ],
+  "offlineDeletePreparation": {
+    "problemId": "90268bc9-42cf-470c-b414-a93357f300e6",
+    "title": "rc14 同步与离线删除验收 · 临时题",
+    "clients": [
+      "Real installed extension ojpmfieipijpbbbhedhfjjgdjdembnmd, ordinary Chrome for Testing",
+      "Real GitHub website session, separate incognito IndexedDB namespace"
+    ],
+    "offlineClient": "website",
+    "mechanism": "Native DevTools Network preset Offline on website tab; extension remained online",
+    "observedNetworkResult": "sync/pull failed net::ERR_INTERNET_DISCONNECTED, zero bytes transferred",
+    "productStatus": "网络暂不可用，稍后自动重试；内容已保留",
+    "offlineDraftMarker": "rc14-OFFLINE-local-edited-preserve-me",
+    "offlineStdIn": "20 22\n",
+    "offlineExportVerified": true,
+    "onlinePluginMarker": "rc14-website-roundtrip",
+    "onlinePluginStdIn": "17 25\n",
+    "beforeAccountRecords": 14,
+    "beforeDeleteWebsiteRecords": 17,
+    "original14RecordsExactBeforeDelete": true,
+    "deleteDialogScope": {
+      "problem": 1,
+      "draft": 1,
+      "run": 1
+    },
+    "permanentDelete": "performed after explicit human confirmation for only the newly created problem/draft/run",
+    "reconnect": "native DevTools restored No throttling; actual sync requests succeeded, deletion conflict displayed, offline draft exported and copied using product UI"
+  },
+  "offlineDeletionReconnect": {
+    "status": "passed",
+    "baselineRecords": 14,
+    "websiteCopyRecords": 17,
+    "pluginCopyRecords": 17,
+    "baselineExact": true,
+    "originalAbsentOnBoth": true,
+    "newProblemId": "136f70bb-538e-4d04-9c40-70df7a2af7af",
+    "copyRetainsOfflineCodeAndStdin": true,
+    "copyRetainsRemappedHistory": true,
+    "twoClientPayloadsAndReferencesExact": true,
+    "metadataNote": "The newly copied records have local/remote revision and timestamp differences; payloads and record references match. Original baseline records match including metadata.",
+    "backups": {
+      "real-account-plugin-before.json": "d8570235152e8bc89fd5d6aa881a3e76aee842fb70e714e29b5f2b932edc6d68",
+      "real-account-website-offline.json": "c70916baab7718c519b66358f96d6d962fa8dddbfa4fc89e72e3f8145c9b9d3d",
+      "real-account-plugin-deleted.json": "4df2bbb423961d2692cc5505954a4e270219e534b96de8593d8bf4cba92848c6",
+      "real-offline-delete-conflict.json": "e988a7435bcedabb9695d0c8b9e5cc5645766bc1c5d00cf15d5c1039bc293b5d",
+      "real-account-website-copy.json": "01bc46989806d5e4fe7c714ee5621b87c63cf8746e0f8e1fca4ec297703a2685",
+      "real-account-plugin-copy.json": "3659b80979ea5ee6c8ab12d68897a71ffd252471dfcb3ff3761ea728479081fe"
+    },
+    "usabilityLimit": "Online deleting plugin displayed two empty local-delete / remote-delete conflicts for cascaded draft and run tombstones. Both were resolved through actual Keep cloud buttons before reconnect. No existing records were affected."
+  },
+  "storeScreenshots": {
+    "version": "4.0.0-rc.14",
+    "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+    "extensionId": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+    "installation": "Same-ID existing extension updated using public rc14 ZIP; actual Settings confirmed rc14/5adac6a after full browser restart.",
+    "browser": "Chrome for Testing 151.0.7922.34",
+    "capture": "Native CUA full-window screenshots of the actually installed extension, including Chrome sidebar on actual LeetCode. No website substitute, generated UI, replacement or overlays.",
+    "transformation": "Uniform whole-window downscale from 2820x1988 into 1280x800 with neutral side margins to preserve aspect ratio; no crop or stretch. Renderer locked resvg 2.6.2.",
+    "pageZoom": "Actual browser 75% for the extension origin. LeetCode retains its own normal zoom.",
+    "privacy": "Anonymous profile; public LeetCode questions, self-authored demonstration code. No provider Key or authorization values visible.",
+    "storeStatus": "not-submitted",
+    "requirements": "https://developer.chrome.com/docs/webstore/images",
+    "raw": [
+      {
+        "name": "raw/01-leetcode-sidepanel.jpg",
+        "width": 2820,
+        "height": 1988,
+        "format": "JPEG",
+        "bytes": 645775,
+        "sha256": "7670a8e185cf5bdb4d926adbe0faf36713b3fece3595ae35741855791846d161"
+      },
+      {
+        "name": "raw/02-library.jpg",
+        "width": 2820,
+        "height": 1988,
+        "format": "JPEG",
+        "bytes": 405158,
+        "sha256": "94cc0b1beb75ec356059ee5b102b2e11eca0933ed9d24cbcaee5afaffe534f93"
+      },
+      {
+        "name": "raw/03-today.jpg",
+        "width": 2820,
+        "height": 1988,
+        "format": "JPEG",
+        "bytes": 407443,
+        "sha256": "3f5a630fcd727b44f9a5a4fb362f71fb25087477a64bc8288b9b6b3407b5ddb7"
+      },
+      {
+        "name": "raw/04-history.jpg",
+        "width": 2820,
+        "height": 1988,
+        "format": "JPEG",
+        "bytes": 463288,
+        "sha256": "be31237b110fcf0b4aba733faece1c9cd79c94361a0b0163f0849f5e7f3c51f5"
+      },
+      {
+        "name": "raw/05-settings.jpg",
+        "width": 2820,
+        "height": 1988,
+        "format": "JPEG",
+        "bytes": 415988,
+        "sha256": "a527be9367ecbc7040b8b41d062f25c3c76c71ab53fa8bd692103119eb5e3f61"
+      }
+    ],
+    "screenshots": [
+      {
+        "name": "01-leetcode-sidepanel.png",
+        "source": "raw/01-leetcode-sidepanel.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 388831,
+        "sha256": "ce3b272a30536488a5d3f3f9368cce59d5cf1b9b80787e6b2b3eb266c287fc2a"
+      },
+      {
+        "name": "02-library.png",
+        "source": "raw/02-library.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 375909,
+        "sha256": "3d87fab140ea3dbf7d62b7d8403ee7daa73c2c00a37d74e42c2eaaa7935d9aaf"
+      },
+      {
+        "name": "03-today.png",
+        "source": "raw/03-today.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 404031,
+        "sha256": "c51be060d3d43d6b9b3c67b86c12e8bb53206a8a092be26439370083a783844d"
+      },
+      {
+        "name": "04-history.png",
+        "source": "raw/04-history.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 373894,
+        "sha256": "0136e5bab298ba428bbcdfcde43e37f146aff986566b1af7f6a5f72c1465556d"
+      },
+      {
+        "name": "05-settings.png",
+        "source": "raw/05-settings.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 374993,
+        "sha256": "6f8194892df56d4e7938a26725e8bc53f7e5810abab021e7b00659723647e4ad"
+      }
+    ]
+  }
 }

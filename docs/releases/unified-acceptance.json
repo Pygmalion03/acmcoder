@@ -30,8 +30,8 @@
       "evidence": "Actual galatea0315 RC10 product UI export while editing in a second tab. Temporary 10-second IndexedDB completion notification delay kept export pending; editing completed 0.315 seconds after export start. All 17 exported payloads/references equal the original complete snapshot; fresh tab reload observed the new draft. Key excluded; instrumentation removed and test comment restored. evidence/backup-ui-concurrency-2026-10-02.json. Notification-delay instrumentation is explicit; prior storage probe remains separate."
     },
     "sync-conflict-delete": {
-      "status": "pending",
-      "evidence": "Real GitHub local/web conflict-copy and SQLite/D1 tombstone checks pass. Original S2 real independent-client offline-edit -> another client permanent-delete -> reconnect still requires a complete product receipt; see unified-requirement-audit.md."
+      "status": "passed",
+      "evidence": "Actual public rc14 ZIP plugin with real GitHub device approval and independent authenticated incognito website. Native DevTools Offline blocked only website sync. Website code/stdin edited offline; online plugin permanently deleted the explicitly approved new problem/draft/run. After reconnect, original ID absent, offline draft retained in conflict and actual Copy as new problem preserved code/stdin plus remapped run history on both clients; all original 14 records unchanged. Two empty cascade tombstone conflicts required manual Keep cloud resolution. Revocation retained all 17 records. evidence/rc14-native-extension-2026-10-02.json. No storage/cookie/session injection; tab-level network emulation scope is explicit."
     },
     "two-real-accounts": {
       "status": "passed",
