@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-02",
+  "version": "4.0.0-rc.14",
+  "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
+  "status": "in-progress-awaiting-real-github-sign-in",
+  "browser": "Google Chrome for Testing 151.0.7922.34",
+  "macLock": "resolved-by-fresh-native-observation",
+  "freshInstall": {
+    "passed": true,
+    "source": "public ZIP, SHA256 matched previous anonymous download",
+    "directory": "dist/extension-acceptance/public-rc14-5adac6a",
+    "extensionId": "ojpmfieipijpbbbhedhfjjgdjdembnmd",
+    "nativeManagerVersion": "4.0.0-rc.14",
+    "workspaceVersion": "4.0.0-rc.14 / 5adac6a",
+    "newIndependentGuestSpace": true,
+    "deviceConfirmationPageOpened": true,
+    "githubLoginPageReached": true,
+    "realGithubApproval": false
+  },
+  "existingInstall": {
+    "extensionId": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+    "observedBeforeVersion": "4.0.0-rc.12 / f3c7078",
+    "preservedFiles": "dist/extension-acceptance/e9a318f-rc12-before-public14",
+    "nativeBackupExport": true,
+    "backupRecords": 21,
+    "backupKinds": {
+      "conversation": 1,
+      "problem": 3,
+      "review": 1,
+      "run": 9,
+      "settings": 1,
+      "draft": 4,
+      "attempt": 2
+    },
+    "backupSHA256": "ab9764ffd212c09fb06565f1aa210a074486af7467c5d77e02802add6bbbae15",
+    "privateBackup": "dist/releases/4.0.0-rc.14/native-evidence/rc12-before-upgrade-backup.json",
+    "rc14FilesStaged": true,
+    "browserReload": false,
+    "upgradeRetentionVerified": false
+  },
+  "screenshots": {
+    "installProof": "dist/releases/4.0.0-rc.14/native-evidence/01-fresh-installed.jpg",
+    "finalStoreScreenshots": 0
+  },
+  "stillPending": [
+    "Real GitHub approval, sync and revocation",
+    "Same-ID extension upgrade/restart/rollback and exact exported record comparison",
+    "Independent-client offline edit, permanent delete, reconnect receipt",
+    "Five current native extension store screenshots"
+  ],
+  "notes": [
+    "No website OAuth or API Key reconfiguration is requested.",
+    "Current existing extension browser version remains rc12 until native reload; staged files alone are not activation.",
+    "Private learning backups and authentication data are not publication assets."
+  ]
+}
