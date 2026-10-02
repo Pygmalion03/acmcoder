@@ -1,0 +1,120 @@
+{
+  "version": "4.1.0-rc.3",
+  "commit": "587406427363d97df202f242c80b93bc0e53404d",
+  "date": "2026-10-02",
+  "scope": "Three incremental gaps beyond the preserved v4.0.0 release; Chrome store remains deferred by the user.",
+  "checks": {
+    "dailyChrome": {
+      "status": "passed",
+      "extensionId": "bkdaiagfchdjlkebhfoicjgodfilikki",
+      "sameIdUpgrade": true,
+      "realAccountConnected": true,
+      "remember30Days": false,
+      "aiConnection": "Real authorized provider returned text; key injected internally from self-hosted vault, session-only.",
+      "javaOutput": "8",
+      "javaInteropIsolation": "ISOLATED (rc.1 same runner implementation)"
+    },
+    "websiteOffline": {
+      "status": "passed",
+      "freshOrigin": "https://58475243.acmcoder-unified-preview.pages.dev/",
+      "firstJavaRun": "Closed workspace; new tab loaded privacy page without app; offline before root navigation; first Java compilation returned 42. No online Java run on this origin.",
+      "pythonOutput": "42",
+      "cppOutput": "42",
+      "realAccount": "Fresh target opened main origin offline and restored remembered account namespace, Java code/stdin and output 8; restored network, synchronized new draft/run to daily extension.",
+      "mainOriginRepair": "DevTools activated the fully downloaded fixed controller while existing user tabs were preserved. No IndexedDB, cookies or learning data cleared; all network overrides restored.",
+      "recordComparison": {
+        "website": 24,
+        "extension": 24,
+        "sameIds": true,
+        "samePayloads": true,
+        "metadata": "Revision and updatedAt may differ during synchronization. A later plugin self-test adds one further run."
+      }
+    },
+    "browserJava": {
+      "status": "passed",
+      "language": "Java 8",
+      "cumulativeAllocationBudgetMiB": 64,
+      "compileAllocationBudgetMiB": 256,
+      "executionSeconds": 5,
+      "compileSeconds": 30,
+      "limits": "Foreground compilation required. Cumulative allocation guard is not a claim of total browser memory bound; native JDK language versions differ.",
+      "guards": "Real rc.1 product rejected 80MB allocation and infinite loop, then recovered; isolated JS bridge denied. rc.3 runner bytes unchanged."
+    }
+  },
+  "dataPreservation": {
+    "originalDailyAccountRecords": 18,
+    "allOriginalPayloadsPreserved": true,
+    "localOriginalRecords": 13,
+    "localCurrentRecords": 13,
+    "localSameIdsAndPayloads": true,
+    "anonymousRecords": 7,
+    "anonymousUpgradeEvidence": "rc.1 same-ID comparison; rc.3 does not repeat unrelated storage verification"
+  },
+  "website": {
+    "deploymentId": "de90fbee-5221-4660-8ba0-85140ded2986",
+    "immutableUrl": "https://de90fbee.acmcoder-unified-preview.pages.dev/",
+    "mainUrl": "https://acmcoder-unified-preview.pages.dev/",
+    "environment": "production",
+    "branch": "codex/unified-product"
+  },
+  "ci": {
+    "runId": 37026461866,
+    "unitTests": 405,
+    "passed": 405,
+    "failed": 0,
+    "appDockerSmoke": "passed",
+    "imagesPublished": true,
+    "stablePromotion": "skipped"
+  },
+  "images": {
+    "app": {
+      "name": "app",
+      "version": "4.1.0-rc.3",
+      "commit": "587406427363d97df202f242c80b93bc0e53404d",
+      "digest": "sha256:a02897756807acccb214012a6f585bf2851453786714e7776237b499da0a8ecb"
+    },
+    "runner": {
+      "name": "runner",
+      "version": "4.1.0-rc.3",
+      "commit": "587406427363d97df202f242c80b93bc0e53404d",
+      "digest": "sha256:69e370ace200e8bde99c154711f8720c497c274402fd77386f1db23dc1ac2390"
+    }
+  },
+  "preservedStable": {
+    "version": "4.0.0",
+    "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+    "latestUnchanged": true
+  },
+  "publicArtifacts": [
+    {
+      "name": "acmcoder-source-v4.1.0-rc.3.tar.gz",
+      "bytes": 924455,
+      "sha256": "6ac3907135581a66dabf6872e9240c9b8ad081b5d0b17aad23e07963fffe7888"
+    },
+    {
+      "name": "acmcoder-extension-v4.1.0-rc.3.zip",
+      "bytes": 73449489,
+      "sha256": "10ece2f7b4e5f4dc18a2c40c53f34473faebd018cb5b587c9df5966373145681"
+    },
+    {
+      "name": "acmcoder-java-corresponding-source-v4.1.0-rc.3.zip",
+      "bytes": 69133602,
+      "sha256": "4e909a21db0c2130ea5a4c96077f0d25af850169507728bc63626f93c2ef8e31"
+    }
+  ],
+  "privateEvidence": {
+    "public-account-java-offline.png": "412e23f83d6e7f5d9727dc726bc981b442674e035f01ed331436334d98903c74",
+    "public-account-offline.png": "3169d47888b6bc35e0cfcc6dfefbd8b375127b414041ab52e70bd7cb150f34f0",
+    "default-chrome-java-pass.png": "edfb093d0842ae25c2d30d0e6380fb89fab1c3e46016852dbb7c20c6e6f469ad",
+    "public-first-java-offline.png": "1ef7f896f637810a10bf16c5dcd80c2fe761e681eecbfb5e4d3fbdd1c174ecbb",
+    "public-python-offline.png": "732b58709b8908bd6fbe71660f87a0ea0c335016cdcc70d33c5659b8cff12efc",
+    "public-cpp-offline.png": "00e96dce71c1005cb49c877fe2ff833a2e89ee0c396d8f3a8bc40536c2bcbd3f",
+    "default-chrome-ai-success.png": "a24aa6a5fa3824e305efdf058c4f0ac14931eb62394f9e25dafb5df9d1b07f33"
+  },
+  "offlineFreshOriginPreview": {
+    "deploymentId": "58475243-42c7-4aae-817a-bdce9cd15312",
+    "url": "https://58475243.acmcoder-unified-preview.pages.dev/",
+    "environment": "preview",
+    "commit": "587406427363d97df202f242c80b93bc0e53404d"
+  }
+}
