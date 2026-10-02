@@ -180,27 +180,27 @@
     "upgradedRC14Data": "/tmp/acmcoder-new-user-rc14/upgrade-data"
   },
   "storeReviewKit": {
-    "file": "acmcoder-store-review-v4.0.0-rc.14.zip",
-    "bytes": 153741,
-    "sha256": "8a6c3fe91c97ba14c7cc26332c84a2bc8fc4ebf4a7b906dd4c1b14b69c05deb7",
-    "nativeScreenshots": 0,
+    "name": "acmcoder-store-review-v4.0.0-rc.14-final.zip",
+    "bytes": 3869534,
+    "sha256": "8fbafdc44bffb720d17bf6e0843dd610607a38819ce914b398ce33221b14dd35",
+    "anonymousDownload": true,
+    "url": "https://github.com/Pygmalion03/acmcoder/releases/download/v4.0.0-rc.14/acmcoder-store-review-v4.0.0-rc.14-final.zip",
+    "nativeScreenshots": 5,
+    "materialsComplete": true,
     "submissionReady": false,
-    "publicAsset": false,
-    "documentationCommit": "9fc4f398d8dd9a4f95e6497c1aadfb5c5b4fdb14",
-    "previousDraftPreservedAs": "acmcoder-store-review-v4.0.0-rc.14-pre-receipt-37c6860.zip"
+    "storeListed": false,
+    "publicAsset": true,
+    "documentationCommit": "160dd1cd611dca2ce4e2740713ecba1e9c40cd74",
+    "screenshotManifest": "store-screenshots/screenshot-manifest.json"
   },
-  "stillUnproven": [
-    "new public ZIP actual native installation and upgrade/restart/rollback",
-    "real GitHub installed extension approve/sync/revoke and draft retention",
-    "real independent client offline edit / permanent delete / reconnect",
-    "five current installed extension store screenshots"
-  ],
+  "stillUnproven": [],
   "limits": [
-    "Candidate public release is not full goal completion or stable release",
-    "amd64 execution does not prove arm64 execution",
-    "Live device transport receipt used a Chrome API shim, not native installation",
-    "No store submission, new terms acceptance or payment",
-    "Old user service remains prior installed version and was not restarted"
+    "Candidate channel and stable/latest 3.0.4 retained; this completed goal does not promote stable or publish to stores.",
+    "amd64 execution does not prove arm64 execution.",
+    "Earlier shim transport remains historical; actual public ZIP installation, real GitHub authorization and revoke now passed in native Chrome.",
+    "No store submission, new terms acceptance or payment; developer-mode update is not store automatic update.",
+    "Old user 43117 service remains prior installed version and was not restarted.",
+    "Two empty cascade tombstone conflicts required actual manual Keep cloud resolution; no old learning records changed."
   ],
   "blockedAudit": {
     "checkedAt": "2026-10-01T19:51:13.163215+00:00",
@@ -217,6 +217,65 @@
     "remainingRequireNativeOrHumanInteraction": true,
     "liveBuildOrTerminalJobsRemaining": false,
     "requiredUserActionAfterWaking": "Unlock the Mac, then resume this goal; any actual login or irreversible test deletion prompt is handled at its action time",
-    "fullObjectiveComplete": false
+    "fullObjectiveComplete": false,
+    "historical": true
+  },
+  "previousStoreReviewKit": {
+    "file": "acmcoder-store-review-v4.0.0-rc.14.zip",
+    "bytes": 153741,
+    "sha256": "8a6c3fe91c97ba14c7cc26332c84a2bc8fc4ebf4a7b906dd4c1b14b69c05deb7",
+    "nativeScreenshots": 0,
+    "submissionReady": false,
+    "publicAsset": false,
+    "documentationCommit": "9fc4f398d8dd9a4f95e6497c1aadfb5c5b4fdb14",
+    "previousDraftPreservedAs": "acmcoder-store-review-v4.0.0-rc.14-pre-receipt-37c6860.zip"
+  },
+  "blockingResolvedBy": {
+    "receipt": "rc14-native-extension-2026-10-02.json",
+    "freshNativeInstall": true,
+    "realGithubApproveSyncRevoke": true,
+    "sameIDUpgradeRollbackReturn": true,
+    "fullBrowserRestart": true,
+    "offlineEditDeleteReconnectCopy": true,
+    "currentNativeScreenshots": 5
+  },
+  "finalAcceptance": {
+    "status": "passed",
+    "release": "https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14",
+    "prereleaseRetained": true,
+    "productSourceInstallerAndHistoricalManifestUnchanged": true,
+    "downloads": [
+      {
+        "name": "acmcoder-store-review-v4.0.0-rc.14-final.zip",
+        "bytes": 3869534,
+        "sha256": "8fbafdc44bffb720d17bf6e0843dd610607a38819ce914b398ce33221b14dd35",
+        "anonymousDownload": true,
+        "url": "https://github.com/Pygmalion03/acmcoder/releases/download/v4.0.0-rc.14/acmcoder-store-review-v4.0.0-rc.14-final.zip"
+      },
+      {
+        "name": "RC14-ACCEPTANCE.json",
+        "bytes": 10162,
+        "sha256": "fd6d2da376676cc915b4ecc8ae7a581d1d629185a28812ac9539c02a1e128f30",
+        "anonymousDownload": true,
+        "url": "https://github.com/Pygmalion03/acmcoder/releases/download/v4.0.0-rc.14/RC14-ACCEPTANCE.json"
+      },
+      {
+        "name": "STORE-REVIEW-SHA256SUMS",
+        "bytes": 111,
+        "sha256": "123054a62828e633f0e5a7739c04d08d2e51f0235fd6addf1a100e929217e8d2",
+        "anonymousDownload": true,
+        "url": "https://github.com/Pygmalion03/acmcoder/releases/download/v4.0.0-rc.14/STORE-REVIEW-SHA256SUMS"
+      }
+    ],
+    "downloadedKitZIPCRC": "passed",
+    "downloadedKitCurrentNativeScreenshots": 5,
+    "noPrivateLearningBackups": true,
+    "originalPlanNodes": 18,
+    "functionalChecks": 12,
+    "originalPlanScopeCompleted": true,
+    "audit": "../unified-requirement-audit.md",
+    "nativeReceipt": "rc14-native-extension-2026-10-02.json",
+    "supplementAsset": "RC14-ACCEPTANCE.json",
+    "documentationCommit": "160dd1cd611dca2ce4e2740713ecba1e9c40cd74"
   }
 }

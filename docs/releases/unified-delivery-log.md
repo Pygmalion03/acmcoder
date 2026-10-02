@@ -463,3 +463,12 @@ Chrome for Testing 同ID `jmdplnhlhdhcaaefllfndokbcmhbpmdb` 实际重新加载rc
 原18节点逐项核对及12门槛完成。已记录的边界：级联墓碑仍可能需要手动清空冲突；浏览器Java按退路不交付；arm64仅发布清单未实机执行；用户43117旧服务未在本轮更新；稳定latest仍3.0.4，商店身份/条款/费用/审核不在本轮交付范围。没有新增代码修改，复用固定源码393/393及已通过的真实AI/C++/两账号/备份证据，不重复部署或全量测试。
 
 收据：`evidence/rc14-native-extension-2026-10-02.json`；当前截图来源/摘要：`dist/releases/4.0.0-rc.14/store-screenshots/screenshot-manifest.json`。私有备份路径仅记录摘要，不将实际代码、凭据或账号数据上传。
+
+
+## 2026-10-02 — 最终审核材料与验收补充公开下载通过
+
+验收文档提交160dd1c已推送到codex/unified-product。rc14 Release发布三个新增附件：`acmcoder-store-review-v4.0.0-rc.14-final.zip`（3869534字节，SHA256 `8fbafdc44bffb720d17bf6e0843dd610607a38819ce914b398ce33221b14dd35`）、`RC14-ACCEPTANCE.json`、`STORE-REVIEW-SHA256SUMS`。补充包33个明确选定文件，包含五张当前1280×800截图及原图/转换/清单、品牌图、MIT/第三方声明、文案/权限/隐私/审核步骤、版本和脱敏验收收据；不包含私人学习备份或授权数据。
+
+三个附件全部通过无凭据curl下载，字节、SHA256和GitHub资产digest相等；下载后的ZIP CRC与五图数量通过，12项门槛均passed，原18节点范围记录一致。公开源码tar.gz、安装ZIP及旧release-manifest.json的资产digest不变；后者保留为当时分发收据，最终补充清单明确更新其历史待验状态。Release文案更新为实装与分发验收完成，prerelease身份不变，不移动稳定latest。旧截图/准备包/版本和数据备份继续留存。
+
+完整目标三项（18节点证据核对、公开分发、新用户安装与商店材料）已按约定范围完成。商店上架、稳定频道提升及arm64实机执行没有纳入完成声明。没有新增产品代码或重复全量测试，复用固定5adac6a的393/393及已验证构建。
