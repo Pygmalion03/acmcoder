@@ -20,6 +20,7 @@ export function startOfflineSupport(){
   else navigator.serviceWorker.register('/offline-worker.js',{scope:'/'}).then(registration=>{
     function update(){
       if(registration.waiting)show('新版本已下载。关闭本站所有标签页后再打开，即可使用新版本。');
+      else if(registration.installing)show('正在下载当前版本的离线页面和运行资源…');
       else if(registration.active){
         show('正在确认 Java 离线启动…');
         javaReady??=prepareJavaBootstrap();
