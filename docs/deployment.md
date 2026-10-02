@@ -1,6 +1,6 @@
 # ACMCoder统一正式版部署
 
-当前源码为 4.1.0-rc.1 候选。计划的固定镜像标签为 `ghcr.io/pygmalion03/acmcoder-app:v4.1.0-rc.1` 与 `ghcr.io/pygmalion03/acmcoder-runner:v4.1.0-rc.1`；是否已发布、对应摘要和验收状态以候选发行清单为准。v4 稳定版本及 latest 在候选验收期间保留。
+当前源码为 4.1.0-rc.2 候选。计划的固定镜像标签为 `ghcr.io/pygmalion03/acmcoder-app:v4.1.0-rc.2` 与 `ghcr.io/pygmalion03/acmcoder-runner:v4.1.0-rc.2`；是否已发布、对应摘要和验收状态以候选发行清单为准。v4 稳定版本及 latest 在候选验收期间保留。
 
 统一正式版为 **4.0.0**。[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0)关联固定源码、生成插件ZIP、校验和、网站及GHCR镜像；以随包 `release-manifest.json` 的实际摘要为准。rc.14及稳定3.0.4的旧版本仍保留供回退。
 

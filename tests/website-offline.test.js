@@ -59,3 +59,16 @@ test('stopping Python during resource download resolves immediately and never st
   const pending=runner.run({id:'pending',language:'python',code:'print(1)',stdin:''},event=>events.push(event));
   runner.cancel('pending');assert.equal((await pending).cancelled,true);finishLoad([]);await new Promise(resolve=>setImmediate(resolve));assert.equal(frame.src,'');runner.destroy();
 });
+
+test('offline readiness waits for a real nonce-bound Java bootstrap, not just cached bytes',async()=>{
+  let receive,frame;
+  const status={textContent:''},panel={innerHTML:'',querySelector:()=>status};
+  const registration={active:{},waiting:null,addEventListener(){}};
+  const context={navigator:{serviceWorker:{register:async()=>registration}},fetch:async()=>Response.json({bridge:`bridge-${'a'.repeat(24)}.html`}),crypto,setTimeout,clearTimeout,
+    addEventListener:(name,listener)=>receive=listener,removeEventListener(){},document:{createElement(){return frame={contentWindow:{},setAttribute(){},remove(){}};},body:{append(){}}}};
+  const source=(await fs.readFile(new URL('../cloudflare/public/offline.js',import.meta.url),'utf8')).replace('export function','function');vm.runInNewContext(source,context);
+  context.startOfflineSupport().mount(panel);await new Promise(resolve=>setImmediate(resolve));
+  assert.match(status.textContent,/确认 Java/);assert.ok(frame.src.endsWith('.html#'+frame.src.split('#')[1]));
+  const data={kind:'ready',nonce:frame.src.split('#')[1]};receive({source:{},origin:'null',data});receive({source:frame.contentWindow,origin:'https://wrong.invalid',data});assert.doesNotMatch(status.textContent,/已就绪/);
+  receive({source:frame.contentWindow,origin:'null',data});await new Promise(resolve=>setImmediate(resolve));assert.match(status.textContent,/离线资源已就绪/);
+});
