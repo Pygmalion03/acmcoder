@@ -204,7 +204,8 @@
     "registrationFee": "not inspected or paid",
     "submission": "not submitted",
     "listed": false,
-    "nativeChromeControl": "creation API denied; separate IAB reached actual Google password verification"
+    "nativeChromeControl": "Extension browser API created blank task tabs but refused protected devconsole navigation. Native Chrome UI then reached the actual Google reauthentication screen too. No credentials entered, registration inspected, terms accepted or fee paid.",
+    "systemChromeRecheck": "Actual native Google identity reauthentication required as well; existing system Chrome session did not bypass this blocker. IAB sign-in handoff remains retained."
   },
   "requiredRemaining": [
     "Google identity verification",
