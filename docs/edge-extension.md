@@ -1,16 +1,18 @@
 # 浏览器插件：独立ACM侧栏
 
-浏览器插件是 ACMCoder 面向 LeetCode 日常练习的主要入口之一。统一候选版自带Python/C++17，网站、本地服务和登录都不是基本练习的前置条件。本地版另外保留Java。
+浏览器插件是 ACMCoder 面向 LeetCode 日常练习的主要入口之一。统一正式版v4.0.0自带Python/C++17，网站、本地服务和登录都不是基本练习的前置条件。本地版另外保留Java。
 
-当前候选rc.14加入ZIP安装的设备确认路径；安装包分发状态以[Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)为准，真实GitHub插件授权仍待实装。旧rc.13解压到新目录时，扩展ID变化会导致账号连接被拒绝；匿名练习不受影响。
+从[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0)下载`acmcoder-extension-v4.0.0.zip`。商店上架留待以后；手动加载无需开发者注册或付款。ZIP安装的设备确认已通过真实GitHub授权、同步与撤销验收，见[需求核对](releases/unified-requirement-audit.md)。
 
 ## 安装与读取题目
 
-1. 下载生成的扩展ZIP并解压到固定目录，或执行 `npm ci --ignore-scripts`、`node scripts/build-clients.mjs extension`。
+1. 下载正式插件ZIP并解压到固定目录，保留该目录供日常运行和升级。商店素材ZIP内包含安装ZIP，但外层素材ZIP不能直接安装。开发者也可执行 `npm ci --ignore-scripts`、`node scripts/build-clients.mjs extension`。
 2. Edge打开 `edge://extensions/`，Chrome打开 `chrome://extensions/`。
 3. 启用 `Developer mode`，点击 `Load unpacked`，选择生成目录 `dist/extension/` 或ZIP中manifest.json所在目录。不要直接选择源码 `extension/`。
 4. 打开LeetCode cn/com题目页，点击ACMCoder图标，再点击读取当前题目。题面与原始样例会保存；ACM标准输入由你自行调整。
 5. 编写完整程序，运行自测。样例通过不代表原平台隐藏测试AC。
+
+日常练习和账号登录使用你自己的Chrome或Edge即可，不需要Codex内置浏览器或Chrome for Testing。
 
 ## 保存与重写
 
@@ -24,7 +26,7 @@
 
 需要跨设备时在设置主动连接GitHub账号，网站确认设备后插件取得独立同步授权，网站标签页无需常开。默认会话连接，可自选最长30天保持连接；网站可撤销设备，草稿保留。
 
-rc.14待验路径：已登记ID继续通过PKCE回调连接。ZIP安装ID没有登记时，插件打开网站设备确认页；选择自己的GitHub账号并确认后，回到插件等待连接完成。未确认时不会取得同步授权；关闭未确认页面会取消连接。插件页面刷新后，可再次点击连接以继续十分钟内的待确认请求，不需要重新打开另一个确认页。设备码及令牌仅由受信任后台管理；网页和运行沙箱不会得到它们。商店固定ID仍需单独登记，不放宽回调来源。
+已登记ID通过PKCE回调连接。ZIP安装ID没有登记时，插件打开网站设备确认页；选择自己的GitHub账号并确认后，回到插件等待连接完成。未确认时不会取得同步授权；关闭未确认页面会取消连接。插件页面刷新后，可再次点击连接以继续十分钟内的待确认请求，不需要重新打开另一个确认页。设备码及令牌仅由受信任后台管理；网页和运行沙箱不会得到它们。未来商店固定ID仍需单独登记，不放宽回调来源。
 
 ## 自带API
 

@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-02",
+  "version": "4.0.0",
+  "sourceCommit": "1e141a74d77073dcef62bfeec39ef30224631203",
+  "distribution": {
+    "channel": "GitHub Release ZIP, manual unpacked installation",
+    "storeStatus": "deferred by user",
+    "developerRegistrationFeeShownUSD": 5,
+    "feePaid": false,
+    "agreementAccepted": false,
+    "storeItemCreated": false,
+    "reviewSubmitted": false,
+    "materialsRetained": true
+  },
+  "browser": {
+    "application": "Google Chrome",
+    "profile": "yu",
+    "extensionId": "bkdaiagfchdjlkebhfoicjgodfilikki",
+    "newInstallation": true,
+    "developerModeAlreadyEnabled": true,
+    "toolbarPinned": true
+  },
+  "package": {
+    "name": "acmcoder-extension-v4.0.0.zip",
+    "sha256": "94ee81cbe8900da8a84cd1c2bcb95f4e4ab27125d2ed602444cdea54ee88bd9f",
+    "crcVerified": true,
+    "numericVersion": "4.0.0.65535",
+    "contentsMatchOriginalRelease": true
+  },
+  "acceptance": {
+    "sourceUrl": "https://leetcode.cn/problems/two-sum-ii-input-array-is-sorted/description/",
+    "capture": "real installed extension capture; full statement and all three original sample groups",
+    "python": {
+      "status": "passed",
+      "stdin": "2 7 11 15\n9",
+      "expected": "1 2",
+      "actual": "1 2",
+      "program": "complete ACM two-pointer program entered in real UI"
+    },
+    "cpp17": {
+      "status": "passed",
+      "stdin": "2 7 11 15\n9",
+      "expected": "1 2",
+      "actual": "1 2",
+      "program": "complete ACM two-pointer program with vector/string/istringstream entered in real UI"
+    },
+    "closeAndReopen": {
+      "status": "passed",
+      "retained": [
+        "Python code",
+        "stdin",
+        "expected output"
+      ]
+    },
+    "languageSwitch": {
+      "status": "passed",
+      "retained": [
+        "independent Python and C++ drafts"
+      ]
+    },
+    "versionUi": "4.0.0 · 1e141a7 · python / cpp",
+    "backup": {
+      "status": "passed",
+      "recordCount": 7,
+      "kinds": {
+        "problem": 2,
+        "run": 2,
+        "draft": 3
+      },
+      "sha256": "816b61aa116bc9304d0819951d34f8e852f49f098f83c365b6eefda2bf76a6f4",
+      "privateBackupRetained": true
+    }
+  },
+  "scope": {
+    "existingChromeWebsiteData": "not edited by this exercise",
+    "previousChromeForTestingInstallation": "retained, not replaced",
+    "currentInstallationAccount": "guest; existing cloud account requires explicit connection",
+    "currentInstallationAI": "not configured; no provider calls made",
+    "offlineColdStart": "prior same-package evidence reused; not newly tested here",
+    "storeAutoUpdate": "not delivered; manual updates retain the same installation path",
+    "arm64Execution": "not newly tested"
+  },
+  "documentationValidation": {
+    "command": "node --test tests/naming-and-docs.test.js",
+    "environment": "dev-wsl mapped project v3 after Mutagen flush",
+    "passed": 4,
+    "failed": 0
+  },
+  "screenshots": [
+    {
+      "name": "default-chrome-python.jpg",
+      "sha256": "5f53f396be98666ca4b1e21b26d3cfc0dbcf974a4e899443c8657890fbb894f3",
+      "location": "private local evidence; not published as store material"
+    },
+    {
+      "name": "default-chrome-cpp.jpg",
+      "sha256": "b5d6fb97a1e1fe9395a6d2e89db0d3d59bbe6da321a9d2a75c2aa794124d7190",
+      "location": "private local evidence; not published as store material"
+    }
+  ]
+}

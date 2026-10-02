@@ -16,9 +16,9 @@ rc.14固定源码5adac6a、[旧Release](https://github.com/Pygmalion03/acmcoder/
 
 ## 插件
 
-候选ZIP解压到固定目录。Chrome打开 chrome://extensions/，Edge打开 edge://extensions/，启用 Developer mode，Load unpacked 选择解压目录中的 manifest.json 所在目录。新版必须使用生成包 dist/extension；源码 extension/ 不含随包运行资源。
+正式插件ZIP解压到固定目录。Chrome打开 chrome://extensions/，Edge打开 edge://extensions/，启用 Developer mode，Load unpacked 选择解压目录中的 manifest.json 所在目录。新版必须使用生成包 dist/extension；源码 extension/ 不含随包运行资源。当前保留免费手动安装与更新，商店上架留待以后。
 
-升级时先导出备份，再更新原解压目录中的完整文件，点击扩展管理页重新加载。保留原安装路径和扩展身份，切勿卸载后再装来代替升级；不同路径可能产生不同ID和存储。旧语言草稿一次迁移，原键保留。授权回调需登记安装ID；未登记ID仍能匿名离线练习。
+升级时先导出备份，再更新原解压目录中的完整文件，点击扩展管理页重新加载。保留原安装路径和扩展身份，切勿卸载后再装来代替升级；不同路径可能产生不同ID和存储。旧语言草稿一次迁移，原键保留。未登记安装ID通过网站设备确认连接GitHub，无需自行修改回调白名单。
 
 商店版以后由商店更新，审核期间网站通过协议兼容保留旧客户端。商店版本号由根版本派生：rc.N映射major.minor.patch.N，正式版映射major.minor.patch.65535，显示版本仍为原SemVer，避免正式版数字小于候选版而不能升级。该字段规则参考 [Chrome官方版本说明](https://developer.chrome.com/docs/extensions/reference/manifest/version)。
 

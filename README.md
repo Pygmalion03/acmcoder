@@ -59,7 +59,7 @@ docker compose -f docker-compose.prebuilt.yml down
 
 ## 安装浏览器插件
 
-下载候选发行ZIP或先构建 `dist/extension/`，解压到固定目录。Edge打开 `edge://extensions/`；Chrome打开 `chrome://extensions/`，启用 `Developer mode` / 开发者模式，点击 `Load unpacked` / 加载已解压的扩展程序，选择含manifest.json的目录。
+下载[正式版插件ZIP](https://github.com/Pygmalion03/acmcoder/releases/download/v4.0.0/acmcoder-extension-v4.0.0.zip)，解压到固定目录。Edge打开 `edge://extensions/`；Chrome打开 `chrome://extensions/`，启用 `Developer mode` / 开发者模式，点击 `Load unpacked` / 加载已解压的扩展程序，选择含manifest.json的目录。无需注册商店开发者账号或支付注册费；当前使用免费手动安装，商店上架留待以后。
 
 打开LeetCode题目页，点击ACMCoder图标，在浏览器插件侧栏读取当前题目，即可直接编写ACM程序和标准输入；默认Python可断网运行。关闭网站和本地服务不会影响插件练习。旧本地侧栏从设置进入，仍可连接稳定版服务。
 
@@ -67,43 +67,39 @@ docker compose -f docker-compose.prebuilt.yml down
 
 ## 另一台设备怎么更新
 
-统一候选插件先导出备份，再关闭扩展页面，把新发行ZIP解压覆盖**原安装目录**，在 `edge://extensions/` 或 `chrome://extensions/` 点 `Reload`。不要卸载、换目录或直接加载源码 `extension/`；生成包目录是 `dist/extension/`，发行ZIP解压后的根目录直接含manifest.json。商店尚未上架，当前为手动更新。
+插件先导出备份，再关闭扩展页面，把新发行ZIP解压覆盖**原安装目录**，在 `edge://extensions/` 或 `chrome://extensions/` 点 `Reload`。不要卸载、换目录或直接加载源码 `extension/`；生成包目录是 `dist/extension/`，发行ZIP解压后的根目录直接含manifest.json。商店尚未上架，当前为手动更新。
 
-稳定3.0.4的Docker用户在原数据目录执行：
-
-```bash
-docker compose -f docker-compose.prebuilt.yml pull
-docker compose -f docker-compose.prebuilt.yml up -d
-```
-
-统一候选镜像已发布，在本版源码解压目录使用版本锁定覆盖文件；升级时沿用原数据目录：
+Docker用户升级前导出备份并保留原数据目录，在新版源码目录执行：
 
 ```bash
-docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml pull
-docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml up -d
+docker compose -f docker-compose.prebuilt.yml -f docker-compose.release.yml pull
+docker compose -f docker-compose.prebuilt.yml -f docker-compose.release.yml up -d
 ```
+
+`docker-compose.release.yml`锁定正式v4.0.0；`docker-compose.candidate.yml`保留给rc.14候选环境，不用于本次正式版安装。
 
 覆盖文件仅更换镜像，沿用四个数据/凭据路径和回环端口。升级前先导出并另存数据目录；不要运行带删除卷的命令。降级先保留当前数据，按[升级与回退](docs/upgrade.md)使用升级前副本；旧服务不会显示全部V3记录。
 
 如果你在 Compose 文件里固定了镜像 tag，把 tag 更新到当前版本：
 
 ```text
-ghcr.io/pygmalion03/acmcoder-app:v3.0.4
-ghcr.io/pygmalion03/acmcoder-runner:v3.0.4
+ghcr.io/pygmalion03/acmcoder-app:v4.0.0
+ghcr.io/pygmalion03/acmcoder-runner:v4.0.0
 ```
 
 ## 日常使用流程
 
-1. 启动 ACMCoder 服务。
-2. 打开 LeetCode 题目页。
-3. 点击 ACMCoder 扩展图标打开侧栏。
-4. 选择语言，按 ACM 输入输出协议补全代码。
-5. 填写 `stdin` 和可选预期输出，点击 `Run`。
-6. 打开 `http://127.0.0.1:43117`，可以管理个人题库和推荐题库，也可以生成每日计划后在完整练习页继续编程。
+1. 打开 LeetCode 题目页，点击 ACMCoder 扩展图标打开侧栏。
+2. 点击读取当前题目，选择Python或C++17，编写完整ACM程序。
+3. 填写标准输入和期望输出，点击「运行自测」。
+4. 完成后可「重新手撕」，原代码和历史继续保留。
+5. 在「设置与数据」主动连接GitHub，可同步到[网站](https://acmcoder-unified-preview.pages.dev/)和其他设备。基本练习无需登录或本地服务。
+
+需要Java或本地完整环境时，启动本地/Docker服务并打开 `http://127.0.0.1:43117`。
 
 ## 即时巩固练习
 
-Web 练习页会把当前题目的 AI 对话和最近一轮练习保存在当前浏览器中；每日推荐题加入个人题库的方式不变。收到 AI 建议后可点“我懂了，马上重练”，或在确认 AC 后点“再练一次”：两者都会以同一道题的初始模板开始一轮干净的巩固练习。巩固期间可查看上一轮思路；在首次编辑或运行前也可以恢复上一轮。
+统一练习页会保存代码、输入、期望输出和同题AI对话。点击「重新手撕」先保留原代码快照，再开始独立重写草稿；关闭后再回来仍可继续。完成重写后可对照原记录，只有显式「放弃本次重写」才丢弃未完成重写。AI对话每页显示20条，完整历史继续保留。
 
 ## 启动方式和运行模式
 
@@ -183,7 +179,7 @@ ACMCODER_DOCKER_AUTO_BUILD=0
 
 这个项目有三类发布物：
 
-- **源码分支**：当前为 `v3`，包含代码、Dockerfile、Web、插件和文档。
+- **源码分支**：默认 `codex/unified-product`，正式版源码固定于 `v4.0.0`；旧 `v3` 分支保留。
 - **GitHub Release**：面向用户看的版本页，说明 tag、变更和启动方式。
 - **GHCR Docker 镜像**：Docker 用户实际拉取的预构建镜像。
 
@@ -196,13 +192,15 @@ ghcr.io/pygmalion03/acmcoder-app:latest
 需要锁版本时使用当前 Release tag：
 
 ```text
-ghcr.io/pygmalion03/acmcoder-app:v3.0.4
-ghcr.io/pygmalion03/acmcoder-runner:v3.0.4
+ghcr.io/pygmalion03/acmcoder-app:v4.0.0
+ghcr.io/pygmalion03/acmcoder-runner:v4.0.0
 ```
 
 更多部署边界见 [`docs/deployment.md`](docs/deployment.md)。
 
-## 当前能力
+## 原版本地兼容能力
+
+以下为保留的原版本地入口能力；统一工作区的当前能力与三端区别见[功能矩阵](docs/releases/unified-feature-matrix.md)。
 
 - 5 道种子题。
 - 支持 Java、C++17、Python。
@@ -215,7 +213,7 @@ ghcr.io/pygmalion03/acmcoder-runner:v3.0.4
 - 推荐题库只保存题目索引和 LeetCode 链接；加入个人题库时按需读取完整题面并保存在本机。
 - Web 工作台会同步插件新增题目和 AC 进度，同时保留当前代码、输入和选题。
 
-## 模型建议和本地数据
+## 原版本地模型建议和数据
 
 模型能力是可选增强，不参与判题，也不会覆盖源代码。每日计划只允许模型从本地候选题中选择；模型返回的题量、slug 或去重结果不符合要求，或者请求超过 8 秒时，系统改用确定性的本地规则。用户也可以主动请求代码建议。API Key、Base URL 和 Model 都在本机配置，服务端通过 OpenAI-compatible `chat/completions` 接口请求结果。
 
