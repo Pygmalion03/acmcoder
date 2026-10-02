@@ -224,5 +224,20 @@
     "zipCRC": "passed",
     "files": 19,
     "nestedInstallerExactMatch": true
+  },
+  "distribution": {
+    "release": "https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0",
+    "releasePublic": true,
+    "assetsPublished": [
+      "acmcoder-store-submission-v4.0.0.zip",
+      "store-review-manifest.json",
+      "STORE-SUBMISSION-SHA256SUMS"
+    ],
+    "bundleURL": "https://github.com/Pygmalion03/acmcoder/releases/download/v4.0.0/acmcoder-store-submission-v4.0.0.zip",
+    "githubAssetDigests": "All three supplemental assets and unchanged original installer match local SHA256 and byte counts",
+    "anonymousFullDownload": "not completed: Mac and WSL requests timed out with partial bodies; no public full-download pass claimed",
+    "anonymousSmallVerification": "not completed: subsequent Mac range/manifest requests failed during TLS handshake",
+    "preparationCommit": "749da1b",
+    "productCodeOrInstallerChanged": false
   }
 }
