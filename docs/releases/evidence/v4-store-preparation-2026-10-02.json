@@ -1,0 +1,228 @@
+{
+  "kind": "v4-stable-chrome-store-preparation",
+  "date": "2026-10-02",
+  "version": "4.0.0",
+  "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+  "installer": {
+    "name": "acmcoder-extension-v4.0.0.zip",
+    "bytes": 33772612,
+    "sha256": "94ee81cbe8900da8a84cd1c2bcb95f4e4ab27125d2ed602444cdea54ee88bd9f",
+    "zipCRC": "passed",
+    "numericVersion": "4.0.0.65535"
+  },
+  "materialsComplete": true,
+  "assets": [
+    {
+      "path": "store-assets/promo-small-440x280.png",
+      "width": 440,
+      "height": 280,
+      "bytes": 109891,
+      "sha256": "9ed10c9122c5f57813d31d65bed20c4c74589b9bb01ae0ae97ca0671b5fd63a2",
+      "pngCRC": "passed"
+    },
+    {
+      "path": "store-assets/icons/acmcoder-16.png",
+      "width": 16,
+      "height": 16,
+      "bytes": 829,
+      "sha256": "5435c8604dcd9cf5c5a1cf6a9618c247b31c22b022edded740b690993dfb34a5",
+      "pngCRC": "passed"
+    },
+    {
+      "path": "store-assets/icons/acmcoder-32.png",
+      "width": 32,
+      "height": 32,
+      "bytes": 2205,
+      "sha256": "5c8e088dd6492892040d4c5efc8bdb46460423fdf55864912c08bc874472a07a",
+      "pngCRC": "passed"
+    },
+    {
+      "path": "store-assets/icons/acmcoder-48.png",
+      "width": 48,
+      "height": 48,
+      "bytes": 3215,
+      "sha256": "699a78744bd22bf2acf0953dfa8bc577048c62bbc6a95be20be319ee05254309",
+      "pngCRC": "passed"
+    },
+    {
+      "path": "store-assets/icons/acmcoder-128.png",
+      "width": 128,
+      "height": 128,
+      "bytes": 13524,
+      "sha256": "29dafe1ea4f879f30e13eb76b4d80549b72c629b12fa1a7eaff2eea4bf914d32",
+      "pngCRC": "passed"
+    },
+    {
+      "path": "store-screenshots/01-leetcode-sidepanel.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 442300,
+      "sha256": "2a1c8095ae32f93b916ed34db37422a2af390a61d72f4467e2e1e08eed543649",
+      "pngCRC": "passed"
+    },
+    {
+      "path": "store-screenshots/02-library.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 432156,
+      "sha256": "25d7f0e207437061450e1eb703c1e1da5ed32297cef16eddaf3e866268546e04",
+      "pngCRC": "passed"
+    },
+    {
+      "path": "store-screenshots/03-today.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 536060,
+      "sha256": "a92d4445a849347ad396671b754e5f98efd1d99f4b0ff424a17aacd753f3028c",
+      "pngCRC": "passed"
+    },
+    {
+      "path": "store-screenshots/04-history.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 399172,
+      "sha256": "2443f2ab7335bd1cc2c48a6b729cd92fac723dc93503d8d8162bef1ee21706a3",
+      "pngCRC": "passed"
+    },
+    {
+      "path": "store-screenshots/05-settings.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 389764,
+      "sha256": "02d561839a3ed77fafc2e03788a870cfadb126f439babd452a503809d4d0ab40",
+      "pngCRC": "passed"
+    }
+  ],
+  "screenshots": {
+    "version": "4.0.0",
+    "commit": "1e141a74d77073dcef62bfeec39ef30224631203",
+    "extensionId": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
+    "installation": "Same-ID existing extension updated using public v4.0.0 ZIP; actual Settings confirmed 4.0.0/1e141a7. Fresh native screenshots captured 2026-10-02; no repeated restart claim.",
+    "browser": "Chrome for Testing 151.0.7922.34",
+    "capture": "Native CUA full-window screenshots of the actually installed extension, including Chrome sidebar on actual LeetCode. Side-panel Python self-test of retained demonstration code returned 1 2. No website substitute, generated UI, replacement or overlays.",
+    "transformation": "Uniform resize with bottom-aligned full-bleed crop from actual 2126x1500 window to 1280x800; source crop x=0,y=171.25,width=2126,height=1328.75. No padding, stretching, replacement, overlays or invented content. Uncropped native originals retained. Renderer locked resvg 2.6.2.",
+    "pageZoom": "Actual browser 75% for the extension origin. LeetCode retains its own normal zoom.",
+    "privacy": "Anonymous profile; public LeetCode questions, self-authored demonstration code. No provider Key or authorization values visible.",
+    "storeStatus": "not-submitted",
+    "requirements": "https://developer.chrome.com/docs/webstore/images",
+    "raw": [
+      {
+        "name": "raw/01-leetcode-sidepanel.jpg",
+        "width": 2126,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 438513,
+        "sha256": "e95b1498bcc7806f21b99143c54b24ad0408f34a2330f4ca5d0d0790c1c948d4"
+      },
+      {
+        "name": "raw/02-library.jpg",
+        "width": 2126,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 325131,
+        "sha256": "ea059a4dbaf449476eb1514651d19380f5bb28b8bbd6382ef18a3af6681e2e89"
+      },
+      {
+        "name": "raw/03-today.jpg",
+        "width": 2126,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 329145,
+        "sha256": "f1f3241f728c1a29d79f24a2a64e8c8d474da06dfec59fb88a756efb613f1bf1"
+      },
+      {
+        "name": "raw/04-history.jpg",
+        "width": 2126,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 298232,
+        "sha256": "a3f00e37b415320fe14d993f2d7c22a0d53994db060c368764cbbfdb27d19e3a"
+      },
+      {
+        "name": "raw/05-settings.jpg",
+        "width": 2126,
+        "height": 1500,
+        "format": "JPEG",
+        "bytes": 293410,
+        "sha256": "78ec44e029305bb14834474c804d88b7c9dd7bfd922a122f959752e29c038203"
+      }
+    ],
+    "screenshots": [
+      {
+        "name": "01-leetcode-sidepanel.png",
+        "source": "raw/01-leetcode-sidepanel.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 442300,
+        "sha256": "2a1c8095ae32f93b916ed34db37422a2af390a61d72f4467e2e1e08eed543649"
+      },
+      {
+        "name": "02-library.png",
+        "source": "raw/02-library.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 432156,
+        "sha256": "25d7f0e207437061450e1eb703c1e1da5ed32297cef16eddaf3e866268546e04"
+      },
+      {
+        "name": "03-today.png",
+        "source": "raw/03-today.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 536060,
+        "sha256": "a92d4445a849347ad396671b754e5f98efd1d99f4b0ff424a17aacd753f3028c"
+      },
+      {
+        "name": "04-history.png",
+        "source": "raw/04-history.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 399172,
+        "sha256": "2443f2ab7335bd1cc2c48a6b729cd92fac723dc93503d8d8162bef1ee21706a3"
+      },
+      {
+        "name": "05-settings.png",
+        "source": "raw/05-settings.jpg",
+        "width": 1280,
+        "height": 800,
+        "format": "PNG",
+        "bytes": 389764,
+        "sha256": "02d561839a3ed77fafc2e03788a870cfadb126f439babd452a503809d4d0ab40"
+      }
+    ]
+  },
+  "listingDocumentSHA256": "1628f314480cdf7a44c4649a3b45fe9e7a89acf4d3a454971959283e10f460e0",
+  "publisherDashboard": {
+    "status": "Google reauthentication required; developer dashboard inaccessible",
+    "developerRegistration": "unknown",
+    "itemId": null,
+    "terms": "not accepted in this run",
+    "registrationFee": "not inspected or paid",
+    "submission": "not submitted",
+    "listed": false,
+    "nativeChromeControl": "creation API denied; separate IAB reached actual Google password verification"
+  },
+  "requiredRemaining": [
+    "Google identity verification",
+    "inspect existing publisher and existing item before creating anything",
+    "complete any required registration, legal acceptance or fee with human action",
+    "upload original stable ZIP and final listing/materials; verify dashboard validation",
+    "obtain store ID and verify final installed extension account connection",
+    "submit and receive review approval",
+    "verify actual store install/update and retained learning data"
+  ],
+  "submissionReady": false,
+  "scope": "Formal installer and product code unchanged. Fresh native extension screenshots; one retained public-demo Python self-test output 1 2; no code/input edits, deletion, new permissions or AI requests.",
+  "materialBundle": {
+    "name": "acmcoder-store-submission-v4.0.0.zip",
+    "bytes": 36091305,
+    "sha256": "613142272cef28e530637b1a5d164b6548a80c9b5cb286ef5636dc1a566b1554",
+    "zipCRC": "passed",
+    "files": 19,
+    "nestedInstallerExactMatch": true
+  }
+}
