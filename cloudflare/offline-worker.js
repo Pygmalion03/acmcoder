@@ -16,7 +16,12 @@ self.addEventListener('install',event=>event.waitUntil((async()=>{
         if(!response.ok)throw new Error('Offline asset unavailable');
         const bytes=await response.clone().arrayBuffer();
         if(bytes.byteLength!==asset.bytes||hex(await crypto.subtle.digest('SHA-256',bytes))!==asset.sha256)throw new Error('Offline asset changed during download');
-        await cache.put(asset.path,response);
+        // Pages redirects .html files to their clean URLs. A redirected Response
+        // cannot satisfy a navigation whose redirect mode is manual; store the
+        // verified body as a direct response while retaining its security headers.
+        const headers=new Headers(response.headers);
+        headers.delete('content-encoding');headers.delete('content-length');
+        await cache.put(asset.path,new Response(bytes,{status:response.status,statusText:response.statusText,headers}));
       }
     }));
   }catch(error){await caches.delete(cacheName);throw error;}

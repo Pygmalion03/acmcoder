@@ -21,7 +21,7 @@ test('offline account opens only a remembered local namespace; online logout and
   resolveWebsiteAccount({session:{authenticated:true,user:first},storage});forgetWebsiteAccount(storage);assert.equal(entries.size,0);
 });
 
-async function workerFixture({changed=false}={}){
+async function workerFixture({changed=false,redirected=false}={}){
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'acmcoder-offline-'));
   for(const dir of ['shared/runners','runner','vendor'])await fs.mkdir(path.join(directory,dir),{recursive:true});
   await fs.writeFile(path.join(directory,'_headers'),"/runner/*\n  Content-Security-Policy: script-src 'self' blob: 'wasm-unsafe-eval'\n\n/shared/runners/cpp-bridge\n  Content-Security-Policy: script-src 'self' blob: 'wasm-unsafe-eval'");
@@ -34,7 +34,7 @@ async function workerFixture({changed=false}={}){
   const listeners={},buckets=new Map(),fetched=[];
   const caches={async open(name){if(!buckets.has(name))buckets.set(name,new Map());const map=buckets.get(name);return {put:async(key,response)=>map.set(key,response),match:async key=>map.get(key)?.clone()};},keys:async()=>[...buckets.keys()],delete:async name=>buckets.delete(name)};
   let claimed=false;
-  vm.runInNewContext(source,{URL,Response,crypto,Uint8Array,Set,caches,self:{location:{origin:'https://site.invalid'},clients:{claim:async()=>{claimed=true;}},addEventListener:(name,fn)=>listeners[name]=fn},fetch:async(url,options)=>{fetched.push({url,options});return new Response(changed&&url==='/vendor/runtime.wasm'?'changed':contents.get(url));}});
+  vm.runInNewContext(source,{URL,Response,Headers,crypto,Uint8Array,Set,caches,self:{location:{origin:'https://site.invalid'},clients:{claim:async()=>{claimed=true;}},addEventListener:(name,fn)=>listeners[name]=fn},fetch:async(url,options)=>{fetched.push({url,options});const response=new Response(changed&&url==='/vendor/runtime.wasm'?'changed':contents.get(url),{headers:{'content-security-policy':"default-src 'self'",'content-encoding':'br','content-length':'1'}});if(redirected)Object.defineProperty(response,'redirected',{value:true});return response;}});
   const dispatch=async(name,request)=>{let result;listeners[name]({request,waitUntil:promise=>result=promise,respondWith:promise=>result=promise});return result;};
   return {dispatch,buckets,fetched,info,claimed:()=>claimed};
 }
@@ -51,6 +51,14 @@ test('offline worker serves the complete public graph, runner nonce and root; ne
 
 test('a changed runtime rejects offline installation instead of activating a mixed version',async()=>{
   const fixture=await workerFixture({changed:true});await assert.rejects(fixture.dispatch('install'),/changed during download/);assert.equal(fixture.buckets.size,0);
+});
+
+test('Pages clean-URL redirects become direct cached navigation responses with security headers intact',async()=>{
+  const fixture=await workerFixture({redirected:true});await fixture.dispatch('install');
+  const response=await fixture.dispatch('fetch',new Request('https://site.invalid/',{redirect:'manual'}));
+  assert.equal(response.redirected,false);assert.equal(await response.text(),'content:workspace.html');
+  assert.equal(response.headers.get('content-security-policy'),"default-src 'self'");
+  assert.equal(response.headers.has('content-encoding'),false);assert.equal(response.headers.has('content-length'),false);
 });
 
 test('stopping Python during resource download resolves immediately and never starts a late worker',async()=>{
