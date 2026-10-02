@@ -2,7 +2,7 @@
   "date": "2026-10-02",
   "version": "4.0.0-rc.14",
   "commit": "5adac6ab53d55087993004f443a06d5b60d19c8e",
-  "status": "in-progress-awaiting-real-github-sign-in",
+  "status": "in-progress-awaiting-new-device-approval",
   "browser": "Google Chrome for Testing 151.0.7922.34",
   "macLock": "resolved-by-fresh-native-observation",
   "freshInstall": {
@@ -15,7 +15,13 @@
     "newIndependentGuestSpace": true,
     "deviceConfirmationPageOpened": true,
     "githubLoginPageReached": true,
-    "realGithubApproval": false
+    "realGithubApproval": false,
+    "authenticatedWebsiteAccount": "Pygmalion03",
+    "websiteSessionVerifiedIn": "Chrome for Testing incognito, website settings",
+    "expiredRequestHandled": "Website reports request expired; new plugin request opened successfully",
+    "currentApprovalPageVerified": true,
+    "approvalDeviceLabel": "ACMCoder 浏览器插件（ZIP 安装）",
+    "accountSyncGrant": "pending action-time user confirmation"
   },
   "existingInstall": {
     "extensionId": "jmdplnhlhdhcaaefllfndokbcmhbpmdb",
@@ -35,22 +41,29 @@
     "backupSHA256": "ab9764ffd212c09fb06565f1aa210a074486af7467c5d77e02802add6bbbae15",
     "privateBackup": "dist/releases/4.0.0-rc.14/native-evidence/rc12-before-upgrade-backup.json",
     "rc14FilesStaged": true,
-    "browserReload": false,
-    "upgradeRetentionVerified": false
+    "browserReload": true,
+    "upgradeRetentionVerified": true,
+    "rollbackRetentionVerified": true,
+    "returnUpgradeRetentionVerified": true,
+    "currentObservedVersion": "4.0.0-rc.14 / 5adac6a",
+    "allThreeExportedRecordArraysExact": true,
+    "fullBrowserRestart": "pending; extension reload and new workspace page tested"
   },
   "screenshots": {
     "installProof": "dist/releases/4.0.0-rc.14/native-evidence/01-fresh-installed.jpg",
-    "finalStoreScreenshots": 0
+    "finalStoreScreenshots": 0,
+    "approvalProof": "dist/releases/4.0.0-rc.14/native-evidence/02-device-approval.jpg"
   },
   "stillPending": [
     "Real GitHub approval, sync and revocation",
-    "Same-ID extension upgrade/restart/rollback and exact exported record comparison",
     "Independent-client offline edit, permanent delete, reconnect receipt",
-    "Five current native extension store screenshots"
+    "Five current native extension store screenshots",
+    "Full browser restart, with current website login no longer needed"
   ],
   "notes": [
     "No website OAuth or API Key reconfiguration is requested.",
     "Current existing extension browser version remains rc12 until native reload; staged files alone are not activation.",
-    "Private learning backups and authentication data are not publication assets."
+    "Private learning backups and authentication data are not publication assets.",
+    "Approval uses the existing real GitHub-authenticated website session in an independent browser window; no cookie/session/token extraction or injection."
   ]
 }

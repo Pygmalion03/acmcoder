@@ -443,3 +443,8 @@
 ## rc14 原生验收恢复（2026-10-02）
 
 Mac锁屏已解除。公开rc14 ZIP在新目录真实加载成功，独立插件ID `ojpmfieipijpbbbhedhfjjgdjdembnmd`，扩展管理页显示rc14，设置显示5adac6a。新ID连接进入实际网站设备确认及GitHub登录页；测试浏览器缺登录会话，已交给用户登录，批准/同步/撤销仍待验。旧同ID插件原生导出21条记录，rc12安装文件与私人备份已保留；已准备rc14文件，但尚未重新加载，不宣称升级完成。见 [原生验收收据](evidence/rc14-native-extension-2026-10-02.json)。
+
+
+## rc14 旧插件升级与回退实测（2026-10-02）
+
+Chrome for Testing 同ID `jmdplnhlhdhcaaefllfndokbcmhbpmdb` 实际重新加载rc14/5adac6a → 保留目录回退rc12/f3c7078 → 再次激活rc14。每次设置确认实际版本、原生导出并与升级前完整比较：21条record数组及pendingRestores完全一致；7行当前代码、原stdin/期望输出、17行历史对照和5条真实AI消息仍可见。未卸载扩展、未清除学习数据。开发模式重载不等同商店自动升级；完整浏览器重启仍待账号验收结束后验证。新ZIP设备确认页已核对到真实GitHub账号Pygmalion03，浏览器操作规则要求新增设备访问在当场确认，当前保持待批准；未读取或注入Cookie/令牌。
