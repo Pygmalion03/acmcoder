@@ -14,6 +14,8 @@ self.setImmediate = (callback, ...args) => {
 };
 self.clearImmediate = (id) => immediateJobs.delete(id);
 importScripts('./doppio.js');
+importScripts('./quota.js');
+const allocationQuota=installJavaAllocationQuota(self.DoppioJVM||self.Doppio,{onExceeded(){postMessage({type:'result',id:currentId,error:'Java 累计分配超过限制，已停止。',kind:'MemoryLimit'});self.close();}});
 let fs, stdout = '', stderr = '', sequence = 0;
 let ready;
 let currentId;
@@ -46,6 +48,7 @@ async function initialize() {
       root.mount('/sys', library);
       BrowserFS.initialize(root);
       fs = BrowserFS.BFSRequire('fs');
+      allocationQuota.protectFiles(fs);
       const read = fs.readFile.bind(fs);
       fs.readFile = (name, ...args) => {
         const cb = args.pop();
@@ -64,7 +67,7 @@ function newJVM(classpath) {
     try { const stat = fs.statSync(name); return { name, size: stat.size, isFile: stat.isFile() }; }
     catch (error) { return { name, error: error.message }; }
   });
-  return new Promise((resolve, reject) => new JVM({ doppioHomePath: '/sys', classpath, intMode: true, responsiveness: 1000, properties: { 'file.encoding': 'UTF-8' } }, (error, vm) => error ? reject(error) : resolve(vm)));
+  return new Promise((resolve, reject) => new JVM({ doppioHomePath: '/sys', classpath, intMode: true, responsiveness: 1000, properties: { 'file.encoding': 'UTF-8' } }, (error, vm) => {if(error)reject(error);else{allocationQuota.protect(vm);resolve(vm);}}));
 }
 function runClass(vm, name, args) { return new Promise((resolve) => vm.runClass(name, args, resolve)); }
 onmessage = async ({ data }) => {
@@ -78,11 +81,13 @@ onmessage = async ({ data }) => {
     fs.writeFileSync(`${directory}/Main.java`, data.code, 'utf8');
     stdout = ''; stderr = '';
     phase('compiling');
+    allocationQuota.begin(256*1024*1024);
     const compiler = await newJVM(['/sys/vendor/java_home/lib/tools.jar', directory]);
     phase('javac-running');
     const compileCode = await runClass(compiler, 'com.sun.tools.javac.Main', ['-encoding', 'UTF-8', '-d', directory, `${directory}/Main.java`]);
     if (compileCode !== 0) throw Object.assign(new Error('javac failed'), { name: 'CompileError', rawLog: stdout + stderr });
     stdout = ''; stderr = '';
+    allocationQuota.begin(64*1024*1024);
     const vm = await newJVM([directory]);
     // Use a finite input buffer, rather than TTY input that waits indefinitely.
     let input = Buffer.from(data.stdin || '', 'utf8');

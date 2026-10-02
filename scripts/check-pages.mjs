@@ -42,6 +42,19 @@ export async function inspectPagesArtifact(directory){
     cppBytes+=bytes.length;
   }
   if(cppBytes!==cpp.totalBytes)throw new Error('C++ resource total differs from the manifest');
-  return {version:info.version,commit:info.commit,protocolVersion:info.protocolVersion,tool:{name:'esbuild',version:'0.28.1'},worker:{bytes:worker.length,gzipBytes:gzipSync(worker).length,sha256:hash(worker)},assets:{count,totalBytes,largest},routes,cpp:{version:cpp.version,totalBytes:cpp.totalBytes},deployment:{status:'not-deployed'}};
+  let java;
+  if(info.languages?.includes('java')){
+    java=JSON.parse(await fs.readFile(path.join(root,'vendor/java/manifest.json'),'utf8'));
+    let bytes=0;
+    for(const [i,item] of java.files.entries()){
+      if(item.file!==`resource-${i}.gz`)throw new Error('Unexpected Java asset path');
+      const data=await fs.readFile(path.join(root,'vendor/java',item.file));
+      if(data.length!==item.compressedBytes||hash(data)!==item.compressedSha256)throw new Error(`Java static resource differs: ${item.file}`);bytes+=data.length;
+    }
+    if(bytes!==java.totalBytes)throw new Error('Java resource total differs from the manifest');
+    for(const name of ['OpenJDK-GPL-Classpath.txt','OpenJDK-THIRD-PARTY.txt','JCL-THIRD-PARTY.txt','Doppio-MIT.txt','BrowserFS-MIT.txt'])await fs.access(path.join(root,'vendor/java/licenses',name));
+    await fs.access(path.join(root,'offline-worker.js'));
+  }
+  return {version:info.version,commit:info.commit,protocolVersion:info.protocolVersion,tool:{name:'esbuild',version:'0.28.1'},worker:{bytes:worker.length,gzipBytes:gzipSync(worker).length,sha256:hash(worker)},assets:{count,totalBytes,largest},routes,cpp:{version:cpp.version,totalBytes:cpp.totalBytes},...(java?{java:{version:java.version,totalBytes:java.totalBytes}}:{}),deployment:{status:'not-deployed'}};
 }
 if(process.argv[1]===fileURLToPath(import.meta.url))console.log(JSON.stringify(await inspectPagesArtifact(process.argv[2]||'dist/site'),null,2));

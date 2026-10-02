@@ -103,6 +103,7 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
     if(view==='library'){
       const finder=document.createElement('section');finder.className='glass finder-panel';finder.innerHTML=`<h3>想练哪道题？</h3><div class="finder-form"><label>找题描述<input id="problem-request" maxlength="2000" value="${escape(findText)}" placeholder="例如：导入 LeetCode 二分查找，或生成一道原创求和题"></label><div class="actions">${button('find-problems','查找题目','primary')}</div></div><p id="finder-status" role="status" class="muted">优先找已有题目和目录；AI 建议在读取原题前保持未验证。</p><div id="finder-candidates"></div>`;$('content').querySelector('.hero').after(finder);
     }
+    if(view==='settings'&&client.offline){const panel=document.createElement('section');panel.className='glass';$('content').querySelector('.settings').insertBefore(panel,$('content').querySelector('.settings>section:last-child'));client.offline.mount(panel);}
     if(ai&&['settings','practice'].includes(view)){
       if(view==='settings')$('content').querySelector('.settings>section:last-child').remove();
       const panel=document.createElement('section');panel.className='glass ai-panel';

@@ -1,6 +1,6 @@
 // The sandbox receives only public runtime bytes, code and stdin. No extension APIs.
-const nonce=location.hash.slice(1);
-const parentOrigin=`${location.protocol}//${location.host}`;
+const nonce=globalThis.document?.documentElement?.dataset.runnerNonce||location.hash.slice(1);
+const parentOrigin=globalThis.document?.documentElement?.dataset.parentOrigin||`${location.protocol}//${location.host}`;
 let worker=null,current=null;
 const source=String.raw`
 let count=0,limited=false;

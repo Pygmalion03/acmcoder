@@ -1,7 +1,7 @@
-export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=globalThis.window,initData={},language:runnerLanguage='python',codeLimit=50000,stdinLimit=32000,loadingMessage='Python 加载超时，请检查网络后重试。'}) {
+export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',bridgeDocument,staticBridge=false,host=globalThis.window,initData={},initTransfer=[],language:runnerLanguage='python',codeLimit=50000,stdinLimit=32000,loadingMessage='Python 加载超时，请检查网络后重试。'}) {
   let ready=false,active=null,loadingTimer=null,runTimer=null;
   const nonce=crypto.randomUUID();
-  const send=data=>frame.contentWindow?.postMessage({...data,nonce},'*');
+  const send=(data,transfer=[])=>frame.contentWindow?.postMessage({...data,nonce},'*',transfer);
   const emit=data=>active?.onEvent({...data,type:data.kind,id:active.id});
   function finish(data) {
     clearTimeout(loadingTimer);clearTimeout(runTimer);
@@ -11,7 +11,7 @@ export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=
   function dispatch() {
     if (!active || !ready || active.sent) return;
     active.sent=true;
-    send({...initData,kind:'run',id:active.id,code:active.code,stdin:active.stdin});
+    send({...initData,kind:'run',id:active.id,code:active.code,stdin:active.stdin},initTransfer);
   }
   function onMessage(event) {
     if (event.source !== frame.contentWindow || event.origin !== 'null' || event.data?.nonce !== nonce) return;
@@ -28,7 +28,12 @@ export function createBrowserRunner({frame,bridgeUrl='/runner/bridge.html',host=
   host.addEventListener('message',onMessage);
   // Changing only a fragment does not rerun the bridge script. A fresh runner
   // must load a new document so its nonce/ready handshake cannot remain stale.
-  frame.src=`${bridgeUrl}${bridgeUrl.includes('?')?'&':'?'}session=${nonce}#${nonce}`;
+  if(bridgeDocument){
+    // The trusted parent loads the cached bootstrap. An opaque child cannot
+    // receive Service Worker navigation interception, even for a cached URL.
+    const origin=host.location.origin.replaceAll('&','&amp;').replaceAll('"','&quot;');
+    frame.srcdoc=bridgeDocument.replace('<html>',`<html data-runner-nonce="${nonce}" data-parent-origin="${origin}">`);
+  }else frame.src=staticBridge?`${bridgeUrl}#${nonce}`:`${bridgeUrl}${bridgeUrl.includes('?')?'&':'?'}session=${nonce}#${nonce}`;
   function cancel(id) { if(active?.id===id) finish({kind:'error',cancelled:true,text:'已停止运行。'}); }
   return {
     run({id,language,code,stdin,signal},onEvent) {

@@ -26,6 +26,11 @@ const originalWrite = process.stdout.write.bind(process.stdout);
 let output = '';
 process.stdout.write = (chunk, ...args) => { output += chunk.toString(); return originalWrite(chunk, ...args); };
 const report = (value) => originalWrite(JSON.stringify({ environment: 'Node VM of browser bundle; not browser', ...value }) + '\n');
+let allocationQuota;
+if(process.argv.includes('--quota')){
+  vm.runInContext(fs.readFileSync(path.join(directory,'java/quota.js'),'utf8'),context);
+  allocationQuota=context.installJavaAllocationQuota(context.module.exports,{limit:256*1024*1024,onExceeded(){report({phase:'allocation-refused',passed:output.includes('结果 11')&&!output.includes('UNBOUNDED'),usage:allocationQuota.usage()});process.exit(output.includes('结果 11')?0:1);}});
+}
 const timer = setTimeout(() => { report({ error: 'deadline-120s' }); process.exit(2); }, 120000);
 (async () => {
   const started = performance.now();
@@ -37,7 +42,9 @@ const timer = setTimeout(() => { report({ error: 'deadline-120s' }); process.exi
   report({ phase: 'compiled', compileExit, compileMs: performance.now() - compileStart, ms: performance.now() - started });
   if (compileExit !== 0) return;
   output = '';
+  allocationQuota?.begin(64*1024*1024);
   const runtime = await newJVM();
+  allocationQuota?.protect(runtime);
   const exitCode = await runClass(runtime, 'Main', []);
   report({ phase: 'executed', exitCode, stdout: output, ms: performance.now() - started });
 })().catch(error => { report({ error: error.message || String(error), stack: error.stack }); process.exitCode = 1; }).finally(() => clearTimeout(timer));

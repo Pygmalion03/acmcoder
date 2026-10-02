@@ -29,8 +29,13 @@ with zipfile.ZipFile(sys.argv[2],"w",compression=zipfile.ZIP_DEFLATED,compressle
    info.external_attr=0o100644<<16
    archive.writestr(info,item.read_bytes())
 `,path.join(root,'dist/extension'),extensionFile]);
+const artifactNames=[sourceName,extensionName];
+if(metadata.languages.includes('java')){
+  const name=`acmcoder-java-corresponding-source-v${version}.zip`;
+  execFileSync('python3',[path.join(root,'scripts/package-java-source.py'),path.join(output,name)],{stdio:'inherit'});artifactNames.push(name);
+}
 const artifacts=[];
-for(const name of [sourceName,extensionName]){const data=await fs.readFile(path.join(output,name));artifacts.push({name,bytes:data.length,sha256:createHash('sha256').update(data).digest('hex')});}
+for(const name of artifactNames){const data=await fs.readFile(path.join(output,name));artifacts.push({name,bytes:data.length,sha256:createHash('sha256').update(data).digest('hex')});}
 const manifest={version,commit:metadata.commit,protocolVersion:metadata.protocolVersion,channel:metadata.channel,artifacts,website:{deploymentId:null,status:'not-associated'},images:{app:null,runner:null,status:'not-published'},acceptance:JSON.parse(await fs.readFile(path.join(root,'docs/releases/unified-acceptance.json'),'utf8'))};
 await fs.writeFile(path.join(output,'release-manifest.json'),JSON.stringify(manifest,null,2)+'\n');
 await fs.writeFile(path.join(output,'SHA256SUMS'),artifacts.map(a=>`${a.sha256}  ${a.name}`).join('\n')+'\n');

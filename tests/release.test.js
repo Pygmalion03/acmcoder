@@ -15,6 +15,8 @@ test('old RC metadata retains Python while rc4 adds browser C++ without removing
   assert.deepEqual(releaseLanguages('4.0.0-rc.4','extension'),['python','cpp']);
   assert.deepEqual(releaseLanguages('4.0.0','site'),['python','cpp']);
   assert.deepEqual(releaseLanguages('4.0.0-rc.4','local-web'),['python','cpp','java']);
+  assert.deepEqual(releaseLanguages('4.1.0-rc.1','site'),['python','cpp','java']);
+  assert.deepEqual(releaseLanguages('4.1.0-rc.1','extension'),['python','cpp','java']);
 });
 test('release checks reject mixed source commits, wrong tag and unaccepted stable releases',()=>{
   const candidate=fixture('4.0.0-rc.1');assert.deepEqual(validateRelease({...candidate,candidate:true}),[]);

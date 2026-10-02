@@ -17,6 +17,8 @@ ACMCoder 自有源码采用 MIT，完整文本见根 LICENSE，版权署名为 C
 | Node.js | Docker node:22-bookworm-slim基础镜像 | 基础镜像与Node自带许可证；源码包不复制该运行时 |
 | GNU g++ / libstdc++ | Debian / Ubuntu基础镜像软件包 | GPL及GCC运行库例外等，以镜像中的软件包版权文件为准 |
 | OpenJDK | app镜像17 / runner镜像21 | GPL-2.0及Classpath Exception等，以镜像中的软件包版权文件为准 |
+| Doppio / BrowserFS | npm doppiojvm 0.5.0 / browserfs 1.4.3，构建校验固定 SHA256 | MIT；浏览器 Java 8 在禁止网络、无应用存储权限的隔离 Worker 执行；vendor/java/licenses 保留完整许可 |
+| 浏览器 OpenJDK 8 类库 | Doppio JCL v3.2；Ubuntu OpenJDK 8u72-b05-1ubuntu1 | GPL-2.0 with Classpath Exception；vendor/java/licenses 保留 GPL、例外及第三方说明。对应原始源码和 Ubuntu 补丁随 Java 发行资源单独提供，不改为 MIT |
 
 插件构建生成 vendor/python/manifest.json，记录运行文件体积、SHA256和来源。构建再次校验Pyodide版本及npm锁定摘要。发行包应保留随包许可，不将自己的根仓库许可覆盖到这些第三方组件。
 
@@ -26,3 +28,5 @@ https://github.com/pyodide/pyodide/tree/0.29.3 。该许可及接收者获取、
 构建另生成 vendor/cpp/manifest.json；记录压缩和解压后的 SHA256、固定来源、C++17 与执行限制。网站和插件随包分发 gzip 公共资源，下载资源校验后才传给禁止网络的隔离运行器。巨型 LLVM 与 sysroot 不进入 Git。固定来源为 https://github.com/cppstudio-io/wasm-clang-runtime/tree/df1180d80184733c6a01599f76b92b4001d20f87 ；ACMCoder 的调整由 scripts/bundle-cpp.mjs、scripts/wasm-memory-limit.mjs 和 shared/runners/cpp-worker.js 实现，随包 vendor/cpp/licenses/NOTICE 标明调整范围，third_party/cpp/README.md 保留 LLVM/wasi-libc 固定源码标识及重建入口。
 
 Docker依赖通过发行版包管理器安装，保留 /usr/share/doc 中的版权文件。多架构镜像是否已公开发布，以发行清单中的实际digest为准，不以构建流程存在代替公开产物。
+
+浏览器 Java 的固定来源、分配限制调整和对应源码获取方式见 `third_party/java/README.md`。运行资源为公共依赖，不包含用户代码或密钥；编译用户的完整 `public class Main` 程序发生在浏览器中。

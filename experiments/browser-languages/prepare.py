@@ -145,6 +145,7 @@ def java(target):
     (directory / 'listings.json').write_text(json.dumps(listing))
     (directory / 'file-sizes.json').write_text(json.dumps(sizes))
     shutil.copy2(ROOT / 'java-worker.js', directory / 'worker.js')
+    shutil.copy2(ROOT / 'java-quota.js', directory / 'quota.js')
 
 
 if __name__ == '__main__':

@@ -107,6 +107,31 @@ async function execute(full) {
   } finally { active = false; $('status').textContent = '实验结束；隔离与分发尚需独立验收'; }
 }
 $('basic').onclick = () => execute(false);
+async function quotaReview(){
+  if(active)return;active=true;stopping=false;stop('reset');records.length=0;document.querySelector('select').value='java';
+  try{
+    const okay=await record('quota-standard-input-unicode-collections',await run(javaBasic,'4\n7 2 9 3\n'),r=>r.stdout?.trim()==='结果 11');if(!okay)return;
+    const cases=[
+      ['single-80MiB','byte[] b=new byte[80*1024*1024];System.out.println("UNBOUNDED "+b.length);'],
+      ['repeated-small-arrays','java.util.List<byte[]> a=new java.util.ArrayList<>();for(int i=0;i<20;i++)a.add(new byte[4*1024*1024]);System.out.println("UNBOUNDED");'],
+      ['reflection-allocation','Object a=java.lang.reflect.Array.newInstance(byte.class,80*1024*1024);System.out.println("UNBOUNDED");'],
+      ['multidimensional-allocation','byte[][] a=new byte[32][4*1024*1024];System.out.println("UNBOUNDED");'],
+      ['array-cloning','byte[] a=new byte[32*1024*1024];byte[] b=a.clone();System.out.println("UNBOUNDED");'],
+    ];
+    for(const [name,body] of cases){stop('new-memory-case');await record(name,await run(`public class Main {public static void main(String[] args){${body}}}`),r=>r.kind==='MemoryLimit'&&!r.stdout?.includes('UNBOUNDED'));}
+    stop('new-interop-case');await record('javascript-interop-disabled',await run('public class Main {public static void main(String[] a){System.out.println(doppio.JavaScript.eval("1+1"));}}'),r=>r.stderr?.includes('SecurityException')&&!r.stdout?.includes('2'));
+    stop('recovery');await record('recovery-after-quota',await run(javaBasic,'4\n7 2 9 3\n'),r=>r.stdout?.trim()==='结果 11');
+  }finally{active=false;$('status').textContent='配额复核结束；仍是实验，尚未接入产品。';}
+}
+$('quota').onclick=quotaReview;
+$('file-quota').onclick=async()=>{
+  if(active)return;active=true;stopping=false;stop('reset');records.length=0;document.querySelector('select').value='java';
+  try{
+    await record('host-file-buffer-bound',await run('import java.io.*; public class Main {public static void main(String[] a)throws Exception{byte[] b=new byte[1024*1024];FileOutputStream f=new FileOutputStream("/tmp/large-file");for(int i=0;i<100;i++)f.write(b);f.close();System.out.println("UNBOUNDED");}}'),r=>r.kind==='MemoryLimit');
+    stop('object-case');await record('managed-object-bound',await run('import java.util.*; public class Main {public static void main(String[] a){List<Object> x=new LinkedList<>();for(int i=0;i<500000;i++)x.add(new Object());System.out.println("UNBOUNDED");}}'),r=>r.kind==='MemoryLimit');
+    stop('recovery');await record('recovery-after-host-bound',await run(javaBasic,'4\n7 2 9 3\n'),r=>r.stdout?.trim()==='结果 11');
+  }finally{active=false;$('status').textContent='文件和对象配额复核结束；仍是实验。';}
+};
 $('suite').onclick = () => execute(true);
 $('cancel').onclick = () => { stopping = true; stop(); };
 $('export').onclick = () => {

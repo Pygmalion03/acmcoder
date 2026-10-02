@@ -13,7 +13,8 @@ export function extensionVersion(version){
 export function releaseLanguages(version,target){
   const parts=extensionVersion(version).split('.').map(Number);
   const cpp=parts[0]>4||(parts[0]===4&&(parts[1]>0||parts[2]>0||parts[3]>=4));
-  return target==='local-web'?['python','cpp','java']:cpp?['python','cpp']:['python'];
+  const java=parts[0]>4||(parts[0]===4&&parts[1]>=1);
+  return target==='local-web'||java?['python','cpp','java']:cpp?['python','cpp']:['python'];
 }
 export async function buildInfo(root,target){
   const {version}=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8'));

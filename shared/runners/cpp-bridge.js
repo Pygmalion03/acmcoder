@@ -1,4 +1,4 @@
-const nonce=location.hash.slice(1),parentOrigin=`${location.protocol}//${location.host}`;
+const nonce=globalThis.document?.documentElement?.dataset.runnerNonce||location.hash.slice(1),parentOrigin=globalThis.document?.documentElement?.dataset.parentOrigin||`${location.protocol}//${location.host}`;
 const names=['clang22','lld22','memfs','sysroot22-standard.tar','worker.js'];
 let worker=null,current=null;
 const send=message=>window.parent.postMessage({...message,nonce},parentOrigin);

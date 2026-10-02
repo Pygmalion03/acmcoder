@@ -34,3 +34,9 @@ test('a replacement runner reloads its bridge document instead of changing only 
   const first=createBrowserRunner({frame,host});const firstDocument=frame.src.split('#')[0];first.destroy();
   const second=createBrowserRunner({frame,host});assert.notEqual(frame.src.split('#')[0],firstDocument);second.destroy();
 });
+
+test('offline runner boots a nonce-bound opaque document without navigating to the network',()=>{
+  const frame={src:'',srcdoc:'',contentWindow:{postMessage(){}}},host={location:{origin:'https://site.invalid'},addEventListener(){},removeEventListener(){}};
+  const runner=createBrowserRunner({frame,host,bridgeDocument:'<!doctype html><html><script>/* fixed hashed script */</script></html>'});
+  assert.equal(frame.src,'');assert.match(frame.srcdoc,/data-runner-nonce="[a-f0-9-]+"/);assert.match(frame.srcdoc,/data-parent-origin="https:\/\/site.invalid"/);assert.match(frame.srcdoc,/fixed hashed script/);runner.destroy();
+});
