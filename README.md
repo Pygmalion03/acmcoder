@@ -2,35 +2,35 @@
 
 ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地/Docker版共用题库、今日安排、自动保存、重新手撕和长期历史；代码由你编写，自测只代表当前样例通过。
 
-当前稳定版为 `v3.0.4`。统一候选版为 `v4.0.0-rc.14`，源码分支为 `codex/unified-product`；稳定源码分支仍是 `v3`。rc.14为新目录ZIP安装增加明确设备确认，已登记插件继续使用PKCE。设置/题库排版与AI历史分页沿用rc.12，历史每页最多显示20条，完整记录继续保存、备份与同步；203条实际浏览器历史回归已通过。
+统一正式版为 `v4.0.0`，源码分支为 `codex/unified-product`。网站、插件ZIP、本地/Docker使用同一产品版本；固定源码、网站部署与镜像摘要在随包发行清单中关联。原 `v3` 分支与 `v3.0.4`、`v4.0.0-rc.14` 发布继续保留，便于回退。
 
-[候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)提供固定5adac6a源码、插件ZIP、校验和及最终验收补充。393项固定源码检查、公开Docker首次安装/升级/重启/回退，以及真实插件新安装/GitHub授权/双向同步/撤销、同ID升级/回退和完整浏览器重启已通过。两独立客户端离线编辑→另一端彻底删除→重连另存已实测，原记录未变；当前五张插件截图及商店材料已完成，可安装未上架。删除级联目前可能产生两条空冲突，需要手动保留云端。旧候选与备份保留，见[18节点核对](docs/releases/unified-requirement-audit.md)和[本版说明](docs/releases/v4.0.0-rc.14.md)。
+[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0)提供源码、生成插件ZIP、校验和与发行清单。相对rc.14，本版清理双方已删除记录的空同步冲突，同时保留真实离线修改；修复题库按钮换行与设置复选框宽度。AI对话每页显示20条，完整历史继续保存、备份与同步。原18节点的实际验收与版本边界见[需求核对](docs/releases/unified-requirement-audit.md)，正式版安装说明见[本版说明](docs/releases/v4.0.0.md)。
 
 - **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python与C++17；登录GitHub可跨设备同步。
 - **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python/C++17，不需要本地服务或网站打开。商店未上架。
-- **本地 / Docker**：保留Python、C++、Java工具链运行和离线数据。候选源码构建后使用相同共享界面。
+- **本地 / Docker**：保留Python、C++、Java工具链运行和离线数据。源码构建后使用相同共享界面。
 
 版本、真实能力和限制见 [功能矩阵](docs/releases/unified-feature-matrix.md)。升级前请先阅读 [升级与恢复](docs/upgrade.md)；API Key去向、长期记录与账号删除见 [数据与隐私](docs/data-and-privacy.md)。
 
 自有源码采用 [MIT 许可证](LICENSE)。随包 Python、LLVM 等组件保留自己的许可，见 [第三方声明](THIRD_PARTY_NOTICES.md)。
 
-## 构建统一候选版
+## 构建统一正式版
 
 ```sh
 npm ci --ignore-scripts
 npm run build:clients
-node scripts/check-release.mjs --candidate
+npm run check:release
 npm start
 ```
 
-浏览器插件安装目录为 `dist/extension/`。源码 `extension/` 缺少生成的共享文件和Python/C++运行资源，不能直接安装新版。发行包由 `node scripts/package-release.mjs --candidate` 生成；在无Git的运行镜像中需提供固定源码归档和源commit。正式发行检查未通过前不生成稳定tag或更新镜像latest。
+浏览器插件安装目录为 `dist/extension/`。源码 `extension/` 缺少生成的共享文件和Python/C++运行资源，不能直接安装新版。发行包由 `npm run pack:release` 生成；在无Git的运行镜像中需提供固定源码归档和源commit。正式发行检查未通过前不生成稳定tag或更新镜像latest。
 
-## 稳定3.0.4的Docker安装
+## 正式版Docker安装
 
 普通用户优先使用 Docker app。只需要 Docker Desktop，不需要在本机另装 Node.js、Java、C++ 或 Python。
 
 ```bash
-git clone https://github.com/Pygmalion03/acmcoder.git
+git clone --branch v4.0.0 https://github.com/Pygmalion03/acmcoder.git
 cd acmcoder
 docker compose -f docker-compose.prebuilt.yml up -d
 ```

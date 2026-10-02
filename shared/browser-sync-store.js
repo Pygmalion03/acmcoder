@@ -14,6 +14,11 @@ function mutation(entry){
   if(!r||same(r,entry.base)||(r.deleted&&!entry.base))return null;
   return {mutationId:crypto.randomUUID(),kind:r.kind,id:r.id,op:r.deleted?'delete':'put',baseRevision:entry.base?.revision||0,...(!r.deleted?{payload:r.payload,...(r.problemId?{problemId:r.problemId}:{}),...(r.language?{language:r.language}:{})}:{})};
 }
+function acceptMatchingDeletion(entry,remote){
+  if(!entry.local?.deleted||!remote?.deleted)return false;
+  entry.base=remote;entry.local=remote;entry.conflict=null;entry.inflight=null;entry.pending=null;
+  return true;
+}
 export function createBrowserSyncAdapter({transaction,read,enqueue}){
   const tables=['records','drafts','attempts','meta','sync'];
   async function track(s,changes){
@@ -39,6 +44,8 @@ export function createBrowserSyncAdapter({transaction,read,enqueue}){
   return {track,api:{
     syncStage:({skipNewRuns=false}={})=>enqueue(()=>transaction(['sync'],'readwrite',async s=>{
       const entries=await value(s('sync').getAll());
+      // Older clients persisted cascade-delete acknowledgements as empty conflicts.
+      for(const e of entries)if(acceptMatchingDeletion(e,e.conflict?.remote))s('sync').put(e,key(e.local));
       const order=r=>r.kind==='problem'?0:r.kind==='attempt'?1:r.kind==='draft'?3:2;
       const eligible=entries.filter(e=>!e.conflict&&(e.inflight||e.pending)&&!(skipNewRuns&&e.local.kind==='run'&&!e.local.deleted)).sort((a,b)=>order(a.local)-order(b.local));
       // One request remains comfortably below the free D1 query limit.
@@ -54,7 +61,7 @@ export function createBrowserSyncAdapter({transaction,read,enqueue}){
         const conflict=result.conflicts.find(a=>a.mutationId===e.inflight.mutationId);
         if(applied){
           const sent=e.inflight;e.base={...sent,revision:applied.revision,deleted:sent.op==='delete',payload:sent.payload??null};e.inflight=null;e.pending=mutation(e);
-        }else if(conflict){e.conflict={local:e.local,remote:conflict.current};e.inflight=null;e.pending=null;}
+        }else if(conflict&&!acceptMatchingDeletion(e,conflict.current)){e.conflict={local:e.local,remote:conflict.current};e.inflight=null;e.pending=null;}
         s('sync').put(e,key(e.local));
       }
     },false)),

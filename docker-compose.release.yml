@@ -1,0 +1,4 @@
+# Use with docker-compose.prebuilt.yml; preserves all data paths and loopback binding.
+services:
+  acmcoder:
+    image: ghcr.io/pygmalion03/acmcoder-app:v4.0.0

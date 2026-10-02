@@ -36,8 +36,23 @@ test('lost acknowledgement retries once; edits during upload retain later code',
 test('remote permanent deletion cancels stale device writes and retains conflict copy',async()=>{
  const {device,repo}=setup(),a=device(),b=device();await a.store.putRecord(problem);await a.store.saveDraft(draft);await a.engine.syncNow();await b.engine.syncNow();
  await b.store.saveDraft({...await b.store.getDraft(draft),code:'offline'});await a.store.deleteProblem('sum',{confirmed:true});await a.engine.syncNow();await b.engine.syncNow();
+ assert.equal(a.engine.getStatus().state,'saved');assert.deepEqual(await a.store.syncConflicts(),[]);assert.equal(await a.store.syncPendingCount(),0);
  assert.equal(await b.store.getDraft(draft),null);assert.equal(await b.store.getRecord({kind:'problem',id:'sum'}),null);assert.equal((await b.store.syncConflicts())[0].local.payload.code,'offline');
  assert.equal((await repo.get({userId:'a',kind:'draft',id:'sum--python'})).deleted,true);assert.equal(await b.store.syncPendingCount(),0);
+});
+test('cascade deletion acknowledges already deleted history and conversations without empty conflicts',async()=>{
+ const {device,repo}=setup(),a=device(),b=device();
+ await a.store.putRecord(problem);await a.store.saveDraft(draft);await a.store.startRewrite({...draft,template:''});
+ for(const kind of ['run','conversation','review'])await a.store.putRecord({kind,id:`sum-${kind}`,problemId:'sum',language:'python',payload:kind==='conversation'?{messages:[{role:'user',content:'保留对话'}]}:kind==='review'?{dueDay:'2026-10-02'}:{stdout:'3',status:'self_pass'}});
+ await a.store.putRecord({...problem,id:'untouched'});await a.engine.syncNow();await b.engine.syncNow();
+ await a.store.deleteProblem('sum',{confirmed:true});await a.engine.syncNow();await b.engine.syncNow();
+ for(const client of [a,b]){
+  assert.equal(client.engine.getStatus().state,'saved');assert.deepEqual(await client.store.syncConflicts(),[]);assert.equal(await client.store.syncPendingCount(),0);
+  assert.equal(await client.store.getDraft(draft),null);assert.equal((await client.store.listAttempts(draft)).items.length,0);
+  assert.equal((await client.store.exportBackup()).records.filter(r=>r.id==='sum'||r.problemId==='sum').length,0);
+  assert.equal((await client.store.getRecord({kind:'problem',id:'untouched'})).payload.title,'求和');
+ }
+ assert.equal((await repo.get({userId:'a',kind:'conversation',id:'sum-conversation'})).deleted,true);
 });
 test('pull cursor only changes after atomic persistence; failed validation leaves entire page unchanged',async()=>{
  const {device,remote}=setup(),a=device();await assert.rejects(a.store.syncPullPage({nextCursor:99,changes:[{...problem,revision:1},{kind:'draft',id:'bad',revision:1,payload:{}}]}));

@@ -7,6 +7,10 @@ on:
         description: Optional product tag; must match v plus package.json version.
         required: false
         default: ""
+      promote_stable:
+        description: Promote the already published and associated stable release images to latest.
+        type: boolean
+        default: false
   push:
     tags:
       - "v*"
@@ -21,6 +25,7 @@ env:
 
 jobs:
   verify:
+    if: ${{ !inputs.promote_stable }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -155,5 +160,67 @@ jobs:
           name: image-${{ matrix.name }}-${{ github.sha }}
           path: image-manifests/
 
-  # latest is deliberately promoted separately only after both images, website,
-  # ZIP and source artifacts have been associated and accepted as one release.
+  promote:
+    if: ${{ inputs.promote_stable }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify the published stable release and associated artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_TAG: ${{ inputs.version_tag }}
+        run: |
+          gh release view "$VERSION_TAG" --json tagName,isDraft,isPrerelease > release-state.json
+          gh release download "$VERSION_TAG" --pattern release-manifest.json --dir release-evidence
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const pkg=JSON.parse(fs.readFileSync('package.json'));
+          const release=JSON.parse(fs.readFileSync('release-state.json'));
+          const manifest=JSON.parse(fs.readFileSync('release-evidence/release-manifest.json'));
+          if(!/^\d+\.\d+\.\d+$/.test(pkg.version)||process.env.VERSION_TAG!==`v${pkg.version}`||release.tagName!==process.env.VERSION_TAG||release.isDraft||release.isPrerelease)throw new Error('A published stable release at this tag is required');
+          if(manifest.version!==pkg.version||manifest.commit!==process.env.GITHUB_SHA||manifest.channel!=='stable'||manifest.website.status!=='accepted'||manifest.website.commit!==manifest.commit||manifest.images.status!=='accepted')throw new Error('Release associations are incomplete');
+          for(const name of ['app','runner']){
+            const image=manifest.images[name];
+            if(image.version!==pkg.version||image.commit!==manifest.commit||!/^sha256:[a-f0-9]{64}$/.test(image.digest))throw new Error('Image association differs');
+            fs.appendFileSync(process.env.GITHUB_ENV,`${name.toUpperCase()}_DIGEST=${image.digest}\n`);
+          }
+          for(const name of [`acmcoder-source-v${pkg.version}.tar.gz`,`acmcoder-extension-v${pkg.version}.zip`])if(!manifest.artifacts.some(a=>a.name===name&&/^[a-f0-9]{64}$/.test(a.sha256)))throw new Error('Source and extension artifacts are required');
+          if(Object.values(manifest.acceptance.checks).some(c=>c.status!=='passed'||!c.evidence))throw new Error('Acceptance is incomplete');
+          JS
+      - name: Verify both public version tags before changing either latest tag
+        env:
+          VERSION_TAG: ${{ inputs.version_tag }}
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          mkdir -p promotion-evidence
+          for name in app runner; do
+            digest_var="${name^^}_DIGEST"
+            expected="${!digest_var}"
+            actual="$(docker buildx imagetools inspect "ghcr.io/$owner/acmcoder-$name:$VERSION_TAG" --format '{{.Manifest.Digest}}')"
+            test "$actual" = "$expected"
+            docker buildx imagetools inspect "ghcr.io/$owner/acmcoder-$name:latest" --format '{{.Manifest.Digest}}' > "promotion-evidence/$name-previous-latest.txt"
+          done
+      - name: Promote accepted digests without rebuilding
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          for name in app runner; do
+            digest_var="${name^^}_DIGEST"
+            digest="${!digest_var}"
+            docker buildx imagetools create --tag "ghcr.io/$owner/acmcoder-$name:latest" "ghcr.io/$owner/acmcoder-$name@$digest"
+            actual="$(docker buildx imagetools inspect "ghcr.io/$owner/acmcoder-$name:latest" --format '{{.Manifest.Digest}}')"
+            test "$actual" = "$digest"
+            printf '%s\n' "$actual" > "promotion-evidence/$name-current-latest.txt"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stable-promotion-${{ github.sha }}
+          path: promotion-evidence/

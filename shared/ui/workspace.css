@@ -41,6 +41,10 @@
 @media(max-width:420px){.test-grid{grid-template-columns:1fr}.practice-heading{flex-wrap:wrap}.editor-tools{gap:5px}}
 
 /* Keep library and settings cards on one consistent content grid. */
+.row-actions{flex-shrink:0}
+.row-actions button{white-space:nowrap;flex-shrink:0}
+.settings input[type=checkbox]{width:auto;flex-shrink:0}
+@media(max-width:760px){.row{flex-wrap:wrap;gap:12px}.row-title{flex-basis:calc(100% - 100px)}.row-actions{margin-left:auto;max-width:none}}
 #app[data-view=library] #content{max-width:1200px;margin:auto;padding-top:24px}
 #app[data-view=library] .hero,.settings .hero{min-height:100px;margin:0 0 20px;gap:20px}
 #app[data-view=library] .hero h1,.settings h1{font-size:30px;margin:8px 0}

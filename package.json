@@ -1,6 +1,6 @@
 {
   "name": "acmcoder",
-  "version": "4.0.0-rc.14",
+  "version": "4.0.0",
   "private": true,
   "license": "MIT",
   "description": "Local-first LeetCode-based ACM practice runner",

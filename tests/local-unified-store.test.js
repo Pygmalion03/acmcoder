@@ -2,6 +2,24 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';import os from 'node:os';import path from 'node:path';
 import {createLocalStore} from '../src/server/unified-store.js';
 const key={problemId:'sum',language:'python'},draft={...key,code:'原代码',stdin:'中文输入',expected:'原输出'};
+test('reopening removes persisted deletion-only conflicts while retaining unsynced work against a cloud tombstone',async()=>{
+ const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'acmcoder-delete-conflict-'));
+ try{
+  let store=createLocalStore({dataDir,namespace:'account:a',sync:true});
+  const records=['sum','offline'].flatMap(id=>[{kind:'problem',id,revision:1,payload:{title:id}},{kind:'draft',id:`${id}--python`,problemId:id,language:'python',revision:1,payload:{code:'原代码',stdin:'',expected:'',mode:'normal'}}]);
+  await store.syncPullPage({changes:records,nextCursor:1});
+  for(const problemId of ['sum','offline']){
+   await store.saveDraft({...await store.getDraft({problemId,language:'python'}),code:'离线版本'});
+   const [sent]=await store.syncStage();
+   await store.syncAcknowledge({applied:[],conflicts:[{mutationId:sent.mutationId,current:{kind:'draft',id:`${problemId}--python`,problemId,language:'python',revision:2,deleted:true,payload:null}}]});
+  }
+  await store.deleteProblem('sum',{confirmed:true});await store.flush();
+  store=createLocalStore({dataDir,namespace:'account:a',sync:true});assert.equal((await store.syncConflicts()).length,2);
+  await store.syncStage();store=createLocalStore({dataDir,namespace:'account:a',sync:true});
+  const [conflict]=await store.syncConflicts();assert.equal(conflict.local.problemId,'offline');assert.equal(conflict.local.payload.code,'离线版本');assert.equal(conflict.remote.deleted,true);
+  assert.equal(await store.getDraft(key),null);
+ }finally{await fs.rm(dataDir,{recursive:true,force:true});}
+});
 test('file PracticeStore persists all languages and shares atomic rewrite/history/backup behavior',async()=>{
   const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'acmcoder-store-'));
   try{
