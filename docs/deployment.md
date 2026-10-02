@@ -1,26 +1,12 @@
-# ACMCoder部署：统一候选版与稳定版
+# ACMCoder统一正式版部署
 
-公开统一候选版为 **4.0.0-rc.14**，固定源码 **5adac6a**；[GitHub Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)关联源码/插件ZIP/校验和/网站591372c0及两套GHCR镜像。GitHub393/393、三端构建与Docker烟测通过，实际匿名下载/拉取及amd64三语言运行通过；空目录首次运行、rc13升级/重启/回退再升级的109条记录保持一致。arm64清单存在但未执行验收。旧3.0.4→rc13升级收据保留，不能重命名代替新版本。用户43117仍原安装，未重启；插件最终实装与真实设备离线删除重连待验。稳定3.0.4/latest不变，见[本版说明](releases/v4.0.0-rc.14.md)及[需求核对](releases/unified-requirement-audit.md)。
+统一正式版为 **4.0.0**。[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0)关联固定源码、生成插件ZIP、校验和、网站及GHCR镜像；以随包 `release-manifest.json` 的实际摘要为准。rc.14及稳定3.0.4的旧版本仍保留供回退。
 
-源码部署先 `npm ci --ignore-scripts`，再 `node scripts/build-clients.mjs all`，`npm start`；默认127.0.0.1:43117。发布构建提供 `ACMCODER_BUILD_COMMIT` 完整Git SHA，各客户端version.json必须一致。WSL镜像不含.git，使用Mac固定commit归档并传入该SHA构建。
+固定Docker版本使用 `docker-compose.prebuilt.yml` 加 `docker-compose.release.yml`，app镜像为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0`，runner为 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0`。不要以拟定标签代替实际发布检查；当前发行验收见交付日志。候选覆盖文件继续锁定rc.14。
 
-候选Docker app从同一源码构建，生成共享本地界面，保留三语言工具链：
+网站执行 `npm run build:pages`，部署完整的 `dist/site`：共享工作区、C++静态运行资源、单文件 `_worker.js` API与仅 `/api/*` 路由。构建检查静态文件25MiB和20,000文件、压缩Worker3MiB免费预算，构建清单位于 `dist/pages-build/manifest.json`。已授权的 `acmcoder-unified-preview` 项目保持仪表盘OAuth/D1绑定，不上传源码中的旧正式配置；不得只上传静态页面而遗漏API。
 
-```sh
-docker build -f Dockerfile.app -t acmcoder-app:4.0.0-rc.14 --build-arg ACMCODER_BUILD_COMMIT="$(git rev-parse HEAD)" .
-```
-
-当前候选引用为 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.14` 和 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.14`。两者registry digest及平台清单见[rc14说明](releases/v4.0.0-rc.14.md)。rc13公开源码包的覆盖文件锁定rc13；本版rc14源码包锁定rc14。按对应Release确认镜像已发布后，在该包解压目录执行 `docker compose -f docker-compose.prebuilt.yml -f docker-compose.candidate.yml up -d` 使用统一版，端口只绑定回环；候选不改变稳定latest。
-
-Cloudflare预览与正式站使用独立D1和OAuth配置。升级时不反向删除迁移表；网站删除与旧设备写入遵循协议1墓碑。数据库、学习数据与credentials不放入源码包或源码同步。完整升级路径见 [升级](upgrade.md)，实际能力见 [矩阵](releases/unified-feature-matrix.md)。
-
-网站完整构建执行 `npm run build:pages`，输出 `dist/site` 的共享工作区、压缩C++静态资源、`_worker.js` API及仅 `/api/*` 的路由。固定 esbuild 0.28.1 打包 `cloudflare/worker.js`，复用既有Functions的API处理器与Pages ASSETS静态绑定，不引入Node运行模块，检查单文件25MiB/20,000文件与3MiB压缩Worker免费预算，构建清单位于 `dist/pages-build/manifest.json`。现有预览项目通过GitHub连接构建此目录；仪表盘OAuth/D1绑定保持，不上传源码中的旧正式配置。直接上传时只对已授权的预览项目使用这份完整输出，不能只上传静态页面而丢API，也不能把C++资源内嵌Worker。
-
-以下记录稳定3.0.4的安装与运行方式，旧用户仍可使用。
-
-# ACMCoder 部署现状
-
-本版候选覆盖文件锁定 `ghcr.io/pygmalion03/acmcoder-app:v4.0.0-rc.14`，runner引用为 `ghcr.io/pygmalion03/acmcoder-runner:v4.0.0-rc.14`。镜像实际发布及digest以[rc14候选Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0-rc.14)的关联清单为准，不能仅从拟定tag推断镜像已发布。上述rc13为已完成的历史分发/安装收据；当前候选新用户插件授权仍待实装。
+新版统一工作区以本机/镜像安装能力选择Python、C++和Java，仍只使用ACM标准输入输出；下面的旧入口运行方式供保留的legacy页面参考。
 
 ## 先分清入口和运行模式
 

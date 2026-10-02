@@ -37,7 +37,7 @@ test("documentation points users to the acmcoder repo and packages", () => {
   assert.match(readme, /github\.com\/Pygmalion03\/acmcoder\.git/);
   assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-app:latest/);
   assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-runner:latest/);
-  assert.ok(readme.includes(`统一候选版为 \`v${version}\``));
+  assert.ok(readme.includes(`统一${version.includes("-rc.")?"候选版":"正式版"}为 \`v${version}\``));
   assert.ok(deployment.includes(`ghcr.io/pygmalion03/acmcoder-app:v${version}`));
   assert.ok(deployment.includes(`ghcr.io/pygmalion03/acmcoder-runner:v${version}`));
   const releaseNotes = fs.readFileSync(`docs/releases/v${version}.md`, "utf8");
