@@ -1,0 +1,145 @@
+{
+  "version": "4.1.0",
+  "commit": "67257cdcecd364160c7a00612ef8a031cf2a582e",
+  "date": "2026-10-03",
+  "status": "passed",
+  "functionalBaseline": {
+    "version": "4.1.0-rc.3",
+    "commit": "587406427363d97df202f242c80b93bc0e53404d",
+    "evidence": "v4.1-incremental-2026-10-02.json",
+    "functionalBytesUnchanged": true,
+    "differences": {
+      "site": [
+        "offline-worker.js",
+        "version.json"
+      ],
+      "extension": [
+        "README.md",
+        "manifest.json",
+        "version.json"
+      ],
+      "local-web": [
+        "version.json"
+      ]
+    }
+  },
+  "website": {
+    "deploymentId": "8817592d-6611-41fa-a29d-c03d3d7ea299",
+    "immutableUrl": "https://8817592d.acmcoder-unified-preview.pages.dev/",
+    "mainUrl": "https://acmcoder-unified-preview.pages.dev/",
+    "commit": "67257cdcecd364160c7a00612ef8a031cf2a582e",
+    "environment": "production",
+    "status": "accepted"
+  },
+  "websiteUI": {
+    "immutableVersionObserved": "4.1.0 / 67257cd",
+    "offlineResourcesReady": true,
+    "existingMainTabs": "Full new graph downloaded; activation waits for all origin tabs to close. Existing learning state preserved."
+  },
+  "ci": {
+    "buildRun": 37030732941,
+    "tests": 405,
+    "passed": 405,
+    "failed": 0,
+    "dockerSmoke": "passed",
+    "platforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "arm64ExecutionVerified": false
+  },
+  "images": {
+    "runner": {
+      "name": "runner",
+      "version": "4.1.0",
+      "commit": "67257cdcecd364160c7a00612ef8a031cf2a582e",
+      "digest": "sha256:ce1a9e534cdf4cb4885c8ab266611a40890d74609f7088fc2627bdbd10a64ffb"
+    },
+    "app": {
+      "name": "app",
+      "version": "4.1.0",
+      "commit": "67257cdcecd364160c7a00612ef8a031cf2a582e",
+      "digest": "sha256:3af7a87125a8e5bad903e9e4fdfd7847ff29f2b0cc4ea07abb6e23f9762187da"
+    },
+    "status": "accepted"
+  },
+  "latestPromotion": {
+    "run": 37031564925,
+    "status": "passed",
+    "digests": {
+      "app": {
+        "previous": "sha256:c3faed21bdfcfe2b2243a3c261ad8812d64094f3b83c693773bee00a6b8d7d9e",
+        "current": "sha256:3af7a87125a8e5bad903e9e4fdfd7847ff29f2b0cc4ea07abb6e23f9762187da"
+      },
+      "runner": {
+        "previous": "sha256:d537a638d0c30e4cdfff4325c534132c57c54f6b386d40da7576d6e95c64fd78",
+        "current": "sha256:ce1a9e534cdf4cb4885c8ab266611a40890d74609f7088fc2627bdbd10a64ffb"
+      }
+    }
+  },
+  "installedExtension": {
+    "sameId": true,
+    "version": "4.1.0",
+    "originalRecords": 25,
+    "sameIdsAndPayloads": true,
+    "accountReconnected": true,
+    "aiReturnedText": true,
+    "key": "session-only"
+  },
+  "localStatic": {
+    "version": "4.1.0",
+    "records": 13,
+    "sameIdsAndPayloads": true,
+    "backendUnchanged": true
+  },
+  "dataPreservation": {
+    "originalWebsiteRecordsBackedUp": 25,
+    "extensionSameIdsAndPayloads": 25,
+    "localSameIdsAndPayloads": 13
+  },
+  "release": {
+    "url": "https://github.com/Pygmalion03/acmcoder/releases/tag/v4.1.0",
+    "draft": false,
+    "prerelease": false,
+    "latest": true,
+    "previousStableRetained": "v4.0.0"
+  },
+  "publicArtifacts": [
+    {
+      "name": "acmcoder-source-v4.1.0.tar.gz",
+      "bytes": 927668,
+      "sha256": "f0bc036fcb9a823217d8781f92e18242f874ee7bf9abd0597dbfdd178d80ada5"
+    },
+    {
+      "name": "acmcoder-extension-v4.1.0.zip",
+      "bytes": 73449180,
+      "sha256": "aa8c9c3e9eb8cdbf29ba59cc318f4f116aba0afb58b543e5c156ff7058b1df4b"
+    },
+    {
+      "name": "acmcoder-java-corresponding-source-v4.1.0.zip",
+      "bytes": 69133602,
+      "sha256": "4e909a21db0c2130ea5a4c96077f0d25af850169507728bc63626f93c2ef8e31"
+    }
+  ],
+  "store": "Deferred by user; no registration, payment or submission performed.",
+  "publicDownloadVerification": [
+    {
+      "name": "acmcoder-source-v4.1.0.tar.gz",
+      "anonymousDownload": "passed",
+      "bytes": 927668,
+      "sha256": "f0bc036fcb9a823217d8781f92e18242f874ee7bf9abd0597dbfdd178d80ada5"
+    },
+    {
+      "name": "acmcoder-extension-v4.1.0.zip",
+      "anonymousDownload": "passed",
+      "bytes": 73449180,
+      "sha256": "aa8c9c3e9eb8cdbf29ba59cc318f4f116aba0afb58b543e5c156ff7058b1df4b"
+    },
+    {
+      "name": "acmcoder-java-corresponding-source-v4.1.0.zip",
+      "anonymousDownload": "passed",
+      "bytes": 69133602,
+      "sha256": "4e909a21db0c2130ea5a4c96077f0d25af850169507728bc63626f93c2ef8e31"
+    }
+  ]
+}
