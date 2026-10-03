@@ -1,0 +1,75 @@
+{
+  "recordedAt": "2026-10-03T16:24:54.374320+00:00",
+  "version": "4.1.0",
+  "sourceCommit": "67257cdcecd364160c7a00612ef8a031cf2a582e",
+  "formalSite": {
+    "url": "https://acmcoder.pygmalion.top/",
+    "project": "acmcoder-web",
+    "deploymentId": "ede97384-bbd2-4c9e-b2b8-18d3f7ddf319",
+    "immutableUrl": "https://ede97384.acmcoder-web.pages.dev/",
+    "environment": "production",
+    "productionBranch": "codex/unified-product",
+    "githubLogin": "passed: real Pygmalion03 OAuth callback",
+    "offlineResources": "ready"
+  },
+  "existingSite": {
+    "url": "https://acmcoder-unified-preview.pages.dev/",
+    "deploymentId": "8817592d-6611-41fa-a29d-c03d3d7ea299",
+    "preserved": true
+  },
+  "data": {
+    "sharedCloudDatabase": true,
+    "priorRecords": 25,
+    "priorIdsAndPayloadsUnchanged": true,
+    "legacyCloudCounts": {
+      "problems": 4,
+      "drafts": 3,
+      "submissions": 5,
+      "progress": 2,
+      "plans": 2,
+      "settings": 1
+    },
+    "legacyCloudRestore": {
+      "imported": 18,
+      "skipped": 1,
+      "pendingConflicts": 1,
+      "pendingConflict": "synthetic built-in sum problem description; existing version retained"
+    },
+    "legacyUnsyncedBrowserDraftsRestored": 2,
+    "additionalBrowserRestoreRecords": 3,
+    "finalFormalRecords": 46,
+    "finalExistingSiteRecords": 46,
+    "idsAndPayloadsEqualAcrossBothSites": true
+  },
+  "extension": {
+    "formalOriginBridge": "passed: installed extension responded to an invalid-nonce consume request without creating a handoff or opening a tab",
+    "syncOrigin": "https://acmcoder-unified-preview.pages.dev/",
+    "sameDatabaseAsFormalSite": true,
+    "internalPageRetested": false,
+    "limitation": "Browser URL policy rejected chrome-extension navigation; no workaround used to open that page. Previous stable extension acceptance remains separate."
+  },
+  "rollback": {
+    "oldDatabaseRetained": true,
+    "oldDeploymentId": "9e1c64f1-3340-4856-90f1-fd94749c90b4",
+    "oldCommit": "ff559239c2ab6ec8d461ae7359cf202165e38389",
+    "privateBackupsExcludedFromGitAndRelease": true,
+    "privateBackupHashes": {
+      "old-formal-learning.json": "79652364bc7dd84e06be2766dcaf6d41c3360204c1c9832ec0625def3cb65f57",
+      "old-formal-unified.json": "372760e52313e608445ed0f7a3c999c950ff4b3572170fc492c51c3699873c20",
+      "old-browser-learning.json": "76c0ca302eb4f53147ebe24d0edc77a35dfc8c85dd7b62c0439e5fbf20f757d1",
+      "old-browser-unified.json": "ed7c25dc9e9cc34e397939210cf17e5c84535624a173c157d75f3a48354f6eac",
+      "formal-before-legacy-restore.json": "d84d31c09dd7a5ca1ac30e59226dbff1d7a70312751e2fe3d7731518247d2443",
+      "formal-final.json": "cc4d97f530c9858c14ccc78d329eec9ba50b367c6f0ad4522e2faa9f0c5f2881",
+      "preview-final.json": "db227dfd33489fdf8749cfca05bef5b10a43ea073dccdf0f4810ad3f058472e7",
+      "project-before.json": "bc67dac34b9c674aafb53a1f4ce5ef99967e12a8c96cf4b53b0af817ed756fb1",
+      "project-after.json": "8656a593e5d427f5f5019a8ff10ec40e36dc43e6b2534b8acefb93e3cb0f773b"
+    }
+  },
+  "changes": {
+    "functionalSourceChanged": false,
+    "oauthCredentialsAndPublicOriginPreserved": true,
+    "browserPermissionsExpanded": false,
+    "sensitiveDataNotPublished": true
+  },
+  "cacheNote": "A stale browser disk-cache entry returned legacy HTML for a module during first load. A cache-bypassing reload fetched current modules; learning storage was retained."
+}

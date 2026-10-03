@@ -6,7 +6,7 @@ ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地
 
 [正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.1.0)提供源码、插件ZIP、Java对应源码、校验和与发行清单。新增功能真实验收见[增量回执](docs/releases/evidence/v4.1-incremental-2026-10-02.json)，原18节点见[需求核对](docs/releases/unified-requirement-audit.md)，安装与限制见[本版说明](docs/releases/v4.1.0.md)。
 
-- **直接练习**：[公开预览网站](https://acmcoder-unified-preview.pages.dev/) 无需登录即可运行Python、C++17与Java 8；登录GitHub可跨设备同步。
+- **直接练习**：[正式网站](https://acmcoder.pygmalion.top/) 无需登录即可运行Python、C++17与Java 8；登录GitHub可跨设备同步。[原预览地址](https://acmcoder-unified-preview.pages.dev/)继续可用，账号数据共用。
 - **LeetCode侧栏**：统一插件生成包 `dist/extension/` 自带离线Python/C++17/Java 8，不需要本地服务或网站打开。商店未上架。
 - **本地 / Docker**：保留Python、C++、Java工具链运行和离线数据。源码构建后使用相同共享界面。
 
@@ -93,7 +93,7 @@ ghcr.io/pygmalion03/acmcoder-runner:v4.1.0
 2. 点击读取当前题目，选择Python、C++17或Java 8，编写完整ACM程序。
 3. 填写标准输入和期望输出，点击「运行自测」。
 4. 完成后可「重新手撕」，原代码和历史继续保留。
-5. 在「设置与数据」主动连接GitHub，可同步到[网站](https://acmcoder-unified-preview.pages.dev/)和其他设备。基本练习无需登录或本地服务。
+5. 在「设置与数据」主动连接GitHub，可同步到[正式网站](https://acmcoder.pygmalion.top/)和其他设备。基本练习无需登录或本地服务。
 
 需要本地原生工具链环境时，启动本地/Docker服务并打开 `http://127.0.0.1:43117`。
 
