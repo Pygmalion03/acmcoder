@@ -2,7 +2,7 @@
 
 ACMCoder 是桌面 ACM 手撕练习工作区。网站、浏览器插件、本地/Docker版共用题库、今日安排、自动保存、重新手撕和长期历史；代码由你编写，自测只代表当前样例通过。
 
-统一正式版为 `v4.1.0`，默认源码分支为 `codex/unified-product`。本版在 v4.0.0 基础上增加网站离线重开、浏览器 Java 8，并完成日常 Chrome 插件真实账号与 AI 验收。网站、插件ZIP、本地/Docker使用同一产品版本，源码、网站部署与镜像摘要由随包发行清单关联。v4.0.0、旧候选和原 `v3` 分支继续保留，便于回退。
+统一正式版为 `v4.1.0`，默认源码分支为 `main`。本版在 v4.0.0 基础上增加网站离线重开、浏览器 Java 8，并完成日常 Chrome 插件真实账号与 AI 验收。网站、插件ZIP、本地/Docker使用同一产品版本，源码、网站部署与镜像摘要由随包发行清单关联。v4.0.0、旧候选和旧分支的归档标签继续保留，便于回退。
 
 [正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.1.0)提供源码、插件ZIP、Java对应源码、校验和与发行清单。新增功能真实验收见[增量回执](docs/releases/evidence/v4.1-incremental-2026-10-02.json)，原18节点见[需求核对](docs/releases/unified-requirement-audit.md)，安装与限制见[本版说明](docs/releases/v4.1.0.md)。
 
@@ -179,9 +179,13 @@ ACMCODER_DOCKER_AUTO_BUILD=0
 
 这个项目有三类发布物：
 
-- **源码分支**：默认 `codex/unified-product`，正式版源码固定于 `v4.1.0`；旧 `v3` 分支保留。
+- **源码分支**：默认 `main`，正式版源码固定于 `v4.1.0`；旧分支保存在 `archive/2026-10-05/` 标签下。
 - **GitHub Release**：面向用户看的版本页，说明 tag、变更和启动方式。
 - **GHCR Docker 镜像**：Docker 用户实际拉取的预构建镜像。
+
+Packages 中的两个正式镜像为 [acmcoder-app](https://github.com/Pygmalion03/acmcoder/pkgs/container/acmcoder-app)（完整本地应用）和 [acmcoder-runner](https://github.com/Pygmalion03/acmcoder/pkgs/container/acmcoder-runner)（代码运行环境）。两者的 `v4.1.0` 与 `latest` 指向同一正式发行镜像；页面也可能显示 `sha-67257cd`，它是同一镜像的源码提交标签。镜像在发布产品版本时更新，文档更新不重新发布镜像。
+
+`main` 是持续开发与网站部署分支；旧版本用 Release 和标签保留。旧分支尖端已保存为 `archive/2026-10-05/<原分支名>`，例如 `archive/2026-10-05/v3`。需要旧源码时可按归档标签检出；原发行标签和安装包保持可用。
 
 `docker-compose.prebuilt.yml` 默认使用：
 

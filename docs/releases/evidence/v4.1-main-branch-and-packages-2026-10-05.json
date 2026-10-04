@@ -1,0 +1,119 @@
+{
+  "recordedAt": "2026-10-05T00:04:47.785312+08:00",
+  "repository": "Pygmalion03/acmcoder",
+  "defaultBranch": "main",
+  "previousDefaultBranch": "codex/unified-product",
+  "branchCountBefore": 9,
+  "branchCountAfter": 1,
+  "archivedBranches": [
+    {
+      "branch": "codex/cloudflare-free-edition",
+      "commit": "ff559239c2ab6ec8d461ae7359cf202165e38389",
+      "archiveTag": "archive/2026-10-05/codex/cloudflare-free-edition"
+    },
+    {
+      "branch": "codex/v1-sync-runtime",
+      "commit": "4eacf9dd2f11159cae42725ab84eee471db7d3b5",
+      "archiveTag": "archive/2026-10-05/codex/v1-sync-runtime"
+    },
+    {
+      "branch": "codex/zip-device-connect",
+      "commit": "7f69a5a89384aa372023d3e92b06a32966ed74b2",
+      "archiveTag": "archive/2026-10-05/codex/zip-device-connect"
+    },
+    {
+      "branch": "v1",
+      "commit": "416e264c7a96da85b9f572a4bd37d9727a31e993",
+      "archiveTag": "archive/2026-10-05/v1"
+    },
+    {
+      "branch": "v2",
+      "commit": "dec32024600da5355e4a895e2760162d35dedf3f",
+      "archiveTag": "archive/2026-10-05/v2"
+    },
+    {
+      "branch": "v2.1",
+      "commit": "f10e826a4be73e3d9bbd2a06807bb095dab384ac",
+      "archiveTag": "archive/2026-10-05/v2.1"
+    },
+    {
+      "branch": "v2.2",
+      "commit": "a5f845a96d031ae4b811fed86195a3c560239308",
+      "archiveTag": "archive/2026-10-05/v2.2"
+    },
+    {
+      "branch": "v3",
+      "commit": "e2a454212b4e9179343d38b30a5af1f7456b98f5",
+      "archiveTag": "archive/2026-10-05/v3"
+    }
+  ],
+  "archiveTagsVerifiedOnRemote": true,
+  "preChangeGitBundleRetained": true,
+  "cloudflare": [
+    {
+      "before": {
+        "project": "acmcoder-web",
+        "productionBranch": "codex/unified-product",
+        "sourceBranch": "codex/unified-product",
+        "deploymentId": "ede97384-bbd2-4c9e-b2b8-18d3f7ddf319",
+        "deploymentUrl": "https://ede97384.acmcoder-web.pages.dev"
+      },
+      "after": {
+        "project": "acmcoder-web",
+        "productionBranch": "main",
+        "sourceBranch": "main",
+        "deploymentId": "ede97384-bbd2-4c9e-b2b8-18d3f7ddf319",
+        "deploymentUrl": "https://ede97384.acmcoder-web.pages.dev"
+      },
+      "configurationPreserved": true,
+      "deploymentPreserved": true
+    },
+    {
+      "before": {
+        "project": "acmcoder-unified-preview",
+        "productionBranch": "codex/unified-product",
+        "sourceBranch": "codex/unified-product",
+        "deploymentId": "8817592d-6611-41fa-a29d-c03d3d7ea299",
+        "deploymentUrl": "https://8817592d.acmcoder-unified-preview.pages.dev"
+      },
+      "after": {
+        "project": "acmcoder-unified-preview",
+        "productionBranch": "main",
+        "sourceBranch": "main",
+        "deploymentId": "8817592d-6611-41fa-a29d-c03d3d7ea299",
+        "deploymentUrl": "https://8817592d.acmcoder-unified-preview.pages.dev"
+      },
+      "configurationPreserved": true,
+      "deploymentPreserved": true
+    }
+  ],
+  "formalWebsiteUI": {
+    "browser": "default Chrome profile yu",
+    "version": "4.1.0",
+    "sourceCommit": "67257cd",
+    "account": "Pygmalion03",
+    "syncStatus": "已同步到云端",
+    "offlineStatus": "离线资源已就绪"
+  },
+  "packages": {
+    "app": {
+      "url": "https://github.com/Pygmalion03/acmcoder/pkgs/container/acmcoder-app",
+      "version": "4.1.0",
+      "sourceCommit": "67257cdcecd364160c7a00612ef8a031cf2a582e",
+      "versionTagDigest": "sha256:3af7a87125a8e5bad903e9e4fdfd7847ff29f2b0cc4ea07abb6e23f9762187da",
+      "latestDigest": "sha256:3af7a87125a8e5bad903e9e4fdfd7847ff29f2b0cc4ea07abb6e23f9762187da",
+      "verified": "Live GHCR manifest inspection for latest and v4.1.0; public GitHub Packages pages list both tags.",
+      "republished": false
+    },
+    "runner": {
+      "url": "https://github.com/Pygmalion03/acmcoder/pkgs/container/acmcoder-runner",
+      "version": "4.1.0",
+      "sourceCommit": "67257cdcecd364160c7a00612ef8a031cf2a582e",
+      "versionTagDigest": "sha256:ce1a9e534cdf4cb4885c8ab266611a40890d74609f7088fc2627bdbd10a64ffb",
+      "latestDigest": "sha256:ce1a9e534cdf4cb4885c8ab266611a40890d74609f7088fc2627bdbd10a64ffb",
+      "verified": "Live GHCR manifest inspection for latest and v4.1.0; public GitHub Packages pages list both tags.",
+      "republished": false
+    }
+  },
+  "scope": "Branch metadata, archived refs and documentation; published runtime and user data unchanged."
+}
