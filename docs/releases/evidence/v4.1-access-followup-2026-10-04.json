@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-10-04T04:23:19Z",
+  "version": "4.1.0",
+  "sourceCommit": "67257cdcecd364160c7a00612ef8a031cf2a582e",
+  "localService": {
+    "status": "active",
+    "versionEndpoint": "http://127.0.0.1:43117/version.json",
+    "reachableFromMac": true,
+    "remoteAndMacVersionsMatch": true,
+    "languages": ["python", "cpp", "java"],
+    "evidence": "SSH systemctl is-active and remote version.json; Mac HTTP version.json",
+    "manualRestartRequired": false
+  },
+  "extensionSync": {
+    "status": "user-confirmed",
+    "userReply": "同步了，wsl也开了",
+    "scope": "User confirmed the requested manual plugin sync; internal extension UI and record counts were not independently rechecked in this follow-up."
+  },
+  "changes": "Acceptance documentation only; no source, service configuration or user data changes."
+}

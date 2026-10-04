@@ -2,6 +2,8 @@
 
 当前正式版为 **v4.1.0**，正式入口为 [acmcoder.pygmalion.top](https://acmcoder.pygmalion.top/)。网站、插件与本地/Docker均交付 Python、C++ 和 Java；浏览器 Java 为 Java 8。网站离线重开、日常 Chrome 真实账号与 AI、正式发布见 [v4.1 正式回执](evidence/v4.1-stable-2026-10-03.json)，正式域名登录、旧数据合并及两站同步见 [域名切换回执](evidence/v4.1-formal-domain-2026-10-04.json)。商店上架仍按用户决定暂缓。
 
+2026-10-04 补验：WSL 常驻服务 active，Mac 本地入口恢复，两端版本均为 v4.1.0/67257cd；插件手动同步由用户确认完成，本轮未重新读取插件内部界面或逐条比较记录。见[访问恢复补验](evidence/v4.1-access-followup-2026-10-04.json)。
+
 以下为 **2026-10-02 的基线核对与后续补充**；表中的候选版本、旧服务状态及“浏览器 Java 未交付”属于当时范围，不代表 v4.1.0 当前状态。历史证据保留原版本标识，未改写为新版重测。
 
 原范围以[总计划](../superpowers/plans/2026-09-30-unified-product-roadmap.md)及三份子计划为准；功能检查表的12项不是18节点的替代。此表记录可证明的范围；没有证据的动作保持待验，不以测试数量推断产品完成。
