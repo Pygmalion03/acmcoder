@@ -2,6 +2,8 @@
 
 当前正式版为 **4.1.0**，GitHub 与 Docker latest 已提升；网站及插件增加 Java 8 和网站离线重开。见文末增量说明与 [正式回执](evidence/v4.1-stable-2026-10-03.json)。以下保留 v4.0.0 的原始验收与表格，不将旧运行结果改名为新版实测。
 
+正式入口为 [acmcoder.pygmalion.top](https://acmcoder.pygmalion.top/)。原预览地址继续可用，与正式站共用云端账号数据；两站 46 条记录的 ID 和内容逐条一致，原有 25 条记录未覆盖。正式域名登录、旧草稿恢复与插件桥接范围见 [切换回执](evidence/v4.1-formal-domain-2026-10-04.json)。插件内部页面本轮未重新操作，不能将桥接响应称为完整插件重测。
+
 ## v4.0.0 基线验收
 
 统一正式版为 **4.0.0**，发行源码 **1e141a7**。[网站固定部署](https://2ab6b547.acmcoder-unified-preview.pages.dev/)、[公开源码/插件ZIP](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.0.0)、GHCR app/runner及latest均已关联同commit。GitHub395/395与Docker烟测通过；公开源码/ZIP匿名下载摘要一致。用户43117常驻服务已实际重启，13条原学习记录逐项保留；原插件同ID更新到4.0.0.65535，22条内容与引用保留。公开Docker镜像使用原本机数据的独立副本升级并重启，13条记录精确一致，Python/C++/Java均输出42；实际执行为amd64。完整收据见[v4正式验收](evidence/v4-stable-2026-10-02.json)。
