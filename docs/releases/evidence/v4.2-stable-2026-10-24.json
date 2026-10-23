@@ -1,0 +1,156 @@
+{
+  "date": "2026-10-24",
+  "version": "4.2.0",
+  "sourceCommit": "aa32c10c6736b0842bce48a9890ecfff755ec0b3",
+  "release": "https://github.com/Pygmalion03/acmcoder/releases/tag/v4.2.0",
+  "publishedStable": true,
+  "website": {
+    "status": "accepted",
+    "commit": "aa32c10c6736b0842bce48a9890ecfff755ec0b3",
+    "deploymentId": "e4cfd8ab-6669-4506-a822-1a0dac6bd4a3",
+    "url": "https://acmcoder.pygmalion.top",
+    "immutableUrl": "https://e4cfd8ab.acmcoder-web.pages.dev",
+    "syncOrigin": "https://acmcoder-unified-preview.pages.dev",
+    "syncDeploymentId": "b96a1887-e3b3-474c-b4f1-6d9a29b53f9b",
+    "syncImmutableUrl": "https://b96a1887.acmcoder-unified-preview.pages.dev"
+  },
+  "images": {
+    "status": "accepted",
+    "app": {
+      "name": "app",
+      "version": "4.2.0",
+      "commit": "aa32c10c6736b0842bce48a9890ecfff755ec0b3",
+      "digest": "sha256:c2cc229df2f42813b8949052ec8b6049452927ca33e3b43d1216d741d037ade7"
+    },
+    "runner": {
+      "name": "runner",
+      "version": "4.2.0",
+      "commit": "aa32c10c6736b0842bce48a9890ecfff755ec0b3",
+      "digest": "sha256:6e6336a220a2fc2c69b5aa82f393b1d9f16a3f311968ce9f74b32bfc664e2ae3"
+    }
+  },
+  "verificationRun": 40004625445,
+  "tests": {
+    "passed": 514,
+    "failed": 0
+  },
+  "promotion": {
+    "run": 40007388405,
+    "status": "success",
+    "latestDigestsMatchVersion": true,
+    "previousLatest": {
+      "app": "sha256:3af7a87125a8e5bad903e9e4fdfd7847ff29f2b0cc4ea07abb6e23f9762187da",
+      "runner": "sha256:ce1a9e534cdf4cb4885c8ab266611a40890d74609f7088fc2627bdbd10a64ffb"
+    }
+  },
+  "publicDownloads": [
+    {
+      "asset": "acmcoder-source-v4.2.0.tar.gz",
+      "bytes": 997785,
+      "sha256": "cd6f1f81c108b9db863512cc62afeb5f20b3ddb3f795f6f916e310a8ad19b399",
+      "anonymousDownload": "passed"
+    },
+    {
+      "asset": "acmcoder-extension-v4.2.0.zip",
+      "bytes": 73655600,
+      "sha256": "24d2b36acd854ee7e44a4f311ff67eea016af2c39a542204ecf4b83eb949cce3",
+      "anonymousDownload": "passed"
+    },
+    {
+      "asset": "acmcoder-java-corresponding-source-v4.2.0.zip",
+      "bytes": 69133602,
+      "sha256": "4e909a21db0c2130ea5a4c96077f0d25af850169507728bc63626f93c2ef8e31",
+      "anonymousDownload": "passed"
+    }
+  ],
+  "database": {
+    "binding": "acmcoder-unified-preview",
+    "recovery": "D1 Time Travel bookmark privately retained before mutation; no independent SQL export",
+    "migration": "0007_record_capacity_repair.sql",
+    "applied": true,
+    "before": {
+      "records": 78,
+      "payloadCharacters": 15418,
+      "revisionSum": 124,
+      "maxChangeCursor": 465,
+      "mutations": 122,
+      "accountedBytes": 100270
+    },
+    "after": {
+      "records": 78,
+      "payloadCharacters": 15418,
+      "revisionSum": 124,
+      "maxChangeCursor": 465,
+      "mutations": 122,
+      "accountedBytes": 99897,
+      "updateTriggers": 1
+    },
+    "migrationTracking": "No d1_migrations table; exact 0007 batch applied through dashboard, not all prior migrations"
+  },
+  "extension": {
+    "browser": "Daily Google Chrome",
+    "id": "bkdaiagfchdjlkebhfoicjgodfilikki",
+    "before": "4.1.0",
+    "after": "4.2.0",
+    "sameInstallation": true,
+    "upgradeRecords": 51,
+    "allOriginalRecordObjectsAndPendingRestoresEqualImmediatelyAfterUpgrade": true,
+    "actualLanguageRuns": {
+      "python": "42 sample passed",
+      "cpp": "42 sample passed",
+      "java": "42 sample passed"
+    },
+    "closeReopenDraftInputExpectedRetained": true
+  },
+  "crossClientSync": {
+    "account": "Pygmalion03",
+    "websiteVersion": "4.2.0",
+    "extensionVersion": "4.2.0",
+    "websiteRecords": 59,
+    "extensionRecords": 59,
+    "allRecordIdsKindsAndPayloadsEqual": true,
+    "allOriginal51PayloadsPreserved": true,
+    "websitePendingRestores": 1,
+    "extensionPendingRestores": 0,
+    "pendingRestoreScope": "Website one pending restore existed in first post-login export and retained unchanged through final export; these local restore queues are not claimed identical across clients.",
+    "siteActualPython": "42 sample passed; run snapshot visible on website and exported to plugin",
+    "syntheticProblem": "v4.2.0 发布验收：整数求和"
+  },
+  "docker": {
+    "date": "2026-10-24",
+    "image": "ghcr.io/pygmalion03/acmcoder-app:v4.2.0",
+    "imageId": "sha256:c2cc229df2f42813b8949052ec8b6049452927ca33e3b43d1216d741d037ade7",
+    "isolated": true,
+    "bind": "http://127.0.0.1:43118",
+    "codeExecution": [
+      "python",
+      "cpp",
+      "java"
+    ],
+    "sourceState": "clean",
+    "channel": "stable",
+    "editorBundle": true,
+    "legacyEntry": true,
+    "productionDependenciesEmpty": true,
+    "recreatedContainerPreservedRecords": 2
+  },
+  "localService": {
+    "name": "acmcoder-v3.service",
+    "active": true,
+    "origin": "http://127.0.0.1:43117",
+    "version": "4.2.0",
+    "sourceState": "clean",
+    "channel": "stable"
+  },
+  "screenshots": {
+    "website-accepted.jpg": "52e75d2916470858e3bf57943a783ac87beb9a842cbbd64d81bc1654596db4d7",
+    "website-run-snapshot.jpg": "1d186c5532dcb19ba63e8d059683055c53432dfff4678bfa0c83727fd4c7478d"
+  },
+  "scopeLimits": [
+    "No fresh paid model call in this release acceptance; historical AI receipts retain original versions.",
+    "Original account has no conversation records, so no claim of real old-conversation pagination upgrade.",
+    "arm64 images built but not execution-tested.",
+    "Chrome Web Store submission remains deferred.",
+    "Private learning backups and D1 recovery bookmark excluded from public release assets."
+  ]
+}
