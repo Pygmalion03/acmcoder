@@ -1,181 +1,80 @@
-# 部署 ACMCoder
+# 部署与本地运行
 
-统一正式版为 **4.1.0**。[正式Release](https://github.com/Pygmalion03/acmcoder/releases/tag/v4.1.0)关联源码、插件ZIP、Java对应源码、网站与GHCR镜像；实际摘要以随包 release-manifest.json 为准。v4.0.0、rc.3 与旧版继续保留供回退。
+本指南适用于 [v4.2.0](releases/v4.2.0.md)。安装包、源码提交、网站部署与固定镜像的关联以该发行的 `release-manifest.json` 为准。升级已有数据先读[升级与恢复](upgrade.md)。
 
-固定Docker版本使用 `docker-compose.prebuilt.yml` 加 `docker-compose.release.yml`，app镜像为 `ghcr.io/pygmalion03/acmcoder-app:v4.1.0`，runner为 `ghcr.io/pygmalion03/acmcoder-runner:v4.1.0`。候选覆盖文件继续保留旧rc.14环境。
+## 本地源码
 
-## 先分清入口和运行模式
+准备 Node.js 22+ 和所需语言工具链。Python 使用 Python 3，C++ 需要支持 C++17 的 `g++`，Java 需要 `java` 与 `javac`。
 
-ACMCoder 现在有两个 Web 启动入口：
-
-- 宿主机源码启动：Node 服务在本机跑。
-- Docker app 启动：Node 服务和 Java/C++/Python 工具链都在 app 容器里。
-
-页面里的运行模式只负责决定 `Run` 时把代码交给谁执行：
-
-- `本机环境` 只出现在宿主机源码启动场景，调用宿主机工具链。
-- `Docker runner` 只服务于宿主机 Web 调 Docker runner 镜像。
-- `内置环境` 只出现在 Docker app 场景，调用 app 容器自带工具链。
-
-## 本地启动
-
-适合开发者或已经有 Node.js 的用户。
-
-```bash
-npm install
+```sh
+npm ci --ignore-scripts
+node scripts/build-clients.mjs local-web
+node bin/acmcoder.js doctor
 npm start
 ```
 
-打开：
+打开 `http://127.0.0.1:43117`。统一界面使用 `dist/local-web/`，原版界面为 `/legacy.html`。更新源码后重建静态界面并重启服务，避免新前端调用旧服务端接口。完整三端构建使用 `npm run build:clients`，还需 Python 3 和首次下载语言运行资源的网络连接。
 
-```text
-http://127.0.0.1:43117
+统一界面直接使用本机工具链；Docker app 中则使用容器自带工具链。旧界面和 CLI 另保留 Local / Docker runner 选择，不要把旧界面的选择器当作统一工作区必需步骤。
+
+## Docker app
+
+只有 Docker Engine / Docker Desktop 和 Compose v2 也能使用。下载 v4.2.0 源码 ZIP，进入解压目录：
+
+```sh
+docker compose -f docker-compose.prebuilt.yml -f docker-compose.release.yml up -d
 ```
 
-默认只接受本机 Host（`localhost`、`127.0.0.1`、`[::1]`）。通过已知域名部署时，设置 `ACMCODER_TRUSTED_HOSTS=practice.example.test` 后启动服务；多个精确 hostname 可用逗号分隔，不支持通配符或 URL。两份 Compose 文件都会传入该变量，未设置时为空。反向代理需保留被配置认可的 Host，请求中的 `X-Forwarded-Host` 不参与信任判断。
+两份配置合用会固定 `ghcr.io/pygmalion03/acmcoder-app:v4.2.0`。只使用 `docker-compose.prebuilt.yml` 则跟随 `latest`；需要可重复安装和回退时使用固定版本。自行构建用：
 
-这个模式下，Local runner 会扫描宿主机的 `python`、`javac/java`、`g++`。如果用户没有对应语言环境，但安装了 Docker Desktop，可以在页面里切到 Docker runner。
-
-## 只有 Docker 的用户
-
-发布后的预构建应用镜像是最短路径：
-
-```bash
-docker compose -f docker-compose.prebuilt.yml up -d
+```sh
+docker compose up -d --build
 ```
 
-打开：
+app 镜像包含 Node.js、Python 3、g++ 和 JDK 17。宿主机无需安装语言环境，容器也无需访问宿主机 Docker socket。镜像准备好后，基本练习可离线使用；账号同步、外部导题和在线 AI 仍需联网。
 
-```text
-http://127.0.0.1:43117
+Compose 默认绑定 `127.0.0.1:43117`，持久目录如下：
+
+| 宿主目录 | 容器目录 | 内容 |
+| --- | --- | --- |
+| `data/unified` | `/app/data/unified` | 统一学习记录、同步队列与冲突 |
+| `data/memory` | `/app/data/memory` | 原版题面、进度和迁移来源 |
+| `data/recommendation` | `/app/data/recommendation` | 原版推荐和安排 |
+| `credentials` | `/app/credentials` | 设备授权和旧接口独立凭据 |
+
+保留完整路径，且确保容器运行用户有读写权限。不要把空的 `./data` 整体挂到 `/app/data`，否则会遮住镜像内置题库。使用只读根文件系统、移除 capability 或 NAS ACL 时应按真实数据所有者设置权限，不依赖 root 绕过权限，也不要将凭据目录改成全员可写。
+
+## 数据和连接配置
+
+本地源码默认把统一学习文件写到项目 `data/unified/`，可用 `ACMCODER_UNIFIED_DATA_DIR` 指定独立目录。凭据默认位于 `~/.local/share/acmcoder/credentials/`，可用 `ACMCODER_CREDENTIAL_DIR` 指定；学习备份不包含凭据。文件事务通过恢复 journal、fsync 与原子替换持久化，浏览器关闭后数据仍在。
+
+服务默认只认可 `localhost`、`127.0.0.1` 和 `[::1]`。确需通过自有域名访问时设置 `ACMCODER_TRUSTED_HOSTS=practice.example.test`；多个精确 hostname 用逗号分隔，不接受通配符或 URL。反向代理应保留认可的 Host，`X-Forwarded-Host` 不参与信任判断。仅监听 `0.0.0.0` 不会自动允许其他域名。
+
+自托管云端连接的公开配置在 `shared/deployment-config.js`：`cloudOrigin` 为账号服务的 HTTPS 根地址，`websiteOrigins` 为允许接续的精确网页来源。默认保留既有预览账号入口与正式站来源；不要为已经工作的安装随意换域名。更改后重建三端，让插件权限和接续来源一起更新；切换部署前备份学习数据并退出旧账号，新地址需要重新授权，不会自动搬迁旧云端数据库或凭据。配置文件不应放任何 Secret，Cloudflare 配置见[网站部署](../cloudflare/README.md)。
+
+网站 API 升级到 v4.2.0 时，应先保留 D1 恢复点，再按迁移顺序执行 `0007_record_capacity_repair.sql`。该迁移修复容量统计，保留同步日志与删除标记；将执行结果和网站部署关联一起记录，并核对原有账号数据。新建数据库也需要应用完整迁移序列。
+
+## Docker runner 与 CLI
+
+`Dockerfile` 构建代码运行器，`Dockerfile.app` 构建完整应用。Docker app 不需要额外安装 runner 镜像。
+
+本机 Node 服务或 CLI 需要隔离运行代码时，可单独准备 runner：
+
+```sh
+docker build -t acmcoder-runner:local .
+node bin/acmcoder.js test reverse-linked-list --lang python --file path/to/main.py --runner docker
 ```
 
-这条路不要求用户本机安装 Node.js、Java、C++ 或 Python。容器里的内置环境已经带了 `python3`、`g++`、`openjdk`，所以页面里选择 `内置环境` 就能运行代码。它不是 Docker runner，而是 app 容器本身的编译运行环境。新版Compose还独立挂载 `./data/unified` 与 `./credentials`；稳定版原有 `./data/memory` 和 `./data/recommendation` 挂载到容器，因而记忆题目、推荐题库、每日计划、AC 次数和模型设置可以持久化，同时不会让宿主机的空 `./data` 目录遮住镜像内置的 `problems.json`。
+默认 runner 镜像为 `acmcoder-runner:local`；可用 `ACMCODER_DOCKER_IMAGE` 指定已下载的版本，`ACMCODER_DOCKER_AUTO_BUILD=0` 禁用缺失镜像时自动构建。旧界面 `/legacy.html` 保留对应运行模式选择。统一工作区目前不提供该选择器。
 
-这条路径会创建 Docker 镜像、容器和 Compose 网络，但不会修改用户 Docker Desktop 的全局配置，也不会往宿主机安装 Java/C++/Python。
+## AI 与离线
 
-宿主机上的 `./data/memory` 和 `./data/recommendation` 必须允许容器写入。生产配置同时使用 `cap_drop: [ALL]` 时，即使容器进程 UID 为 0，也不能依赖 `DAC_OVERRIDE` 绕过宿主机目录权限。部署前应由 Docker 创建这些目录，或显式设置适合当前 NAS 用户/ACL 的读写权限；不要把权限错误误判为推荐题库或应用启动失败。不要把整个空的 `./data` 目录挂载到 `/app/data`，否则会遮住镜像内置的种子题库。
+统一界面在设置中配置提供商、模型和 Key。Key 默认只在当前页面内存，可选口令加密保存在本机，刷新后解锁；不进入学习备份或同步。本机服务可显式连接回环地址上的本地模型。原版 `/api/assist` 接口保留独立配置，读取旧 `settings.json` 时会将明文 Key 迁到独立凭据文件，不会把旧 Key 回传统一前端。
 
-如果要从当前源码本地构建应用镜像，再运行：
+网站需在设置完成离线资源准备；完整插件包自带运行资源；本机或 Docker 需先装好依赖、界面与工具链。基础练习不需要账号或 AI。详情见[数据与隐私](data-and-privacy.md)。
 
-```bash
-docker compose up --build
-```
+## 发行链
 
-## 两类 Docker 镜像的区别
+`prepare-unified-candidate.yml` 构建候选文件并上传 Actions artifact，不发布网站、镜像或 Release。`publish-images.yml` 负责验证并发布 app / runner 的版本镜像，`latest` 通过独立提升步骤更新，不会因推送任意候选标签自动切换。
 
-`Dockerfile` 是 runner 镜像。它服务于“本机启动 Web，然后运行代码时选择 Docker runner”的场景。默认镜像名是 `acmcoder-runner:local`，缺失时会自动构建。发布后的预构建镜像名是：
-
-```text
-ghcr.io/pygmalion03/acmcoder-runner:latest
-```
-
-`Dockerfile.app` 是应用镜像。它服务于“用户只有 Docker，也想直接打开 ACMCoder Web”的场景。它把 Node 服务和 Java/C++/Python 工具链都放在一个容器里，因此不需要在容器里再调用 Docker runner。发布后的预构建镜像名是：
-
-```text
-ghcr.io/pygmalion03/acmcoder-app:latest
-```
-
-这两个镜像都先做全量三语言。语言选择发生在页面或 CLI 的每次运行里，不发生在 Docker 部署阶段。部署时拆成 Java-only、C++-only、Python-only 镜像是可行的，但会增加镜像矩阵、文档分支和用户选择成本；在当前目标里，先保证“装了 Docker 就能直接用”更划算。
-
-三种入口的边界：
-
-| 使用方式 | Web 服务 | 编译/运行环境 | 适合谁 |
-| --- | --- | --- | --- |
-| 源码 + Local runner | 宿主机 Node.js | 宿主机 Java/C++/Python | 开发者，本机环境齐全 |
-| 源码 + Docker runner | 宿主机 Node.js | Docker runner 镜像 | 有 Node.js，但不想装编译环境 |
-| Docker app 镜像 | Docker app 容器 | Docker app 容器 | 只有 Docker 的普通用户 |
-
-页面和插件始终列出 `本机环境`、`内置环境` 和 `Docker runner` 三种名称，并禁用当前部署无法使用的选项。Docker app 模式只启用 `内置环境`；本机服务按工具链和 Docker 状态启用 `本机环境` 与 `Docker runner`。如果用户已经通过 Docker app 进入页面，再选 Docker runner 就变成“容器里的 Web 服务继续调用另一个 Docker runner 容器”，当前部署不提供这条链路。
-
-本地 Web 想直接使用预构建 runner 时，可以设置：
-
-```powershell
-$env:ACMCODER_DOCKER_IMAGE="ghcr.io/pygmalion03/acmcoder-runner:latest"
-```
-
-```bash
-export ACMCODER_DOCKER_IMAGE=ghcr.io/pygmalion03/acmcoder-runner:latest
-```
-
-## 镜像发布
-
-`.github/workflows/publish-images.yml` 会发布两类多架构镜像：
-
-- `acmcoder-app`
-- `acmcoder-runner`
-
-发布前必须先通过单元测试，并以只读根文件系统、2 CPU、2 GB 内存、256 PID 和无额外 Linux capability 的配置启动真实 app 镜像。冒烟测试会验证空数据卷仍能加载内置推荐题库，并实际编译运行 Java、C++ 和 Python。只有验证任务通过，发布任务才会构建并推送多架构镜像。
-
-工作流支持手动触发，也会在推送 `v*` tag 时发布带版本 tag 的镜像，并给版本发布产物补 `latest`。`docker-compose.prebuilt.yml` 指向预构建 `app` 镜像，避免零环境用户先在本地 build。
-
-## Release、源码和 Package 的关系
-
-Release 不是 Docker 运行的必要条件。Docker 用户真正拉取的是 GHCR package：
-
-```text
-ghcr.io/pygmalion03/acmcoder-app:latest
-ghcr.io/pygmalion03/acmcoder-runner:latest
-```
-
-Release 的作用是给用户一个清晰的版本页，说明这个版本对应哪个 tag、有哪些镜像、怎么启动。源码 ZIP/TAR 也会挂在 Release 下面，但普通 Docker 用户仍然建议使用仓库里的 `docker-compose.prebuilt.yml` 或最新源码目录，而不是把 Release 当成安装器。
-
-源码分支可以先于正式 Release 更新。默认 Compose 文件使用 `ghcr.io/pygmalion03/acmcoder-app:latest`；如果需要固定版本，再使用 Release 对应的 tag，例如 `ghcr.io/pygmalion03/acmcoder-app:v3.0.4`。
-
-## 环境扫描
-
-Web 和 Edge 侧边栏现在都会调用：
-
-```text
-GET /api/doctor
-```
-
-它会返回 Java/C++/Python 工具链、Docker runner 状态和当前部署模式。宿主机源码启动时，用户没有保存过运行模式，页面会按当前语言推荐 `本机环境` 或 `Docker runner`；Docker app 启动时，页面会标明 `内置环境` 并禁用 Docker runner。
-
-## 模型建议
-
-模型能力是可选项，不参与判题，也不会覆盖源代码。
-
-接口：
-
-```text
-GET  /api/assist/settings
-POST /api/assist/settings
-POST /api/assist
-```
-
-默认按 OpenAI-compatible `chat/completions` 接口调用。用户可以在 Web 或插件里填写 API Key、Base URL 和 Model。设置保存到 `data/memory/settings.json`，这个目录已被 git 忽略。也可以用环境变量：
-
-```text
-ACMCODER_LLM_API_KEY
-ACMCODER_LLM_BASE_URL
-ACMCODER_LLM_MODEL
-```
-
-## 仍然不够顺的地方
-
-从零用户现在至少需要安装 Docker Desktop，并在项目目录里运行一条 Compose 命令。预构建镜像已经把本地 build 从默认路径里拿掉，但还不是“一键安装”。
-
-再往后可以补安装脚本或桌面打包，但要先保证镜像发布和升级路径稳定。桌面打包会增加维护成本，而且代码执行沙箱仍然要认真处理。
-
-## 统一版本开发预览
-
-新版本地首页采用共享的今日/题库/练习/设置界面，原版保留在`/legacy.html`（`/index.html`也继续可用）。本地Python/C++/Java仍调用已安装工具链；网站和免部署插件目前提供Python。
-
-学习文件默认`data/unified/`，通过`ACMCODER_UNIFIED_DATA_DIR`可指定。原`data/memory/`题面首次迁移会保留原文件并在`legacy-originals/`保留副本；原浏览器语言草稿从学习键导入，不删除旧键。文件写入采用恢复journal、fsync与原子替换，关闭浏览器后仍保留。备份包含统一记录，凭据和原始文件副本不混入学习备份。
-
-本地设置的账号连接使用设备码，在网站批准后可以关闭网站，账号副本在独立namespace。凭据默认在用户`~/.local/share/acmcoder/credentials/`，可用`ACMCODER_CREDENTIAL_DIR`改为独立目录；文件0600，不应纳入源码同步或备份。匿名与账号副本仅在主动合并时汇合。
-
-Compose新增`data/unified:/app/data/unified`和`credentials:/app/credentials`两个独立卷，保留原memory/recommendation卷。GitHub上的旧`latest`镜像尚未更新，正式新镜像在统一版本发布阶段提供；当前验证镜像为本地`acmcoder-app:unified-preview`。升级前应备份原数据，不能用测试卷替换用户卷。
-
-独立验证入口`http://127.0.0.1:43118/workspace.html`由WSL tmux `acmcoder-unified-preview`运行，临时测试数据目录`/tmp/acmcoder-unified-local-preview`，用于验证并会清理。正式43117服务更新需要按项目指南重启后验收，不以测试入口代替旧数据迁移验收。
-
-Mac/WSL源码同步需额外排除`data/unified`、`credentials`、`.wrangler`、`.dev.vars*`、`.superpowers`和浏览器测试缓存；这些内容仅留在运行端。当前`acmcoder-v3` Mutagen会话已保留原双向安全配置并补充这些排除，避免学习数据库和设备凭据随源码回传。
-
-## 统一发行工作流
-
-`prepare-unified-candidate.yml` 仅手动构建候选源码、插件 ZIP 和校验和，上传为 Actions artifact，不发布镜像或更改网站。`publish-images.yml` 在完整稳定版验收、许可证和版本校验通过后才发布 `v版本` / `sha-提交` 镜像；固定源码提交写入 app 的 version.json，两个架构的实际 digest 作为 artifact 保存。不会自动更改 `latest`。所有端的公开产物关联齐全后再单独提升稳定渠道，不能让候选版或半次失败的镜像发布影响旧用户。当前 RC 的正式发行检查会因尚未完成的验收而拒绝发布。
-
-工作流配置依据：[Docker metadata-action flavor](https://github.com/docker/metadata-action#flavor-input)、[GitHub Actions artifacts](https://docs.github.com/en/actions/how-tos/store-and-share-data)。流程存在不代表这些镜像已经公开发布。
-
-网站AI转发支持阿里云北京工作空间的OpenAI接口：`https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`，WorkspaceId须为ws-开头的工作空间ID。仅此官方主机模式、HTTPS默认端口及完整路径可用，不接受任意主机、其他路径或Token Plan接口。依据[阿里云Base URL说明](https://help.aliyun.com/zh/model-studio/base-url)；实际提供商调用及受限地址回归已通过，三端真实界面验收仍单独记录。
+正式包需要相同产品版本、固定源码提交、干净源码构建及对应验收。修改中的构建标记为 `development / modified`，正式打包检查会拒绝它；仅有相同的 `version.json` commit 字段不能证明源码归档与生成文件相同。发布时把网站部署与两个镜像的不可变 digest 写入最终发行清单，以该清单确认各端关联。

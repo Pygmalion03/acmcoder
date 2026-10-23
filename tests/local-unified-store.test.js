@@ -1,7 +1,30 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';import os from 'node:os';import path from 'node:path';
-import {createLocalStore} from '../src/server/unified-store.js';
+import {createFileDatabaseFactory,createLocalStore} from '../src/server/unified-store.js';
 const key={problemId:'sum',language:'python'},draft={...key,code:'原代码',stdin:'中文输入',expected:'原输出'};
+test('file readonly transactions keep committed snapshots and returned objects cannot modify stored state',async()=>{
+ const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'acmcoder-read-snapshot-'));
+ let block=false,releaseWrite,writing,beganWrite;
+ const entered=new Promise(resolve=>{beganWrite=resolve;}),gate=new Promise(resolve=>{releaseWrite=resolve;});
+ const value=request=>new Promise((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+ const done=transaction=>new Promise((resolve,reject)=>{transaction.oncomplete=resolve;transaction.onabort=()=>reject(transaction.error);});
+ try{
+  const factory=createFileDatabaseFactory({dataDir,beforeCommit:async({phase})=>{if(block&&phase==='beforeJournal'){beganWrite();await gate;}}});
+  const opening=factory.open('snapshot-test',1);opening.onupgradeneeded=()=>opening.result.createObjectStore('rows',{keyPath:'id'});
+  const database=await value(opening),initial=database.transaction(['rows'],'readwrite'),initialDone=done(initial);
+  await value(initial.objectStore('rows').put({id:'row',payload:{text:'committed',items:[1]}}));await initialDone;
+  block=true;const writer=database.transaction(['rows'],'readwrite');writing=done(writer);
+  await value(writer.objectStore('rows').put({id:'row',payload:{text:'next',items:[2]}}));await entered;
+  const reader=database.transaction(['rows'],'readonly'),readerDone=done(reader),table=reader.objectStore('rows');
+  const item=await value(table.get('row')),all=await value(table.getAll());
+  assert.equal(item.payload.text,'committed');item.payload.text='tampered';all[0].payload.items.push(99);
+  assert.deepEqual((await value(table.get('row'))).payload,{text:'committed',items:[1]});
+  for(const method of ['put','add','delete'])assert.throws(()=>table[method]({id:'row'}),/INACTIVE_LOCAL_TRANSACTION/);
+  await readerDone;releaseWrite();await writing;
+  const latest=database.transaction(['rows'],'readonly'),latestDone=done(latest);
+  assert.deepEqual((await value(latest.objectStore('rows').get('row'))).payload,{text:'next',items:[2]});await latestDone;
+ }finally{releaseWrite();await writing?.catch(()=>{});await fs.rm(dataDir,{recursive:true,force:true});}
+});
 test('reopening removes persisted deletion-only conflicts while retaining unsynced work against a cloud tombstone',async()=>{
  const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'acmcoder-delete-conflict-'));
  try{

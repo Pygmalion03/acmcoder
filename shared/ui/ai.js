@@ -1,5 +1,6 @@
 import {createAIClient,normalizeProvider} from '../ai.js';
 import {createCredentialVault} from '../credential-vault.js';
+import {readConversationPage} from '../conversations.js';
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export async function createAIPanel({store,adapter}){
  const vault=createCredentialVault({name:`acmcoder-ai-vault-v1:${store.namespace}`}),client=createAIClient({store,credentials:vault,transport:adapter.transport});
@@ -28,23 +29,34 @@ export async function createAIPanel({store,adapter}){
    $('#ai-test').onclick=async()=>{const target=$('#ai-test');target.disabled=true;const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);try{const key=vault.get(provider.baseUrl);if(!key)throw new Error('请先保存或解锁密钥。');await adapter.transport({provider,key,messages:[{role:'user',content:'Reply OK.'}],signal:controller.signal});status('连接成功，模型已返回文本。');}catch(error){status(error.message);}finally{clearTimeout(timeout);target.disabled=false;}};
    return;
   }
-  const captured=current,id=`${problemId}--${language}`,record=await store.getRecord({kind:'conversation',id});let input=await store.getMeta(`ai-input:${id}`)||{};
-  if(current!==captured)return;
-  container.innerHTML=`<h3>AI 问答</h3><p class="muted">按你的问题直接回答，代码由你决定如何修改。</p><div class="ai-history-toolbar"><span id="ai-history-range" class="muted"></span><div class="actions"><button id="ai-older">更早的对话</button><button id="ai-newer">更新的对话</button><button id="ai-latest">回到最新</button></div></div><div id="ai-messages" role="region" aria-label="AI 对话历史" tabindex="0"></div><label>你的问题<textarea id="ai-question" maxlength="12000">${escape(input.question||'')}</textarea></label><label><input id="ai-context" type="checkbox" ${input.includeContext?'checked':''}> 附带当前题面、代码和输入</label><div class="actions"><button id="ai-send" ${pending.has(id)?'disabled':''}>发送</button><button id="ai-cancel">停止回答</button></div><p id="ai-chat-status" role="status">${pending.has(id)?'正在等待模型回答…':vault.status()==='ready'?'':'请到设置与数据中配置或解锁 API 密钥。'}</p>`;
+  const captured=current,id=`${problemId}--${language}`;let input=await store.getMeta(`ai-input:${id}`)||{};
+  if(panel!==container||current!==captured)return;
+  container.innerHTML=`<h3>AI 问答</h3><p class="muted">按你的问题直接回答，代码由你决定如何修改。</p><div class="ai-history-toolbar"><span id="ai-history-range" class="muted" role="status"></span><div class="actions"><button id="ai-older">更早的对话</button><button id="ai-newer">更新的对话</button><button id="ai-latest">回到最新</button></div></div><div id="ai-messages" role="region" aria-label="AI 对话历史" tabindex="0"></div><label>你的问题<textarea id="ai-question" maxlength="12000">${escape(input.question||'')}</textarea></label><label><input id="ai-context" type="checkbox" ${input.includeContext?'checked':''}> 附带当前题面、代码和输入</label><div class="actions"><button id="ai-send" ${pending.has(id)?'disabled':''}>发送</button><button id="ai-cancel">停止回答</button></div><p id="ai-chat-status" role="status">${pending.has(id)?'正在等待模型回答…':vault.status()==='ready'?'':'请到设置与数据中配置或解锁 API 密钥。'}</p>`;
   const $=s=>container.querySelector(s),status=t=>{if(panel===container&&current===captured)$('#ai-chat-status').textContent=t;};
-  const messages=record?.payload.messages||[],pageSize=20;let end=messages.length;
-  const showHistory=(atLatest=false)=>{
-   const start=Math.max(0,end-pageSize),transcript=$('#ai-messages');
-   transcript.innerHTML=messages.slice(start,end).map(m=>`<div class="ai-message"><strong>${m.role==='user'?'你':'AI'}</strong><pre>${escape(m.content)}</pre></div>`).join('')||'<p class="muted ai-empty">还没有对话，从下面开始提问。</p>';
-   $('#ai-history-range').textContent=messages.length?`第 ${start+1}–${end} 条 · 共 ${messages.length} 条，完整历史已保留`:'对话会自动保存';
-   $('#ai-older').disabled=start===0;$('#ai-newer').disabled=end===messages.length;$('#ai-latest').disabled=end===messages.length;
-   transcript.scrollTop=atLatest?transcript.scrollHeight:0;
-  };
-  $('#ai-older').onclick=()=>{end=Math.max(0,end-pageSize);showHistory();};
-  $('#ai-newer').onclick=()=>{end=Math.min(messages.length,end+pageSize);showHistory(end===messages.length);};
-  $('#ai-latest').onclick=()=>{end=messages.length;showHistory(true);};
-  showHistory(true);
-  const drawer=container.closest('.practice-ai');if(drawer)drawer.ontoggle=()=>{if(drawer.open&&end===messages.length)$('#ai-messages').scrollTop=$('#ai-messages').scrollHeight;};
+  let cursors=[null],pageIndex=0,nextCursor=null,pageRequest=0,historyFailed=false;
+  const isCurrent=()=>panel===container&&current===captured;
+  function historyControls(loading=false){
+   $('#ai-older').disabled=loading||!nextCursor;$('#ai-newer').disabled=loading||pageIndex===0;$('#ai-latest').disabled=loading||pageIndex===0&&!historyFailed;
+  }
+  async function loadHistory(index,cursor){
+   const request=++pageRequest;historyControls(true);$('#ai-history-range').textContent='正在读取对话…';
+   try{
+    const page=await readConversationPage(store,{problemId,language,cursor,pageSize:20});
+    if(!isCurrent()||request!==pageRequest)return;
+    cursors=[...cursors.slice(0,index),cursor];pageIndex=index;nextCursor=page.nextCursor;historyFailed=false;
+    const transcript=$('#ai-messages');
+    transcript.innerHTML=page.messages.map(m=>`<div class="ai-message"><strong>${m.role==='user'?'你':'AI'}</strong><pre>${escape(m.content)}</pre></div>`).join('')||'<p class="muted ai-empty">还没有对话，从下面开始提问。</p>';
+    $('#ai-history-range').textContent=page.messages.length?`本页 ${page.messages.length} 条 · 完整历史已保留`:'最近对话 · 对话会自动保存';
+    transcript.scrollTop=index===0?transcript.scrollHeight:0;
+   }catch(error){
+    if(!isCurrent()||request!==pageRequest)return;
+    historyFailed=true;$('#ai-history-range').textContent=`对话读取失败：${error.message}；可点“回到最新”重试。`;
+   }finally{if(isCurrent()&&request===pageRequest)historyControls();}
+  }
+  $('#ai-older').onclick=()=>nextCursor?loadHistory(pageIndex+1,nextCursor):undefined;
+  $('#ai-newer').onclick=()=>pageIndex>0?loadHistory(pageIndex-1,cursors[pageIndex-1]):undefined;
+  $('#ai-latest').onclick=()=>loadHistory(0,null);
+  const drawer=container.closest('.practice-ai');if(drawer)drawer.ontoggle=()=>{if(isCurrent()&&drawer.open&&pageIndex===0)$('#ai-messages').scrollTop=$('#ai-messages').scrollHeight;};
   const saveInput=()=>{const question=$('#ai-question').value;input={...input,requestId:input.question===question?input.requestId:undefined,question,includeContext:$('#ai-context').checked};return store.setMeta(`ai-input:${id}`,input);};
   $('#ai-question').oninput=()=>saveInput().catch(error=>status(error.message));$('#ai-context').onchange=()=>saveInput().catch(error=>status(error.message));
   $('#ai-cancel').onclick=()=>{if(pending.has(id))client.cancel(pending.get(id));};
@@ -58,11 +70,12 @@ export async function createAIPanel({store,adapter}){
    }catch(error){status(error.message);pending.delete(id);if(panel===container&&current===captured)$('#ai-send').disabled=false;return;}
    pending.delete(id);if(panel===container&&current===captured)await mount(container,captured);
   };
+  await loadHistory(0,null);
  }
  return {mount,async findProblems(text,{original}){
   const key=vault.get(provider.baseUrl);if(!key)throw new Error('请先到设置中配置或解锁 API 密钥。');
   finding?.abort();const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),60000);finding=controller;
   try{const result=await adapter.transport({provider,key,signal:controller.signal,messages:[{role:'system',content:original?'用户明确要求原创。只返回 JSON {"candidates":[{"title":"题名","sourceKind":"ai-original","statement":"完整 ACM 题面及输入输出格式","cases":[{"stdin":"样例输入","expected":"样例输出"}]}]}。不得声称来自 LeetCode。':'匹配 LeetCode 题目，只返回 JSON {"candidates":[{"title":"题名","sourceUrl":"https://leetcode.cn/problems/slug/"}]}，最多五项。不编造已抓取或已验证，不输出题面。没有把握返回空 candidates。'},{role:'user',content:text}]});return result.message;}
   finally{clearTimeout(timeout);if(finding===controller)finding=null;}
- },destroy:()=>{client.cancelAll();finding?.abort();}};
+ },destroy:()=>{panel=null;current=null;client.cancelAll();finding?.abort();}};
 }

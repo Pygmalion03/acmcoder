@@ -3,19 +3,29 @@ import {normalizeProblem} from '../import.js';
 import {createAIPanel} from './ai.js';
 import {resolveProblemRequest,verifyProblemCandidate} from '../ai-import.js';
 import {normalizeBackup} from '../backup.js';
+import {getDailyQueue,completeDailyProblem,deferDailyProblem,replaceDailyProblem} from '../daily-queue.js';
+import {normalizeCases,runCaseBatch,queryRunHistory} from '../workbench.js';
+import {mountCodeEditor} from './editor.js';
+import {mountWorkspaceLayout} from './workspace-layout.js';
+import {renderPractice,renderCaseControls,renderCaseResults,renderRunHistory,renderDiff} from './workbench-view.js';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const example={kind:'problem',id:'sum',payload:{title:'两个整数相加',statement:'读取两个整数，输出它们的和。\n\n输入：一行两个整数，以空格分隔。\n输出：两个整数的和。',sourceKind:'builtin',tags:['入门','标准输入输出'],rawSamples:['输入：3 5\n输出：8'],cases:[{stdin:'3 5\n',expected:'8\n'}],archivedAt:null}};
 export async function mountWorkspace(root,{store,runner,account,catalog=[],client={},clock=()=>new Date()}) {
   const ai=client.ai?await createAIPanel({store,adapter:client.ai}):null;
   const languages=client.languages||['python'];let language=languages[0];
-  let view='today',selected='sum',filter='mine',query='',draft=null,runId=null,noticeTimer=null,navigation=0;
+  let view='today',selected='sum',filter='mine',query='',draft=null,runId=null,noticeTimer=null,navigation=0,runEpoch=0;
+  let saveState='已保存到此设备';
+  let editor=null,layout=null,batchController=null,selectedCase=-1,practicePanel='code';
+  const layoutPreferences=await store.getMeta('workspace-layout')||{};
+  let historyFilters={problemId:'',language:'',day:''},runHistoryPage=1,runHistoryOpen=false;
   let releaseInfo;
   let pendingBackup=null;
   let legacyProgress=new Map();
   let problems=[],settings={theme:'light',timezone:'Asia/Shanghai',count:3},output='',errorOutput='',importKind='manual',importCases=[],candidates=[];
   let findText=await store.getMeta('problem-request')||'';
   let last=await store.getMeta('location');
+  let lastPractice=await store.getMeta('last-practice');
   const savedSettings=await store.getRecord({kind:'settings',id:'preferences'});
   if(savedSettings)settings={...settings,...savedSettings.payload};
   document.documentElement.dataset.theme=settings.theme;
@@ -34,16 +44,31 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   function progressLabel(id){const row=legacyProgress.get(id);return row?`旧版自测通过 ${row.successes} 次`:'';}
   await refresh();
   if(last&&problems.some(p=>p.id===last.problemId)){selected=last.problemId;view=last.view;if(languages.includes(last.language))language=last.language;}
+  if(!lastPractice&&last?.view==='practice'&&problems.some(p=>p.id===last.problemId)){
+    lastPractice={problemId:last.problemId,language:last.language};await store.setMeta('last-practice',lastPractice);
+  }
   const $=id=>root.querySelector(`#${id}`);
   const problem=()=>problems.find(p=>p.id===selected);
   const button=(action,label,cls='',id='')=>`<button type="button" class="${cls}" data-action="${action}"${id?` data-id="${escape(id)}"`:''}>${label}</button>`;
   function toast(message){clearTimeout(noticeTimer);const el=$('notice');el.textContent=message;el.hidden=false;noticeTimer=setTimeout(()=>{el.hidden=true;},7000);}
   const day=(date=clock())=>new Intl.DateTimeFormat('en-CA',{timeZone:settings.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
   function tomorrow(){const [y,m,d]=day().split('-').map(Number);return new Date(Date.UTC(y,m-1,d+1)).toISOString().slice(0,10);}
-  root.innerHTML=`<header class="glass"><div class="brand"><b>✦</b>ACMCoder</div><nav aria-label="工作区">${['today','library','practice'].map((name,i)=>button(`nav-${name}`,['☀ 今日','▤ 题库','⌘ 练习'][i])).join('')}</nav><div class="head-actions">${button('theme','◐','quiet')}${button('nav-settings','设置与数据','quiet')}</div></header><main id="content"></main><div id="notice" class="status-message" role="status" hidden></div>
+  root.innerHTML=`<header class="glass"><div class="brand"><b>✦</b>ACMCoder</div><nav aria-label="工作区">${['today','library','practice','history'].map((name,i)=>button(`nav-${name}`,['☀ 今日','▤ 题库','⌘ 练习','◷ 记录'][i])).join('')}</nav><div class="head-actions">${button('theme','◐','quiet')}${button('nav-settings','设置与数据','quiet')}</div></header><main id="content"></main><div id="notice" class="status-message" role="status" hidden></div>
     <dialog id="import-dialog"><div class="dialog-title"><h2>导入题目</h2>${button('close-import','✕','quiet')}</div><p class="muted">保留题面和原始样例，ACM 输入由你自行调整。</p><label>原题链接<input id="import-url" type="url" placeholder="https://leetcode.cn/problems/…/"></label>${button('fetch-import','读取公开题面','quiet')}<label>题目名称<input id="import-title" maxlength="160" placeholder="例如：两数之和"></label><label>题面<textarea id="import-statement" placeholder="粘贴题面，或从原题链接读取"></textarea></label><label>原始样例<textarea id="import-samples" placeholder="保留原平台样例，不自动转换函数参数"></textarea></label><label>ACM 样例输入（可选）<textarea id="import-stdin"></textarea></label><label>ACM 样例期望输出（可选）<textarea id="import-expected"></textarea></label><p id="import-note" class="muted" role="status"></p><footer>${button('close-import','取消','quiet')}${button('save-import','导入并开始练习','primary')}</footer></dialog>
     <dialog id="delete-dialog"><h2>彻底删除这道题？</h2><p id="delete-scope"></p><p>本机的题面、草稿、历史、对话与复习安排将一并删除，每日计划中移除该题；已连接账号时会同步删除。此操作无法撤销；需要保留时请先导出备份。</p><footer>${button('cancel-delete','取消')}${button('confirm-delete','彻底删除','danger')}</footer></dialog>`;
-  async function persistLocation(){await store.setMeta('location',{view,problemId:selected,language});}
+  const status=document.createElement('div');status.className='workspace-status';status.innerHTML='<span id="workspace-save-status" role="status"></span><button type="button" class="quiet" data-action="nav-settings"><span id="workspace-sync-status"></span></button>';
+  root.querySelector('header').after(status);
+  function refreshStatus(){
+    $('workspace-save-status').textContent=saveState;
+    $('workspace-sync-status').textContent=account?.user?`${account.user.login} · ${account.statusText()}`:'匿名练习 · 仅保存在此设备';
+    if($('sync-status')&&account?.user)$('sync-status').textContent=account.statusText();
+  }
+  function setSaveState(value){saveState=value;if($('save-status'))$('save-status').textContent=value;refreshStatus();}
+  async function persistLocation(){
+    await store.setMeta('location',{view,problemId:selected,language});
+    if(view==='practice'){lastPractice={problemId:selected,language,visitedAt:clock().getTime()};await store.setMeta('last-practice',lastPractice);}
+  }
+  function cancelRun(){const id=runId,batch=batchController;runId=null;batchController=null;runEpoch++;batch?.abort();if(id&&!batch)runner.cancel(id);}
   async function fetchSource(url){
     if(client.fetchProblem)return client.fetchProblem(url);
     const response=await fetch('/api/import/fetch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url})});const result=await response.json();if(!response.ok)throw new Error(result.error||'原题读取失败。');return result;
@@ -55,51 +80,118 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
     $('import-dialog').showModal();
   }
   async function saveEditor(){
+    editor?.flush();
     if(!draft||!$('code'))return;
     const current={...draft,code:$('code').value,stdin:$('stdin').value,expected:$('expected').value};
     draft=current;
-    $('save-status').textContent='正在保存…';
-    try{await store.saveDraft(current);if(draft===current&&$('save-status'))$('save-status').textContent='已保存到此设备';}
-    catch(error){if($('save-status'))$('save-status').textContent='保存失败，请保留当前页面';throw error;}
+    setSaveState('正在保存…');
+    try{await store.saveDraft(current);if(draft===current)setSaveState('已保存到此设备');}
+    catch(error){if(draft===current)setSaveState('保存失败，请保留当前页面');throw error;}
   }
   async function navigate(next,id){
     const epoch=++navigation;
     if(view==='practice')await saveEditor();
-    if(runId){runner.cancel(runId);runId=null;}
+    cancelRun();
     if(epoch!==navigation)return;
-    view=next;if(id)selected=id;
+    view=next;if(id)selected=id;selectedCase=-1;runHistoryOpen=false;
+    if(next==='history'){historyFilters={problemId:'',language:'',day:''};runHistoryPage=1;}
     await refresh();
     if(view==='practice'&&!problem()){view='library';}
     await persistLocation();await render();
   }
   async function today(){
-    const active=problems.filter(p=>!p.payload.archivedAt);
-    const reviews=(await store.listRecords({kind:'review'})).filter(r=>r.payload.dueDay<=day()&&!r.payload.completedAt);
-    const plans=(await store.getRecord({kind:'plan',id:`plan-${day()}`}))?.payload.completed||{};
-    const ordered=[...reviews.map(r=>active.find(p=>p.id===r.problemId)).filter(Boolean),...active];
-    const entries=[...new Map(ordered.map(p=>[p.id,p])).values()].slice(0,settings.count);
-    const recent=active.find(p=>p.id===selected)||active[0];
-    return `<div class="hero"><div><div class="eyebrow">YOUR DAILY PRACTICE</div><h1 class="gradient">今天，从一题开始。</h1><p class="muted">把昨天的思路，变成今天能独立写出的代码。</p></div><div class="orb" aria-hidden="true">✦</div></div>${recent?`<section class="continue glass"><div class="continue-icon">⌘</div><div><span class="eyebrow">继续上次练习</span><h3>${escape(recent.payload.title)}</h3><span class="muted">你的代码和输入都留在这里</span></div>${button('practice','继续练习 ↗','primary',recent.id)}</section>`:''}<div class="section-heading"><div><h2>今日安排</h2><span class="muted">${day()} · 按自己的节奏来</span></div><label class="muted">题量 <select id="daily-count">${[1,2,3,4,5].map(n=>`<option ${n===settings.count?'selected':''}>${n}</option>`).join('')}</select></label></div><div class="cards">${entries.map(p=>`<article class="card glass"><span class="tag">${reviews.some(r=>r.problemId===p.id)?'到期复习':'我的题目'}</span><h3>${escape(p.payload.title)}</h3><p class="muted">${escape(p.payload.tags?.join(' · ')||'完整程序 · ACM 输入输出')}</p><div class="card-footer">${button('complete-plan',plans[p.id]?'✓ 已完成':'标记完成','quiet',p.id)}${button('practice','开始 →','',p.id)}</div></article>`).join('')||'<div class="empty">去题库导入第一道题，开始今天的练习。</div>'}</div><div class="section-heading"><span class="muted">复习安排可随时调整，不影响历史记录。</span>${button('nav-library','去题库找题 →','quiet')}</div>`;
+    const {entries,canReplace}=await getDailyQueue({store,day:day(),count:settings.count,lastPractice,timezone:settings.timezone});
+    const recent=problems.find(p=>p.id===lastPractice?.problemId&&!p.payload.archivedAt);
+    const reasons={review:'到期复习',resume:'继续未完成练习',practice:'从我的题库安排'};
+    return `<div class="hero"><div><div class="eyebrow">YOUR DAILY PRACTICE</div><h1 class="gradient">今天，从一题开始。</h1><p class="muted">把昨天的思路，变成今天能独立写出的代码。</p></div><div class="orb" aria-hidden="true">✦</div></div>${recent?`<section class="continue glass"><div class="continue-icon">⌘</div><div><span class="eyebrow">继续上次练习</span><h3>${escape(recent.payload.title)}</h3><span class="muted">你的代码和输入都留在这里</span></div>${button('practice','继续练习 ↗','primary',recent.id)}</section>`:''}<div class="section-heading"><div><h2>今日安排</h2><span class="muted">${day()} · 按自己的节奏来</span></div><label class="muted">题量 <select id="daily-count">${[1,2,3,4,5].map(n=>`<option ${n===settings.count?'selected':''}>${n}</option>`).join('')}</select></label></div><div class="cards">${entries.map(({problem:p,reason,completed})=>`<article class="card glass"><span class="tag">${reasons[reason]||'我的题目'}</span><h3>${escape(p.payload.title)}</h3><p class="muted">${escape(p.payload.tags?.join(' · ')||'完整程序 · ACM 输入输出')}</p><div class="card-footer">${button('complete-plan',completed?'✓ 已完成':'标记完成','quiet',p.id)}${button('practice','开始 →','',p.id)}</div><div class="card-footer">${button('defer-plan','推迟到明天','quiet',p.id)}${canReplace?button('replace-plan','换一道','quiet',p.id):''}</div></article>`).join('')||'<div class="empty">今日暂无待练题目。可以去题库选题，或调整题量。</div>'}</div><div class="section-heading"><span class="muted">当天安排已保存；推迟的题今天不再补回，完成状态和历史始终保留。</span>${button('nav-library','去题库找题 →','quiet')}</div>`;
+  }
+  function libraryRows(){
+    if(filter==='recommend')return catalog.filter(p=>(p.title+' '+p.tags.join(' ')).includes(query)).map(p=>`<article class="row"><div class="row-title"><h3>${escape(p.title)}</h3><div class="muted">${escape(p.tags.join(' · '))}</div></div><span class="tag">${{easy:'简单',medium:'中等',hard:'困难'}[p.difficulty]||''}</span>${button('recommend-import','导入练习 →','',p.leetcodeSlug)}</article>`).join('')||'<div class="empty">没有匹配的推荐题。</div>';
+    const items=problems.filter(p=>filter==='archive'?!!p.payload.archivedAt:!p.payload.archivedAt).filter(p=>(p.payload.title+' '+p.payload.tags?.join(' ')).toLowerCase().includes(query.toLowerCase()));
+    return items.map(p=>`<article class="row"><div class="row-title"><h3>${escape(p.payload.title)}</h3><div class="muted">${escape(p.payload.tags?.join(' · ')||'ACM 完整程序练习')}${legacyProgress.has(p.id)?` · ${escape(progressLabel(p.id))}`:''}</div></div><span class="tag">${p.payload.sourceKind==='builtin'?'内置示例':p.payload.sourceKind==='ai-original'?'AI 原创':p.payload.sourceKind==='verified-source'?'已读取原题':p.payload.sourceUrl?'外部来源':'手动导入'}</span><div class="row-actions">${filter==='archive'?button('restore','恢复','',p.id)+button('delete','彻底删除','danger',p.id):button('practice','练习 →','',p.id)+button('archive','归档','quiet',p.id)}</div></article>`).join('')||'<div class="empty">这里还没有题目。</div>';
   }
   function library(){
-    if(filter==='recommend')return `<div class="hero"><div><div class="eyebrow">DISCOVER YOUR NEXT CHALLENGE</div><h1 class="gradient">下一题，从这里开始。</h1><p class="muted">来自已有高频题目录，导入时读取真实题面。</p></div>${button('open-import','＋ 导入题目','primary')}</div><div class="toolbar"><div class="tabs">${button('filter-mine','我的题库')}<button data-action="filter-recommend" aria-pressed="true">推荐题目</button>${button('filter-archive','已归档')}</div><input id="search" class="search" placeholder="搜索题目或标签" aria-label="搜索题目" value="${escape(query)}"></div><div class="rows glass">${catalog.filter(p=>(p.title+' '+p.tags.join(' ')).includes(query)).map(p=>`<article class="row"><div class="row-title"><h3>${escape(p.title)}</h3><div class="muted">${escape(p.tags.join(' · '))}</div></div><span class="tag">${{easy:'简单',medium:'中等',hard:'困难'}[p.difficulty]||''}</span>${button('recommend-import','导入练习 →','',p.leetcodeSlug)}</article>`).join('')||'<div class="empty">没有匹配的推荐题。</div>'}</div>`;
-    const items=problems.filter(p=>filter==='archive'?!!p.payload.archivedAt:!p.payload.archivedAt).filter(p=>(p.payload.title+' '+p.payload.tags?.join(' ')).toLowerCase().includes(query.toLowerCase()));
-    return `<div class="hero"><div><div class="eyebrow">YOUR PROBLEM LIBRARY</div><h1 class="gradient">让每一道题，都有下文。</h1><p class="muted">收集、练习、重写。你的积累都留在这里。</p></div>${button('open-import','＋ 导入题目','primary')}</div><div class="toolbar"><div class="tabs"><button data-action="filter-mine" aria-pressed="${filter==='mine'}">我的题库</button><button data-action="filter-recommend" aria-pressed="false">推荐题目</button><button data-action="filter-archive" aria-pressed="${filter==='archive'}">已归档</button></div><input id="search" class="search" placeholder="搜索题目或标签" aria-label="搜索题目" value="${escape(query)}"></div><div class="rows glass">${items.map(p=>`<article class="row"><div class="row-title"><h3>${escape(p.payload.title)}</h3><div class="muted">${escape(p.payload.tags?.join(' · ')||'ACM 完整程序练习')}${legacyProgress.has(p.id)?` · ${escape(progressLabel(p.id))}`:''}</div></div><span class="tag">${p.payload.sourceKind==='builtin'?'内置示例':p.payload.sourceKind==='ai-original'?'AI 原创':p.payload.sourceKind==='verified-source'?'已读取原题':p.payload.sourceUrl?'外部来源':'手动导入'}</span><div class="row-actions">${filter==='archive'?button('restore','恢复','',p.id)+button('delete','彻底删除','danger',p.id):button('practice','练习 →','',p.id)+button('archive','归档','quiet',p.id)}</div></article>`).join('')||'<div class="empty">这里还没有题目。</div>'}</div>`;
+    const recommended=filter==='recommend';
+    return `<div class="hero"><div><div class="eyebrow">${recommended?'DISCOVER YOUR NEXT CHALLENGE':'YOUR PROBLEM LIBRARY'}</div><h1 class="gradient">${recommended?'下一题，从这里开始。':'让每一道题，都有下文。'}</h1><p class="muted">${recommended?'来自已有高频题目录，导入时读取真实题面。':'收集、练习、重写。你的积累都留在这里。'}</p></div>${button('open-import','＋ 导入题目','primary')}</div><div class="toolbar"><div class="tabs"><button data-action="filter-mine" aria-pressed="${filter==='mine'}">我的题库</button><button data-action="filter-recommend" aria-pressed="${recommended}">推荐题目</button><button data-action="filter-archive" aria-pressed="${filter==='archive'}">已归档</button></div><input id="search" class="search" placeholder="搜索题目或标签" aria-label="搜索题目" value="${escape(query)}"></div><div id="library-rows" class="rows glass">${libraryRows()}</div>`;
   }
   async function practice(){
     const p=problem();
     draft=await store.getDraft({problemId:selected,language});
     if(!draft)draft=await store.saveDraft({problemId:selected,language,code:templates[language],stdin:p.payload.cases?.[0]?.stdin||'',expected:p.payload.cases?.[0]?.expected||'',mode:'normal'});
-    return `<div class="practice-heading"><div><span class="eyebrow">当前练习 · ACM</span><h2>${escape(p.payload.title)}</h2>${legacyProgress.has(p.id)?`<p class="muted">${escape(progressLabel(p.id))} · 记录已保留</p>`:''}</div><span id="save-status" class="save-state">已保存到此设备</span></div><div class="workspace"><section class="glass"><div class="panel-head"><strong>题目</strong><span class="tag">完整程序</span></div><div class="statement-body">${escape(p.payload.statement||'暂无题面，请参考原题链接。')}${p.payload.sourceUrl?`<a class="source-url" href="${escape(p.payload.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看原题 ↗</a>`:''}${p.payload.rawSamples?.length?`<h3>原始样例</h3><pre>${escape(p.payload.rawSamples.join('\n\n'))}</pre>`:''}<p class="muted">在右侧编写完整程序，自行处理标准输入输出。</p></div></section><section class="glass editor-panel"><div class="panel-head"><strong>${languages.length>1?`<select id="practice-language" aria-label="编程语言">${languages.map(l=>`<option value="${l}" ${l===language?'selected':''}>${{python:'Python',cpp:'C++',java:'Java'}[l]}</option>`).join('')}</select>`:'Python'}</strong><div class="editor-tools">${button('history','历史对照','quiet')}${button('rewrite','↻ 重新手撕','quiet')}</div></div>${draft.mode==='rewrite'?`<div class="rewrite-note"><span>原代码已保留，先独立完成这次重写。</span>${button('discard','放弃本次重写','quiet')}${button('finish','结束并对照','')}</div>`:''}<textarea id="code" class="code-editor" aria-label="代码" spellcheck="false" autocapitalize="off">${escape(draft.code)}</textarea><div class="editor-footer"><span class="muted">${escape(client.description||'浏览器内运行 · 最长 5 秒')}</span><div>${button('stop','停止','quiet')}${button('run','▷ 运行自测','primary')}</div></div><div class="test-grid"><label>标准输入 stdin<textarea id="stdin" spellcheck="false">${escape(draft.stdin)}</textarea></label><label>期望输出（可留空）<textarea id="expected" spellcheck="false">${escape(draft.expected)}</textarea></label></div><div id="result" class="result"><span id="result-label">运行后在这里查看结果</span><pre id="stdout"></pre><pre id="stderr"></pre></div></section></div><div id="comparison"></div><div class="section-heading">${button('review','明天再练','quiet')}${client.handoff?button('handoff',client.handoffLabel||'在另一端继续 ↗','quiet'):''}<span class="muted">样例通过仅代表当前自测，不代表原平台隐藏测试 AC。</span></div>`;
+    if(selectedCase>=(p.payload.cases?.length||0))selectedCase=-1;
+    return renderPractice({problem:p,draft,languages,language,progress:progressLabel(p.id),description:client.description,selectedCase})+`<div class="section-heading">${button('review','明天再练','quiet')}${client.handoff?button('handoff',client.handoffLabel||'在另一端继续 ↗','quiet'):''}<span class="muted">样例通过仅代表当前自测，不代表原平台隐藏测试 AC。</span></div>`;
   }
-  const versionLabel=()=>releaseInfo?`${releaseInfo.version}${releaseInfo.channel==='candidate'?' · 候选版':''} · ${releaseInfo.commit?.slice(0,7)} · ${releaseInfo.languages?.join(' / ')}`:'';
+  async function runHistoryHTML(){
+    const page=queryRunHistory(await store.listRecords({kind:'run'}),{...historyFilters,timeZone:settings.timezone,page:runHistoryPage});
+    runHistoryPage=page.page;
+    return renderRunHistory({page,problems,languages,filters:historyFilters,timeZone:settings.timezone});
+  }
+  async function showRunHistory(){
+    const context=navigation,html=await runHistoryHTML();
+    if(context!==navigation)return;
+    const container=view==='history'?$('content'):$('run-history');
+    if(container){container.innerHTML=html;runHistoryOpen=true;}
+  }
+  function resetResult(){
+    output='';errorOutput='';$('stdout').textContent='';$('stderr').textContent='';$('result').dataset.state='';
+    $('result-label').textContent='运行后在这里查看结果';$('case-results').innerHTML='';
+  }
+  async function saveCase(action){
+    await saveEditor();
+    const current=problem(),cases=normalizeCases(current.payload.cases||[]);
+    if(action!=='case-add'&&(selectedCase<0||selectedCase>=cases.length))throw new Error('请先选择一组已保存的样例。');
+    if(action==='case-add')cases.push({stdin:$('stdin').value,expected:$('expected').value});
+    if(action==='case-update')cases[selectedCase]={stdin:$('stdin').value,expected:$('expected').value};
+    if(action==='case-delete')cases.splice(selectedCase,1);
+    const updated={...current,payload:{...current.payload,cases:normalizeCases(cases)}};
+    await store.putRecord(updated);problems=problems.map(p=>p.id===updated.id?updated:p);
+    selectedCase=action==='case-add'?cases.length-1:action==='case-delete'?-1:selectedCase;
+    cancelRun();resetResult();$('case-controls').innerHTML=renderCaseControls(cases,selectedCase);
+    $('run-all').disabled=!cases.length;
+    toast(action==='case-delete'?'已移除样例；当前输入和历史仍保留。':'样例已保存到题目。');
+  }
+  async function runAll(){
+    cancelRun();const epoch=runEpoch;await saveEditor();if(epoch!==runEpoch||view!=='practice')return;
+    const captured={...draft},cases=normalizeCases(problem().payload.cases||[]);
+    if(!cases.length)throw new Error('请先保存至少一组自测样例。');
+    const controller=new AbortController();batchController=controller;
+    const visible=()=>epoch===runEpoch&&view==='practice'&&selected===captured.problemId;
+    const results=[];resetResult();layout?.setPanel('result');
+    try{
+      const batch=await runCaseBatch({runner,language:captured.language,code:captured.code,cases,signal:controller.signal,clock:()=>clock().getTime(),
+        onEvent(event){
+          if(!visible())return;
+          if(event.type==='case-start'){runId=event.id;output='';errorOutput='';$('stdout').textContent='';$('stderr').textContent='';$('result-label').textContent=`正在运行样例 ${event.caseIndex+1} / ${cases.length}…`;}
+          if(event.type==='stdout'){output+=event.text;$('stdout').textContent=output;}
+          if(event.type==='stderr'){errorOutput+=event.text;$('stderr').textContent=errorOutput;}
+        },
+        async onResult(result){
+          results.push(result);
+          if(visible())$('case-results').innerHTML=renderCaseResults(results,cases.length);
+          if(!await store.getMeta(`deleted:${captured.problemId}`)){
+            const {id,language:resultLanguage,...payload}=result;
+            await store.putRecord({kind:'run',id,problemId:captured.problemId,language:resultLanguage,payload});
+          }
+        }});
+      if(visible()){
+        const passed=batch.results.filter(r=>r.status==='self_pass').length;
+        $('result-label').textContent=batch.cancelled?'已停止':`全部样例运行完成：${passed} / ${batch.total} 组通过`;
+        $('result').dataset.state=!batch.cancelled&&passed===batch.total?'success':'';
+        if(runHistoryOpen)await showRunHistory();
+      }
+    }catch(error){if(visible()){$('result-label').textContent=`批量运行未完成：${error.message}`;$('result').dataset.state='error';}throw error;}
+    finally{if(batchController===controller){batchController=null;runId=null;}}
+  }
+  const versionLabel=()=>releaseInfo?`${releaseInfo.version}${releaseInfo.channel==='development'?' · 开发构建（未发布）':releaseInfo.channel==='candidate'?' · 候选版':''} · ${releaseInfo.commit?.slice(0,7)} · ${releaseInfo.languages?.join(' / ')}`:'';
   function settingsPage(){
     if(releaseInfo===undefined){releaseInfo=null;fetch(new URL('../../version.json',import.meta.url),{signal:AbortSignal.timeout(3000)}).then(response=>response.ok?response.json():null).then(info=>{releaseInfo=info;const label=$('release-version');if(label)label.textContent=versionLabel();}).catch(()=>{});}
     return `<div class="settings"><div class="hero"><div><span class="eyebrow">YOUR WORKSPACE</span><h1 class="gradient">设置与数据</h1><p class="muted">你写下的内容，由你保留。</p><p id="release-version" class="muted">${escape(versionLabel())}</p></div></div><section class="glass"><h3>本机数据</h3><p class="muted">${escape(client.storage||'当前保存在此浏览器。清除网站数据会移除未备份的内容。')}</p><div class="setting-row"><div><strong>完整备份</strong><small>包括题目、草稿、历史、对话和待处理恢复冲突</small></div>${button('export','导出备份')}</div><div class="setting-row"><div><strong>恢复备份</strong><small>合并导入，已有冲突不会被覆盖</small></div><label><input id="backup-file" type="file" accept="application/json,.json"></label></div></section><section class="glass"><h3>待处理的恢复</h3><p class="muted">备份恢复或匿名练习合并产生的冲突可随时查看。</p>${button('backup-conflicts','查看恢复冲突')}</section><section class="glass"><h3>练习偏好</h3><div class="setting-row"><label for="timezone">日期与复习时区</label><select id="timezone">${['Asia/Shanghai','Asia/Tokyo','Europe/London','America/New_York','America/Los_Angeles'].map(z=>`<option ${z===settings.timezone?'selected':''}>${z}</option>`).join('')}</select></div><div class="setting-row"><span>界面主题</span>${button('theme',settings.theme==='dark'?'切换浅色':'切换深色')}</div></section><section class="glass"><h3>账号与同步</h3>${account?.user?`<p>已连接 ${escape(account.user.login)} · 本机独立保存账号副本</p><p id="sync-status" class="muted">${escape(account.statusText())}</p><div class="actions">${button('sync','立即同步')}${button('conflicts','查看冲突')}${button('merge-guest','合并此设备的匿名练习')}${button('logout','退出账号')}${account.connect?`${account.rememberOption?`<label><input id="remember-device" type="checkbox" ${account.remember?'checked':''}> 保持连接，最多 30 天</label>`:''}${button('connect-account','重新连接账号 ↗')}`:''}${account.devices?button('devices','已连接的设备'):''}${account.usage?button('cloud-usage','查看云端容量'):''}${account.deleteCloud?button('delete-account','删除云端账号数据','danger'):''}</div><p class="muted">合并只在你点击后进行；冲突内容保留双方，可单独导出。</p>`:`<p class="muted">匿名练习保存在当前浏览器。登录后可以跨设备接续；登录不会自动上传匿名内容。</p>${account?.connect?`${account.rememberOption?'<label><input id="remember-device" type="checkbox"> 保持连接，最多 30 天</label>':''}${button('connect-account','连接 GitHub 账号 ↗')}`:account?.loginAvailable?'<a href="/api/auth/github/start">使用 GitHub 连接账号 ↗</a>':'<p class="muted">账号连接尚未配置；匿名练习可正常使用。</p>'}`}</section><section class="glass"><h3>数据与隐私</h3><p class="muted">查看设备保存、云端同步、API Key、备份和删除规则。</p><a href="${escape(new URL('../privacy.html',import.meta.url).href)}" target="_blank" rel="noopener noreferrer">阅读数据与隐私说明 ↗</a></section><section class="glass"><h3>AI</h3><p class="muted">自带 API 正在接入。</p><a href="${escape(client.legacyUrl||'/legacy.html')}">打开原版界面 ↗</a></section></div>`;}
   async function render(){
+    editor?.destroy();editor=null;layout?.destroy();layout=null;
+    refreshStatus();
     root.dataset.view=view;
     root.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.action===`nav-${view}`?'page':'false'));
-    $('content').innerHTML=view==='today'?await today():view==='library'?library():view==='practice'?await practice():settingsPage();
+    $('content').innerHTML=view==='today'?await today():view==='library'?library():view==='practice'?await practice():view==='history'?await runHistoryHTML():settingsPage();
     if(view==='library'){
       const finder=document.createElement('section');finder.className='glass finder-panel';finder.innerHTML=`<h3>想练哪道题？</h3><div class="finder-form"><label>找题描述<input id="problem-request" maxlength="2000" value="${escape(findText)}" placeholder="例如：导入 LeetCode 二分查找，或生成一道原创求和题"></label><div class="actions">${button('find-problems','查找题目','primary')}</div></div><p id="finder-status" role="status" class="muted">优先找已有题目和目录；AI 建议在读取原题前保持未验证。</p><div id="finder-candidates"></div>`;$('content').querySelector('.hero').after(finder);
     }
@@ -114,7 +206,10 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       }else $('content').querySelector('.settings').append(panel);
       await ai.mount(panel,view==='practice'?{problemId:selected,language,context:()=>({title:problem()?.payload.title,statement:problem()?.payload.statement,code:$('code')?.value,stdin:$('stdin')?.value,language})}:{});
     }
-    if(view==='practice'){$('code').addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();const el=event.target;el.setRangeText('    ',el.selectionStart,el.selectionEnd,'end');saveEditor().catch(e=>toast(e.message));}});}
+    if(view==='practice'){
+      editor=mountCodeEditor({textarea:$('code'),language,onRun:()=>run().catch(error=>toast(error.message)),onChange:()=>saveEditor().catch(error=>toast(error.message)),onStatus:text=>{if($('editor-status'))$('editor-status').textContent=text;}});
+      layout=mountWorkspaceLayout({shell:$('practice-shell'),workspace:$('practice-workspace'),splitter:$('workspace-splitter'),initialWidth:layoutPreferences.width,initialPanel:practicePanel,onPanelChange:panel=>{practicePanel=panel;},onWidthChange:width=>{layoutPreferences.width=width;store.setMeta('workspace-layout',layoutPreferences).catch(error=>toast(error.message));}});
+    }
   }
   let history=[];let historyCursor=null;
   async function compare(attemptId,older=false){
@@ -124,10 +219,13 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
     const previous=attempts.find(a=>a.id===(attemptId||draft.previousAttemptId))||attempts.find(a=>a.reason==='before-rewrite')||attempts[0];
     if(!previous){toast('尚未开始过重写；点击“重新手撕”会先保留当前代码。');return;}
     $('comparison').innerHTML=`<div class="section-heading"><label>历史版本 <select id="history-version">${attempts.map(a=>`<option value="${escape(a.id)}" ${a.id===previous.id?'selected':''}>${escape(new Date(a.createdAt).toLocaleString())} · ${a.reason==='before-rewrite'?'重写前':a.reason==='completed-rewrite'?'重写完成':'导入记录'}</option>`).join('')}</select></label>${historyCursor?button('more-history','更早记录','quiet'):''}</div><div class="compare"><section class="glass"><div class="panel-head"><strong>上次代码 · 已保留</strong></div><pre>${escape(previous.code)}</pre></section><section class="glass"><div class="panel-head"><strong>本次代码</strong></div><pre>${escape(draft.code)}</pre></section></div>`;
+    $('comparison').innerHTML+=`<section class="glass history-panel"><h3>代码差异 · − 上次 / + 本次</h3>${renderDiff(previous.code,draft.code)}<h3>标准输入差异</h3>${renderDiff(previous.stdin||'',draft.stdin||'')}<h3>期望输出差异</h3>${renderDiff(previous.expected||'',draft.expected||'')}</section>`;
     $('comparison').scrollIntoView({block:'nearest'});
   }
   async function run(){
-    await saveEditor();const captured={...draft};output='';errorOutput='';$('stdout').textContent='';$('stderr').textContent='';$('result').dataset.state='';
+    cancelRun();const epoch=runEpoch;await saveEditor();if(epoch!==runEpoch||view!=='practice')return;
+    const captured={...draft};$('case-results').innerHTML='';output='';errorOutput='';$('stdout').textContent='';$('stderr').textContent='';$('result').dataset.state='';
+    layout?.setPanel('result');
     const id=crypto.randomUUID();runId=id;
     let runOutput='',runError='';
     const result=await runner.run({id,language:captured.language,code:captured.code,stdin:captured.stdin},event=>{
@@ -148,7 +246,9 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
         $('result').dataset.state=!event.outputLimited&&captured.expected!==''&&matches?'success':'';
       }
     });
-    if(!await store.getMeta(`deleted:${captured.problemId}`))await store.putRecord({kind:'run',id,problemId:captured.problemId,language:captured.language,payload:{code:captured.code,stdin:captured.stdin,expected:captured.expected,stdout:runOutput,stderr:runError,error:result.text||'',status:result.cancelled?'cancelled':result.kind==='error'?'error':result.outputLimited?'output_limit':captured.expected&&runOutput.replace(/\r\n/g,'\n').trimEnd()===captured.expected.replace(/\r\n/g,'\n').trimEnd()?'self_pass':'complete',createdAt:Date.now()}});
+    if(runId===id)runId=null;
+    if(!await store.getMeta(`deleted:${captured.problemId}`))await store.putRecord({kind:'run',id,problemId:captured.problemId,language:captured.language,payload:{code:captured.code,stdin:captured.stdin,expected:captured.expected,stdout:runOutput,stderr:runError,error:result.text||'',status:result.cancelled?'cancelled':result.kind==='error'?'error':result.outputLimited?'output_limit':captured.expected!==''?(runOutput.replace(/\r\n/g,'\n').trimEnd()===captured.expected.replace(/\r\n/g,'\n').trimEnd()?'self_pass':'self_fail'):'complete',createdAt:clock().getTime()}});
+    if(epoch===runEpoch&&runHistoryOpen)await showRunHistory();
   }
   async function showConflicts(){
     let dialog=$('conflicts-dialog');
@@ -252,10 +352,15 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
         const nextId=crypto.randomUUID();await store.putRecord({kind:'problem',id:nextId,payload});$('import-dialog').close();await navigate('practice',nextId);
       }
       if(action==='run')await run();
-      if(action==='stop'&&runId)runner.cancel(runId);
-      if(action==='rewrite'){await saveEditor();draft=await store.startRewrite({problemId:selected,language,template:templates[language]});await render();}
-      if(action==='finish'){await saveEditor();draft=await store.finishRewrite({problemId:selected,language});await render();await compare();}
-      if(action==='discard'){draft=await store.discardRewrite({problemId:selected,language});await render();toast('已放弃本次重写，原记录仍保留。');}
+      if(action==='run-all')await runAll();
+      if(['case-add','case-update','case-delete'].includes(action))await saveCase(action);
+      if(action==='runs'){historyFilters={problemId:selected,language,day:''};runHistoryPage=1;await showRunHistory();$('run-history')?.scrollIntoView({block:'nearest'});}
+      if(action==='runs-prev'||action==='runs-next'){runHistoryPage=Math.max(1,runHistoryPage+(action==='runs-next'?1:-1));await showRunHistory();}
+      if(action==='runs-clear'){historyFilters={problemId:'',language:'',day:''};runHistoryPage=1;await showRunHistory();}
+      if(action==='stop'){cancelRun();$('result-label').textContent='已停止';$('result').dataset.state='';}
+      if(action==='rewrite'){await saveEditor();draft=await store.startRewrite({problemId:selected,language,template:templates[language]});cancelRun();await render();}
+      if(action==='finish'){await saveEditor();draft=await store.finishRewrite({problemId:selected,language});cancelRun();await render();await compare();}
+      if(action==='discard'){draft=await store.discardRewrite({problemId:selected,language});cancelRun();await render();toast('已放弃本次重写，原记录仍保留。');}
       if(action==='history'){await saveEditor();await compare();}
       if(action==='more-history')await compare($('history-version')?.value,true);
       if(action==='archive'){await store.archiveProblem(id);await refresh();await render();toast('已归档，记录完整保留。');}
@@ -267,22 +372,37 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
       if(action==='cancel-delete')$('delete-dialog').close();
       if(action==='confirm-delete'){target.disabled=true;try{await store.deleteProblem(deleting,{confirmed:true});$('delete-dialog').close();await refresh();await render();}finally{target.disabled=false;}}
       if(action==='review'){await store.putRecord({kind:'review',id:`review-${selected}`,problemId:selected,payload:{dueDay:tomorrow(),completedAt:null}});toast(`已加入 ${tomorrow()} 的复习安排。`);}
-      if(action==='complete-plan'){const key=`plan-${day()}`;const plans=(await store.getRecord({kind:'plan',id:key}))?.payload.completed||{};plans[id]=!plans[id];await store.putRecord({kind:'plan',id:key,payload:{day:day(),timezone:settings.timezone,completed:plans}});const review=await store.getRecord({kind:'review',id:`review-${id}`});if(review){review.payload.completedAt=plans[id]?Date.now():null;await store.putRecord(review);}await render();}
+      if(action==='complete-plan'){await completeDailyProblem({store,day:day(),problemId:id,now:clock().getTime()});await render();}
+      if(action==='defer-plan'){await deferDailyProblem({store,day:day(),tomorrow:tomorrow(),problemId:id});await render();toast('已推迟到明天，今天不再补回这道题。');}
+      if(action==='replace-plan'){await replaceDailyProblem({store,day:day(),problemId:id,count:settings.count,lastPractice,timezone:settings.timezone});await render();}
       if(action==='export'){downloadJSON(await store.exportBackup(),`acmcoder-${day()}.json`);toast('完整备份已导出。');}
     }catch(error){if($('import-dialog').open)$('import-note').textContent=error.message;else toast(error.message);}
   });
   root.addEventListener('input',event=>{
     if(event.target.id==='problem-request'){findText=event.target.value;store.setMeta('problem-request',findText).catch(error=>toast(error.message));}
     if(['code','stdin','expected'].includes(event.target.id))saveEditor().catch(error=>toast(error.message));
-    if(event.target.id==='search'){query=event.target.value;const position=event.target.selectionStart;$('content').innerHTML=library();$('search').focus();$('search').setSelectionRange(position,position);}
+    if(event.target.id==='search'){query=event.target.value;$('library-rows').innerHTML=libraryRows();}
   });
   root.addEventListener('change',async event=>{
     try{
-      if(event.target.id==='practice-language'){await saveEditor();if(runId){runner.cancel(runId);runId=null;}language=event.target.value;if(!languages.includes(language))throw new Error('语言不可用');history=[];historyCursor=null;await persistLocation();await render();}
+      if(event.target.id==='practice-language'){
+        await saveEditor();cancelRun();selectedCase=-1;runHistoryOpen=false;
+        language=event.target.value;if(!languages.includes(language))throw new Error('语言不可用');
+        history=[];historyCursor=null;await persistLocation();await render();
+      }
+      if(event.target.id==='case-select'){
+        await saveEditor();cancelRun();selectedCase=Number(event.target.value);
+        const sample=problem().payload.cases?.[selectedCase];
+        if(sample){$('stdin').value=sample.stdin;$('expected').value=sample.expected;await saveEditor();}
+        resetResult();$('case-controls').innerHTML=renderCaseControls(problem().payload.cases||[],selectedCase);
+      }
+      if(event.target.id.startsWith('run-history-')){
+        const key={'run-history-problem':'problemId','run-history-language':'language','run-history-day':'day'}[event.target.id];
+        if(key){historyFilters[key]=event.target.value;runHistoryPage=1;await showRunHistory();}
+      }
       if(event.target.id==='history-version')await compare(event.target.value);
       if(event.target.id==='daily-count'||event.target.id==='timezone'){
-        if(event.target.id==='history-version')await compare(event.target.value);
-      if(event.target.id==='daily-count')settings.count=Number(event.target.value);else settings.timezone=event.target.value;
+        if(event.target.id==='daily-count')settings.count=Number(event.target.value);else settings.timezone=event.target.value;
         await store.putRecord({kind:'settings',id:'preferences',payload:settings});await render();
       }
       if(event.target.id==='backup-file'&&event.target.files[0]){const file=event.target.files[0];event.target.value='';await previewBackupFile(file);}
@@ -292,5 +412,5 @@ export async function mountWorkspace(root,{store,runner,account,catalog=[],clien
   window.addEventListener('pagehide',leaving);
   await render();
   // A delayed focus/pull must never replace an editor the user has started typing in.
-  return {navigate,async refreshFromCloud(){if(view==='practice')return;await refresh();if(view!=='practice')await render();},destroy(){window.removeEventListener('pagehide',leaving);ai?.destroy();runner.destroy?.();}};
+  return {navigate,refreshStatus,async refreshFromCloud(){if(view==='practice')return;await refresh();if(view!=='practice')await render();},destroy(){window.removeEventListener('pagehide',leaving);cancelRun();editor?.destroy();layout?.destroy();ai?.destroy();runner.destroy?.();}};
 }

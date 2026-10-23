@@ -1,7 +1,8 @@
 import {copyProblemRecords} from './copy-problem.js';
 import {validateRecord,recordBytes} from './records.js';
+import {WEBSITE_ORIGINS} from './deployment.js';
 const NONCE=/^[0-9a-f]{32}$/;
-export const HANDOFF_ORIGINS=['https://acmcoder.pygmalion.top','https://acmcoder-unified-preview.pages.dev'];
+export const HANDOFF_ORIGINS=WEBSITE_ORIGINS;
 export function validateHandoff(records){
   if(!Array.isArray(records)||!records.length||records.length>2000||recordBytes(records)>8*1024*1024)throw new Error('接续数据过大，请使用完整备份导入。');
   const validated=records.map(validateRecord),parents=validated.filter(r=>r.kind==='problem');

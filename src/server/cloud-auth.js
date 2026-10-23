@@ -1,21 +1,22 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-const origins=new Set(['https://acmcoder-unified-preview.pages.dev','https://acmcoder.pygmalion.top']);
+import {DEPLOYMENT,normalizeDeployment,validateVerificationUrl} from '../../shared/deployment.js';
 // Credentials live outside the learning-data directory and all learning backups.
-export function createCloudAuth({origin='https://acmcoder-unified-preview.pages.dev',credentialDir=path.join(os.homedir(),'.local/share/acmcoder/credentials'),fetch:request=globalThis.fetch,clock=()=>Date.now()}={}){
-  if(!origins.has(origin))throw new Error('INVALID_CLOUD_ORIGIN');
+export function createCloudAuth({deployment=DEPLOYMENT,origin,credentialDir=path.join(os.homedir(),'.local/share/acmcoder/credentials'),fetch:request=globalThis.fetch,clock=()=>Date.now()}={}){
+  const configured=normalizeDeployment(deployment);origin??=configured.cloudOrigin;
+  if(!configured.websiteOrigins.includes(origin))throw new Error('INVALID_CLOUD_ORIGIN');
   const file=path.join(credentialDir,`${new URL(origin).hostname}.json`);
   let pending=null,refreshWork=null,epoch=0,credentialWork=Promise.resolve();
   function serialize(work){const result=credentialWork.then(work);credentialWork=result.catch(()=>{});return result;}
   function clear(){epoch++;return serialize(()=>fs.rm(file,{force:true}));}
-  async function call(api,data,token){const response=await request(`${origin}/api/${api}`,{method:data?'POST':'GET',signal:AbortSignal.timeout(20000),headers:{...(data?{'content-type':'application/json'}:{}),...(token?{authorization:`Bearer ${token}`}:{})},...(data?{body:JSON.stringify(data)}:{})});const result=await response.json();if(!response.ok){const error=new Error(result.error||'连接暂不可用');error.code=result.code||String(response.status);throw error;}return result;}
-  async function read(){await credentialWork;try{return JSON.parse(await fs.readFile(file,'utf8'));}catch(error){if(error.code==='ENOENT')return null;throw error;}}
+  async function call(api,data,token){const response=await request(`${origin}/api/${api}`,{method:data?'POST':'GET',redirect:'error',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{...(data?{'content-type':'application/json'}:{}),...(token?{authorization:`Bearer ${token}`}:{})},...(data?{body:JSON.stringify(data)}:{})});if(response.status>=300&&response.status<400)throw new Error('INVALID_AUTH_REDIRECT');const result=await response.json();if(!response.ok){const error=new Error(result.error||'连接暂不可用');error.code=result.code||String(response.status);throw error;}return result;}
+  async function read(){await credentialWork;try{const saved=JSON.parse(await fs.readFile(file,'utf8'));return saved?.origin!==undefined&&saved.origin!==origin?null:saved;}catch(error){if(error.code==='ENOENT')return null;throw error;}}
   function write(value,expectedEpoch){return serialize(async()=>{
     if(expectedEpoch!==epoch)throw new Error('AUTH_CANCELLED');
     await fs.mkdir(credentialDir,{recursive:true,mode:0o700});
     const temporary=`${file}.${crypto.randomUUID()}.tmp`;
-    try{await fs.writeFile(temporary,JSON.stringify(value),{mode:0o600,flag:'wx'});if(expectedEpoch!==epoch)throw new Error('AUTH_CANCELLED');await fs.rename(temporary,file);await fs.chmod(file,0o600);}
+    try{await fs.writeFile(temporary,JSON.stringify({...value,origin}),{mode:0o600,flag:'wx'});if(expectedEpoch!==epoch)throw new Error('AUTH_CANCELLED');await fs.rename(temporary,file);await fs.chmod(file,0o600);}
     finally{await fs.rm(temporary,{force:true});}
   });}
   async function active(){
@@ -25,7 +26,7 @@ export function createCloudAuth({origin='https://acmcoder-unified-preview.pages.
     return refreshWork;
   }
   return {
-    async start(name='ACMCoder 本地版'){const result=await call('devices/start',{name,mode:'device'});pending={...result,expiresAt:clock()+result.expiresIn*1000,nextPollAt:0,epoch:++epoch};return {userCode:result.userCode,verificationUrl:result.verificationUrl,expiresIn:result.expiresIn,interval:result.interval};},
+    async start(name='ACMCoder 本地版'){const result=await call('devices/start',{name,mode:'device'});const verificationUrl=validateVerificationUrl(result.verificationUrl,origin,result.userCode);pending={...result,expiresAt:clock()+result.expiresIn*1000,nextPollAt:0,epoch:++epoch};return {userCode:result.userCode,verificationUrl,expiresIn:result.expiresIn,interval:result.interval};},
     async poll(){
       if(!pending||pending.expiresAt<=clock()){pending=null;return {state:'expired'};}
       if(pending.nextPollAt>clock())return {state:'pending'};

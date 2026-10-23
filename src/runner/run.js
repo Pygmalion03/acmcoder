@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { compareOutput } from "../core/output.js";
 import { findProblem, resolveProjectPath } from "../core/problems.js";
-import { DEFAULT_TIMEOUT_MS } from "./process.js";
+import { DEFAULT_TIMEOUT_MS, SUBMISSION_OUTPUT_LIMIT_BYTES } from "./process.js";
 import { getRunner } from "./runners.js";
 import { getToolchain } from "./toolchains.js";
 
@@ -45,10 +45,12 @@ export async function runSubmission(options) {
         hostWorkdir: workdir,
         stdin: "",
         timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+        maxOutputBytes: SUBMISSION_OUTPUT_LIMIT_BYTES,
         signal: options.signal,
       });
 
       if(compileResult.cancelled)return {status:'CANCELLED',stdout:compileResult.stdout,stderr:''};
+      if(compileResult.outputLimitExceeded)return {status:'OLE',message:'Compilation output exceeded 32 KiB; stopped.',stdout:compileResult.stdout,stderr:compileResult.stderr};
 
       if (compileResult.runnerUnavailable) {
         return {
@@ -92,10 +94,12 @@ export async function runSubmission(options) {
       hostWorkdir: workdir,
       stdin: options.stdin ?? "",
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      maxOutputBytes: SUBMISSION_OUTPUT_LIMIT_BYTES,
       signal: options.signal,
     });
 
     if(runResult.cancelled)return {status:'CANCELLED',stdout:runResult.stdout,stderr:''};
+    if(runResult.outputLimitExceeded)return {status:'OLE',message:'Output exceeded 32 KiB; stopped.',stdout:runResult.stdout,stderr:runResult.stderr};
 
     if (runResult.runnerUnavailable) {
       return {

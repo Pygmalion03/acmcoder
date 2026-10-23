@@ -31,21 +31,20 @@ test("documentation points users to the acmcoder repo and packages", () => {
   const { version } = JSON.parse(fs.readFileSync("package.json", "utf8"));
   const readme = fs.readFileSync("README.md", "utf8");
   const deployment = fs.readFileSync("docs/deployment.md", "utf8");
+  const upgrade = fs.readFileSync("docs/upgrade.md", "utf8");
   const compose = fs.readFileSync("docker-compose.prebuilt.yml", "utf8");
   const workflow = fs.readFileSync(".github/workflows/publish-images.yml", "utf8");
 
   assert.match(readme, /github\.com\/Pygmalion03\/acmcoder\.git/);
-  assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-app:latest/);
-  assert.match(readme, /ghcr\.io\/pygmalion03\/acmcoder-runner:latest/);
-  assert.ok(readme.includes(`统一${version.includes("-rc.")?"候选版":"正式版"}为 \`v${version}\``));
+  assert.ok(readme.includes(`releases/tag/v${version}`));
+  assert.match(readme, /node scripts\/build-clients\.mjs local-web/);
+  assert.match(readme, /docker-compose\.prebuilt\.yml -f docker-compose\.release\.yml/);
   assert.ok(deployment.includes(`ghcr.io/pygmalion03/acmcoder-app:v${version}`));
-  assert.ok(deployment.includes(`ghcr.io/pygmalion03/acmcoder-runner:v${version}`));
   const releaseNotes = fs.readFileSync(`docs/releases/v${version}.md`, "utf8");
   assert.ok(releaseNotes.includes(`ACMCoder v${version}`));
-  assert.match(readme, /源码分支[^\n]*`v3`/);
-  assert.match(readme, /1\s*(?:至|–|-)\s*5\s*道题/);
-  assert.match(readme, /GET\s+\/api\/session/);
-  assert.match(readme, /X-ACMCoder-Token/i);
+  assert.match(readme, /docs\/upgrade\.md/);
+  for(const directory of ['data/unified/','data/memory/','data/recommendation/'])assert.ok(upgrade.includes(directory));
+  assert.match(upgrade, /升级前的数据副本/);
   assert.match(compose, /ghcr\.io\/pygmalion03\/acmcoder-app:latest/);
   assert.match(workflow, /acmcoder-\$\{\{ matrix\.name \}\}/);
   assert.doesNotMatch(readme, /github\.com\/Pygmalion03\/accoder/);
@@ -65,8 +64,5 @@ test("browser extension install docs cover Edge and Chrome manual loading", () =
   assert.match(combined, /Developer mode/i);
   assert.match(combined, /Load unpacked/i);
   assert.match(combined, /extension\//);
-  assert.match(readme, /浏览器插件侧栏/);
-  assert.match(readme, /## 安装浏览器插件/);
-  assert.match(readme, /## 另一台设备怎么更新/);
-  assert.match(extensionDoc, /浏览器插件是 ACMCoder 面向 LeetCode 日常练习的主要入口之一/);
+  assert.match(combined, /dist\/extension\//);
 });

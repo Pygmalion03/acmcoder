@@ -1,3 +1,5 @@
+import {conversationTurnId,readConversationPage} from './conversations.js';
+
 export function normalizeProvider(input,{allowLoopback=false}={}){
  let url;try{url=new URL(String(input?.baseUrl||''));}catch{throw new Error('API 地址无效。');}
  const loopback=['localhost','127.0.0.1','[::1]'].includes(url.hostname);
@@ -32,27 +34,42 @@ export function createChatTransport({fetch:request=globalThis.fetch,allowLoopbac
  };
 }
 export function createAIClient({store,transport,credentials}){
- const active=new Map(),busy=new Set();
+ const active=new Map(),busy=new Set(),unsaved=new Map();
  return {
   cancel(requestId){active.get(requestId)?.abort();},
   cancelAll(){for(const controller of active.values())controller.abort();},
   async chat({requestId,problemId,language,provider,question,context,signal}){
    if(!/^[a-zA-Z0-9_-]{1,100}$/.test(requestId||'')||!question?.trim()||question.length>12000)throw new Error('请输入问题（最多 12000 字）。');
    const key=credentials.get(provider.baseUrl);if(!key)throw new Error('请先配置或解锁 API 密钥。');
-   const id=`${problemId}--${language}`,saved=await store.getRecord({kind:'conversation',id});
-   const existing=saved?.payload.messages.find(m=>m.requestId===requestId&&m.role==='assistant');if(existing)return {message:existing.content};
+   const id=`${problemId}--${language}`;
    if(busy.has(id))throw new Error('此题已有问答正在进行。');busy.add(id);
    const controller=new AbortController();active.set(requestId,controller);const cancel=()=>controller.abort();signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)cancel();
    const timeout=setTimeout(cancel,60000);timeout?.unref?.();
-   const payload=structuredClone(saved?.payload||{messages:[]});
-   if(!payload.messages.some(m=>m.requestId===requestId))payload.messages.push({role:'user',content:redactKey(question.trim(),key),requestId});
-   const record={kind:'conversation',id,problemId,language,payload};
    try{
-    await store.putRecord(record);
-    const result=await transport({provider,key,messages:contextMessages(payload.messages,context),signal:controller.signal});
+    const turnId=await conversationTurnId({problemId,language,requestId});
+    const saved=await store.getRecord({kind:'conversation',id:turnId});
+    const legacy=await store.getRecord({kind:'conversation',id});
+    const existing=[...(saved?.payload.messages||[]),...(legacy?.payload.messages||[])].find(m=>m.requestId===requestId&&m.role==='assistant');
+    if(existing){unsaved.delete(turnId);return {message:existing.content};}
+    if(await store.getMeta(`deleted:${problemId}`))throw new Error('题目已删除，回答不再保存。');
+    const legacyQuestion=legacy?.payload.messages.find(m=>m.requestId===requestId&&m.role==='user');
+    const record=saved||{kind:'conversation',id:turnId,problemId,language,payload:{format:'turn-v1',startedAt:Date.now(),messages:legacyQuestion?[]:[{role:'user',content:redactKey(question.trim(),key),requestId}]}};
+    if(!saved&&!legacyQuestion)await store.putRecord(record);
+    if(controller.signal.aborted)throw new Error('问答已取消。');
+    let message=unsaved.get(turnId);
+    if(message===undefined){
+     const recent=await readConversationPage(store,{problemId,language});
+     const questionMessage=legacyQuestion||record.payload.messages.find(m=>m.role==='user');
+     const messages=[...recent.messages.filter(m=>m.requestId!==requestId),questionMessage];
+     const result=await transport({provider,key,messages:contextMessages(messages,context),signal:controller.signal});
+     message=redactKey(result.message,key);
+    }
     if(controller.signal.aborted)throw new Error('问答已取消。');
     if(await store.getMeta(`deleted:${problemId}`))throw new Error('题目已删除，回答不再保存。');
-    const message=redactKey(result.message,key);payload.messages.push({role:'assistant',content:message,requestId});await store.putRecord(record);return {message};
+    unsaved.set(turnId,message);
+    record.payload.messages.push({role:'assistant',content:message,requestId});
+    try{await store.putRecord(record);}catch{throw new Error('模型已回答，但保存失败。再次发送将只重试保存，不会重新请求模型；请暂时不要关闭页面。');}
+    unsaved.delete(turnId);return {message};
    }catch(error){if(controller.signal.aborted)throw new Error('问答已取消。');throw new Error(redactKey(error.message,key));}
    finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);active.delete(requestId);busy.delete(id);}
   }

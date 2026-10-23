@@ -1,4 +1,4 @@
-const SITE='https://acmcoder-unified-preview.pages.dev';
+import {DEPLOYMENT,normalizeDeployment,matchesStoredOrigin,validateVerificationUrl} from '../shared/deployment.js';
 const SESSION_KEY='acmcoder.device.session',PERSIST_KEY='acmcoder.device.refresh';
 const PENDING_KEY='acmcoder.device.pending';
 const allowedPath=path=>path==='records/migrate'||path==='sync/push'||/^sync\/pull\?cursor=\d+&limit=50$/.test(path);
@@ -6,21 +6,23 @@ const random=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toSt
 async function challenge(value){return btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))))).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');}
 
 // Called only by the service worker. Neither the content script nor sandbox receives tokens.
-export function installDeviceAuth(){
+export function installDeviceAuth({deployment=DEPLOYMENT}={}){
+  const SITE=normalizeDeployment(deployment).cloudOrigin;
   let refreshWork=null,connectWork=null,pollWork=null,epoch=0,credentialWork=Promise.resolve();
   function serialize(work){const result=credentialWork.then(work);credentialWork=result.catch(()=>{});return result;}
   const failure=(message,code)=>Object.assign(new Error(message),{code});
   const ready=Promise.all([chrome.storage.local.setAccessLevel({accessLevel:'TRUSTED_CONTEXTS'}),chrome.storage.session.setAccessLevel({accessLevel:'TRUSTED_CONTEXTS'})]);
-  async function read(){await ready;await credentialWork;return (await chrome.storage.session.get(SESSION_KEY))[SESSION_KEY]||(await chrome.storage.local.get(PERSIST_KEY))[PERSIST_KEY]||null;}
+  async function read(){await ready;await credentialWork;const session=(await chrome.storage.session.get(SESSION_KEY))[SESSION_KEY];if(matchesStoredOrigin(session,SITE))return session;const persisted=(await chrome.storage.local.get(PERSIST_KEY))[PERSIST_KEY];return matchesStoredOrigin(persisted,SITE)?persisted:null;}
   function write(value,expectedEpoch){return serialize(async()=>{
     if(expectedEpoch!==epoch)throw new Error('账号连接已取消。');
-    await chrome.storage.session.set({[SESSION_KEY]:value});
-    if(value.remember)await chrome.storage.local.set({[PERSIST_KEY]:{refreshToken:value.refreshToken,refreshExpiresAt:value.refreshExpiresAt,user:value.user,deviceId:value.deviceId,remember:true}});
+    await chrome.storage.session.set({[SESSION_KEY]:{...value,origin:SITE}});
+    if(value.remember)await chrome.storage.local.set({[PERSIST_KEY]:{origin:SITE,refreshToken:value.refreshToken,refreshExpiresAt:value.refreshExpiresAt,user:value.user,deviceId:value.deviceId,remember:true}});
     else await chrome.storage.local.remove(PERSIST_KEY);
   });}
   function clear(){epoch++;return serialize(async()=>{await ready;await Promise.all([chrome.storage.session.remove([SESSION_KEY,PENDING_KEY]),chrome.storage.local.remove(PERSIST_KEY)]);});}
   async function request(path,data,token){
-    const response=await fetch(`${SITE}/api/${path}`,{method:data?'POST':'GET',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{...(data?{'content-type':'application/json'}:{}),...(token?{authorization:`Bearer ${token}`}:{})},...(data?{body:JSON.stringify(data)}:{})});
+    const response=await fetch(`${SITE}/api/${path}`,{method:data?'POST':'GET',redirect:'error',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{...(data?{'content-type':'application/json'}:{}),...(token?{authorization:`Bearer ${token}`}:{})},...(data?{body:JSON.stringify(data)}:{})});
+    if(response.status>=300&&response.status<400)throw new Error('INVALID_AUTH_REDIRECT');
     return {status:response.status,data:await response.json()};
   }
   async function active(){
@@ -45,7 +47,7 @@ export function installDeviceAuth(){
   async function connect(remember){
     await ready;await credentialWork;
     const pending=(await chrome.storage.session.get(PENDING_KEY))[PENDING_KEY];
-    if(pending&&pending.expiresAt>Date.now())return {pending:true,interval:5};
+    if(matchesStoredOrigin(pending,SITE)&&pending.expiresAt>Date.now())return {pending:true,interval:5};
     await chrome.storage.session.remove(PENDING_KEY);
     const expectedEpoch=epoch,verifier=random(),state=random();
     const start=await request('devices/start',{name:'ACMCoder 浏览器插件',mode:'pkce',codeChallengeMethod:'S256',codeChallenge:await challenge(verifier),state,redirectUri:chrome.identity.getRedirectURL('connect')});
@@ -54,15 +56,15 @@ export function installDeviceAuth(){
     if(start.status===403&&start.data.code==='unregistered_extension'){
       const device=await request('devices/start',{name:'ACMCoder 浏览器插件（ZIP 安装）',mode:'device'});
       if(device.status!==200)throw new Error('暂时无法发起账号连接，请稍后重试。');
-      const tab=await chrome.tabs.create({url:device.data.verificationUrl});
+      const tab=await chrome.tabs.create({url:validateVerificationUrl(device.data.verificationUrl,SITE,device.data.userCode)});
       await serialize(async()=>{
         if(expectedEpoch!==epoch)throw new Error('账号连接已取消。');
-        await chrome.storage.session.set({[PENDING_KEY]:{deviceCode:device.data.deviceCode,tabId:tab.id,remember:!!remember,expiresAt:Date.now()+device.data.expiresIn*1000,nextPollAt:Date.now()+5000}});
+        await chrome.storage.session.set({[PENDING_KEY]:{origin:SITE,deviceCode:device.data.deviceCode,tabId:tab.id,remember:!!remember,expiresAt:Date.now()+device.data.expiresIn*1000,nextPollAt:Date.now()+5000}});
       });
       return {pending:true,interval:5};
     }
     if(start.status!==200)throw new Error('暂时无法发起账号连接，请稍后重试。');
-    const returned=await chrome.identity.launchWebAuthFlow({url:start.data.verificationUrl,interactive:true});
+    const returned=await chrome.identity.launchWebAuthFlow({url:validateVerificationUrl(start.data.verificationUrl,SITE,start.data.userCode),interactive:true});
     const url=new URL(returned||'https://invalid.local');
     if(url.origin+url.pathname!==chrome.identity.getRedirectURL('connect')||url.searchParams.get('state')!==state)throw new Error('授权回调无效，未连接账号。');
     const result=await request('devices/token',{deviceCode:url.searchParams.get('code'),codeVerifier:verifier});
@@ -73,6 +75,7 @@ export function installDeviceAuth(){
     await ready;await credentialWork;
     const expectedEpoch=epoch,pending=(await chrome.storage.session.get(PENDING_KEY))[PENDING_KEY];
     if(!pending)throw new Error('账号连接已取消，请重新连接。');
+    if(!matchesStoredOrigin(pending,SITE))throw failure('连接地址已更改，请重新连接；本机练习仍保留。','401');
     if(pending.expiresAt<=Date.now()){await chrome.storage.session.remove(PENDING_KEY);throw new Error('授权已过期，请重新连接。');}
     if(pending.nextPollAt>Date.now())return {pending:true,interval:Math.ceil((pending.nextPollAt-Date.now())/1000)};
     await serialize(async()=>{

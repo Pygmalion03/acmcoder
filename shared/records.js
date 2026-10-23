@@ -39,6 +39,9 @@ export function validateRecord(input) {
   if (['run','review','progress'].includes(input.kind) && !input.problemId) invalid();
   if (input.kind === 'settings') assertNoCredentials(payload);
   if (input.kind === 'conversation' && (!Array.isArray(payload.messages) || payload.messages.some(m => !object(m) || !['user','assistant'].includes(m.role) || typeof m.content !== 'string'))) invalid();
+  if (input.kind === 'conversation' && payload.format === 'turn-v1') {
+    if (!input.problemId || !input.language || !Number.isSafeInteger(payload.startedAt) || payload.startedAt < 0 || payload.messages.length < 1 || payload.messages.length > 2 || payload.messages.some(m => !ID.test(m.requestId || ''))) invalid();
+  }
   return { kind: input.kind, id: input.id, ...(input.problemId ? { problemId: input.problemId } : {}), ...(input.language ? { language: input.language } : {}), revision, updatedAt: Number.isFinite(input.updatedAt) ? input.updatedAt : Date.now(), payload };
 }
 

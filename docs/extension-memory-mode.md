@@ -1,4 +1,6 @@
-# 浏览器插件记忆模式设计
+# 原版兼容：浏览器插件记忆模式设计
+
+本文仅说明保留的原版本地连接模式；当前独立插件的安装、IndexedDB存储和API Key规则见[插件使用](edge-extension.md)与[数据与隐私](data-and-privacy.md)。以下本地接口和缓存描述不作为统一工作区的安装要求。
 
 插件通过 content script 读取 LeetCode 当前题目页。优先走 LeetCode 同源 GraphQL，拿不到时退回 DOM 文本提取。
 

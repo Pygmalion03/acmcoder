@@ -68,6 +68,7 @@ import { checkDockerRunner as defaultCheckDockerRunner } from "../runner/docker-
 import { checkToolchain as defaultCheckToolchain, listLanguages as defaultListLanguages } from "../runner/toolchains.js";
 
 const DEFAULT_PORT = 43117;
+const MAX_RUN_TIMEOUT_MS = 30000;
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -613,6 +614,10 @@ export function createAcmcoderServer(options = {}) {
         }
 
         const body = await readJsonBody(request);
+        if (body.timeoutMs !== undefined && (!Number.isSafeInteger(body.timeoutMs) || body.timeoutMs < 1 || body.timeoutMs > MAX_RUN_TIMEOUT_MS)) {
+          sendJson(response, 400, { error: `运行时限必须是 1 至 ${MAX_RUN_TIMEOUT_MS} 毫秒的整数。` });
+          return;
+        }
         const controller=new AbortController();const id=typeof body.id==='string'?body.id:crypto.randomUUID();
         if(activeRuns.has(id)){sendJson(response,409,{error:'This run is already active.'});return;}activeRuns.set(id,controller);
         response.once('close',()=>{if(!response.writableEnded)controller.abort();});

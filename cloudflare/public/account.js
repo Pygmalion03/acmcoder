@@ -15,6 +15,12 @@ let editingProblem = null;
 let cloudSessionInvalid = false;
 let importFailedItems = [];
 let cloudCatalog = [];
+let cloudCatalogActions = {};
+let cloudSelectMode = false;
+let cloudSelectedIds = new Set();
+let cloudSubmissions = [];
+let cloudAiGeneration = 0;
+let cloudAiController = null;
 let cloudPreferences = { dailyCount: 3, difficultyPressure: 'standard', cooldownDays: 3, targetTags: [] };
 let cloudRanked = [];
 
@@ -40,6 +46,7 @@ if (document.querySelectorAll) {
 function cloudInvalidateSession() {
   if (cloudSessionInvalid) return;
   saveDraft();
+  cloudCancelAi();
   cloudSessionInvalid = true;
   cloudSelection++;
   for (const timer of cloudSaveTimers.values()) clearTimeout(timer);
@@ -55,7 +62,7 @@ async function cloudApi(path, options = {}) {
   const boundUser = cloudUser?.id;
   const headers = { ...(options.body ? { 'content-type': 'application/json' } : {}), ...(boundUser && path !== 'auth/session' ? { 'x-acm-expected-user': boundUser } : {}) };
   const response = await fetch(`/api/${path}`, { credentials: 'same-origin', ...options, headers: { ...headers, ...options.headers } });
-  const data = await response.json().catch(() => ({ error: '服务响应无效。' }));
+  const data = await response.json().catch(() => ({ error: `服务暂不可用（HTTP ${response.status}）。` }));
   if (data.code === 'account_changed' || (boundUser && response.status === 401)) cloudInvalidateSession();
   if (!response.ok) { const error = new Error(data.error || '请求失败。'); error.status = response.status; error.data = data; throw error; }
   return data;
@@ -90,7 +97,7 @@ async function cloudAddRecommendation(entry) {
     $('problem-select').value = added.id;
     loadProblem(added.id);
     cloudNavigate('practice');
-    cloudNote(added.statement ? '已加入个人练习。力扣题面已获取；请自行把平台样例转换为 ACM stdin 与期望输出。' : '已收藏原题链接。公开题面暂不可用；可在编辑题目中手动粘贴。');
+    cloudNote(added.statement ? '已加入个人练习。力扣题面已获取；请自行把平台样例转换为 ACM stdin 与期望输出。' : `已收藏原题链接。公开题面暂不可用${result.fetchWarning ? `（${result.fetchWarning}）` : ''}；可在编辑题目中手动粘贴。`);
     await cloudLoadRecommendations();
   } catch (error) { $('recommendation-status').textContent = error.status === 409 ? '这道题已在个人题库中。' : `加入失败：${error.message}`; }
 }
@@ -116,7 +123,7 @@ function cloudRenderRecommendationList() {
       if (owned) { $('problem-select').value = owned.id; loadProblem(owned.id); cloudNavigate('practice'); }
       else cloudAddRecommendation(entry);
     }, true));
-    const item = ranked.get(entry.leetcodeSlug)?.actions || {};
+    const item = cloudCatalogActions[entry.leetcodeSlug] || {};
     actions.append(cloudRecommendationButton('跳过', () => cloudRecommendationAction(entry.leetcodeSlug, 'skip')));
     actions.append(cloudRecommendationButton(item.masteredAt ? '再练' : '掌握', () => cloudRecommendationAction(entry.leetcodeSlug, item.masteredAt ? 'want_practice_again' : 'mastered')));
     card.append(head, meta, actions); list.append(card);
@@ -127,7 +134,8 @@ async function cloudLoadRecommendations() {
   const [catalog, preferences, ranked] = await Promise.all([
     cloudApi('recommendations/catalog'), cloudApi('recommendations/preferences'), cloudApi('recommendations/ranked')
   ]);
-  cloudCatalog = catalog.entries; cloudPreferences = preferences.preferences; cloudRanked = ranked.entries;
+  cloudCatalog = catalog.entries; cloudCatalogActions = catalog.actions || {};
+  cloudPreferences = preferences.preferences; cloudRanked = ranked.entries;
   $('planner-count').value = String(cloudPreferences.dailyCount);
   $('planner-difficulty').value = cloudPreferences.difficultyPressure;
   $('planner-tags').value = cloudPreferences.targetTags.join(', ');
@@ -201,6 +209,9 @@ function cloudGuestDraft(id) {
 async function cloudSelectedProblem(id) {
   if (!cloudUser || cloudSessionInvalid) return;
   const selection = ++cloudSelection;
+  cloudCancelAi();
+  cloudRenderAiHistory();
+  cloudRenderHistory();
   cloudDraftReady.delete(id);
   cloudConflict = null;
   $('draft-status').textContent = '本机已保存 · 正在核对云端';
@@ -237,6 +248,88 @@ async function cloudSelectedProblem(id) {
     if (cloudGuestDraft(id)) $('migrate-draft').hidden = false;
   } catch (error) { if (selection === cloudSelection) { $('draft-status').textContent = '本机已保存 · 云端暂不可用'; cloudNote(`云端草稿暂不可用：${error.message}。本机草稿仍保留。`); } }
 }
+
+function cloudRenderHistory() {
+  const area = $('history-items'); area.replaceChildren();
+  const entries = cloudSubmissions.filter(entry => entry.problemId === problem).slice(0, 20);
+  if (!entries.length) { area.textContent = '当前题还没有云端自测历史。'; return; }
+  const labels = { self_pass: '当前样例通过', self_fail: '当前样例未通过', error: '运行错误', stopped: '已停止' };
+  for (const entry of entries) {
+    const row = document.createElement('div'); row.className = 'history-row';
+    const label = document.createElement('span'); label.textContent = `${new Date(entry.createdAt * 1000).toLocaleString('zh-CN')} · ${labels[entry.status] || entry.status}`;
+    const preview = document.createElement('pre'); preview.hidden = true; preview.textContent = entry.code;
+    const show = cloudRecommendationButton('查看代码', () => { preview.hidden = !preview.hidden; });
+    const restore = cloudRecommendationButton('恢复到编辑器', () => {
+      if (problem !== entry.problemId || !confirm('将这次自测的代码恢复到当前编辑器？当前代码会保存在本机备份。')) return;
+      cloudBackup(problem, cloudCurrent());
+      $('code').value = entry.code;
+      saveDraft(); cloudDraftChanged(problem);
+      setResult('已恢复历史代码；当前编辑器内容可继续修改。');
+    });
+    row.append(label, show, restore, preview); area.append(row);
+  }
+}
+async function cloudLoadHistory() {
+  if (!cloudUser || cloudSessionInvalid) return;
+  const data = await cloudApi('submissions');
+  cloudSubmissions = data.submissions;
+  cloudRenderHistory();
+}
+
+const cloudAiKey = () => `acmcoder-ai-v1:${cloudUser?.id || 'guest'}:${problem}`;
+function cloudAiConversations() {
+  try { const value = JSON.parse(localStorage.getItem(cloudAiKey()) || '[]'); return Array.isArray(value) ? value.slice(-6) : []; }
+  catch { return []; }
+}
+function cloudRenderAiHistory() {
+  const area = $('ai-history'); area.replaceChildren();
+  const entries = cloudAiConversations();
+  if (!entries.length) { area.textContent = '当前题还没有本机问答。'; return; }
+  for (const entry of entries) {
+    const box = document.createElement('div'); box.className = 'ai-exchange';
+    const question = document.createElement('p'); question.textContent = `你：${entry.question}`;
+    const answer = document.createElement('pre'); answer.textContent = entry.answer;
+    box.append(question, answer); area.append(box);
+  }
+}
+function cloudCancelAi() {
+  cloudAiGeneration++;
+  cloudAiController?.abort(); cloudAiController = null;
+  $('ask-ai').disabled = false; $('cancel-ai').disabled = true;
+}
+$('cancel-ai').addEventListener('click', () => { cloudCancelAi(); $('ai-status').textContent = '已停止等待；若模型已开始处理，本次请求仍可能计入今日额度。'; });
+$('ask-ai').addEventListener('click', async () => {
+  if (!cloudUser || cloudSessionInvalid) { $('ai-status').textContent = '请先登录后提问。'; return; }
+  const question = $('ai-question').value.trim();
+  if (!question) { $('ai-status').textContent = '请先输入问题。'; return; }
+  cloudCancelAi();
+  const generation = cloudAiGeneration;
+  const userId = cloudUser.id;
+  const problemId = problem;
+  const controller = new AbortController(); cloudAiController = controller;
+  let timedOut = false;
+  const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 30000);
+  $('ask-ai').disabled = true; $('cancel-ai').disabled = false;
+  $('ai-status').textContent = '免费模型正在回答…';
+  try {
+    const result = await cloudApi('ai/help', { method: 'POST', signal: controller.signal,
+      body: cloudBody({ problemId, question, code: $('code').value, stdin: $('stdin').value, expected: $('expected').value,
+        stdout: $('stdout').textContent.slice(0, 2000), stderr: $('stderr').textContent.slice(0, 2000),
+        result: $('result').textContent.slice(0, 1000), history: cloudAiConversations().map(item => ({ question: item.question, answer: item.answer })) }) });
+    if (generation !== cloudAiGeneration || cloudUser?.id !== userId || problem !== problemId || cloudSessionInvalid) return;
+    const entries = [...cloudAiConversations(), { question, answer: result.answer, at: Date.now() }].slice(-6);
+    try { localStorage.setItem(cloudAiKey(), JSON.stringify(entries)); }
+    catch { $('ai-status').textContent = '回答已显示，但本机空间不足，未能保留问答。'; }
+    cloudRenderAiHistory();
+    $('ai-question').value = '';
+    if (!$('ai-status').textContent.includes('空间不足')) $('ai-status').textContent = '回答已完成；仅保存在本机。';
+  } catch (error) {
+    if (generation === cloudAiGeneration) $('ai-status').textContent = timedOut ? '问答等待超时；若模型已开始处理，本次请求仍可能计入今日额度。' : error.name === 'AbortError' ? '已停止等待；本次请求仍可能计入今日额度。' : `问答失败：${error.message}`;
+  } finally {
+    clearTimeout(timeout);
+    if (generation === cloudAiGeneration) { cloudAiController = null; $('ask-ai').disabled = false; $('cancel-ai').disabled = true; }
+  }
+});
 function cloudDraftChanged(id) {
   if (!cloudUser || cloudSessionInvalid || cloudConflict?.id === id) return;
   cloudDirty.add(id);
@@ -288,18 +381,36 @@ function cloudRenderLibrary() {
   ].filter(item => (!favoritesOnly || item.favorite) && (!q || `${item.title} ${(item.tags || []).join(' ')}`.toLocaleLowerCase().includes(q)));
   if (!items.length) { list.textContent = '没有匹配的题目。'; return; }
   for (const item of items) {
+    const wrapper = document.createElement('div'); wrapper.className = 'problem-card-wrap';
+    if (cloudSelectMode && cloudProblems.some(problem => problem.id === item.id)) {
+      const select = document.createElement('input'); select.type = 'checkbox'; select.checked = cloudSelectedIds.has(item.id);
+      select.setAttribute('aria-label', `选择${item.title}`);
+      select.addEventListener('change', () => { if (select.checked) cloudSelectedIds.add(item.id); else cloudSelectedIds.delete(item.id); cloudUpdateBulkControls(); });
+      wrapper.append(select);
+    }
     const button = document.createElement('button');
     button.type = 'button'; button.className = 'problem-card';
     const name = document.createElement('strong'); name.textContent = item.title;
     const tags = document.createElement('span'); tags.textContent = `${item.favorite ? '★ ' : ''}${(item.tags || []).join(' · ')}`;
     button.append(name, tags);
     button.addEventListener('click', () => { $('problem-select').value = item.id; loadProblem(item.id); cloudNavigate('practice'); });
-    list.append(button);
+    wrapper.append(button); list.append(wrapper);
   }
+}
+function cloudUpdateBulkControls() {
+  const count = cloudSelectedIds.size;
+  $('select-problems').textContent = cloudSelectMode ? '结束选择' : '批量选择';
+  $('export-selected').hidden = !cloudSelectMode;
+  $('delete-selected').hidden = !cloudSelectMode;
+  $('export-selected').disabled = count === 0;
+  $('delete-selected').disabled = count === 0;
+  $('export-selected').textContent = `导出选中 (${count})`;
+  $('delete-selected').textContent = `删除选中 (${count})`;
 }
 async function cloudLoadProblems() {
   const data = await cloudApi('problems');
   cloudProblems = data.problems;
+  cloudSelectedIds = new Set([...cloudSelectedIds].filter(id => cloudProblems.some(item => item.id === id)));
   for (const key of Object.keys(sample)) if (!['sum', 'free'].includes(key)) delete sample[key];
   $('problem-select').replaceChildren(new Option('两个整数相加（原创示例）', 'sum'), new Option('自由练习', 'free'));
   for (const item of cloudProblems) {
@@ -308,6 +419,7 @@ async function cloudLoadProblems() {
     $('problem-select').add(new Option(item.title, item.id));
   }
   cloudRenderLibrary();
+  cloudUpdateBulkControls();
 }
 async function cloudLoadProgress() {
   const [progress, plan, recommendations] = await Promise.all([cloudApi('progress'), cloudApi('plans/today'), cloudApi('plans/recommendations')]);
@@ -326,19 +438,21 @@ async function cloudLoadProgress() {
       if (problem !== item.problemId) return;
       if (cloudConflict?.id === item.problemId) { cloudNote('请先处理本机与云端的草稿冲突，再开始新一轮。'); return; }
       const previous = cloudCurrent();
-      try { localStorage.setItem(cloudRoundBackupKey(item.problemId), JSON.stringify({ ...previous, savedAt: Date.now() })); }
+      try { localStorage.setItem(cloudRoundBackupKey(item.problemId), JSON.stringify({ ...previous, ai: cloudAiConversations(), savedAt: Date.now() })); }
       catch { cloudNote('本机空间不足，无法保留上次代码；请先自行复制代码。'); return; }
       const key = `acmcoder-practice-round:${draftScope}:${item.problemId}`;
       let next = 1;
       try { next = Number(localStorage.getItem(key) || 0) + 1; localStorage.setItem(key, String(next)); } catch { /* practice remains usable */ }
       $('code').value = '# 从这里开始新一轮练习\n';
+      try { localStorage.setItem(cloudAiKey(), '[]'); } catch { /* round still starts */ }
+      cloudRenderAiHistory();
       $('stdin').value = sample[item.problemId].stdin || '';
       $('expected').value = sample[item.problemId].expected || '';
       saveDraft();
       cloudDraftChanged(item.problemId);
       cloudShowRoundBackup(item.problemId);
       setResult(`已开始第 ${next} 轮重练，代码已清空；可查看或恢复上次代码。运行后会留下新的自测记录。`);
-      $('practice').scrollIntoView({ behavior: 'smooth' });
+      cloudNavigate('practice');
     }); row.append(redo); }
     progressArea.append(row);
   }
@@ -369,7 +483,7 @@ async function cloudRecordResult(id, status, details) {
   if (!cloudUser) return;
   try {
     await cloudApi('submissions', { method: 'POST', body: cloudBody({ problemId: id, status, ...details }) });
-    await cloudLoadProgress();
+    await Promise.all([cloudLoadProgress(), cloudLoadHistory()]);
   } catch (error) { cloudNote(`自测已在本机完成，云端记录失败：${error.message}`); }
 }
 
@@ -387,6 +501,7 @@ async function cloudInitialize() {
     $('logout').hidden = !cloudUser;
     $('export').hidden = !cloudUser;
     $('open-restore').hidden = !cloudUser;
+    $('select-problems').hidden = !cloudUser;
     $('make-plan').hidden = !cloudUser;
     $('delete-account').hidden = !cloudUser;
     if (cloudUser) {
@@ -396,6 +511,7 @@ async function cloudInitialize() {
       else await cloudSelectedProblem(problem);
       await cloudLoadRecommendations();
       await cloudLoadProgress();
+      await cloudLoadHistory();
     }
   } catch (error) {
     $('account-state').textContent = cloudUser ? `@${cloudUser.login} · 数据暂不可用` : '访客 · 云端暂不可用';
@@ -419,6 +535,34 @@ document.addEventListener('visibilitychange', async () => {
 
 $('search').addEventListener('input', cloudRenderLibrary);
 $('favorites-only').addEventListener('change', cloudRenderLibrary);
+$('select-problems').addEventListener('click', () => {
+  cloudSelectMode = !cloudSelectMode;
+  if (!cloudSelectMode) cloudSelectedIds.clear();
+  cloudUpdateBulkControls(); cloudRenderLibrary();
+});
+$('export-selected').addEventListener('click', () => {
+  const selected = cloudProblems.filter(item => cloudSelectedIds.has(item.id));
+  if (!selected.length) return;
+  cloudDownloadJson(`acmcoder-selected-problems-${new Date().toISOString().slice(0, 10)}.json`, { problems: selected });
+  $('library-status').textContent = `已导出 ${selected.length} 道题目的题面和样例；完整草稿及历史请使用“导出完整备份”。`;
+});
+$('delete-selected').addEventListener('click', async () => {
+  const ids = [...cloudSelectedIds];
+  if (!ids.length || !confirm(`删除选中的 ${ids.length} 道题目及其草稿、进度和今日计划？自测历史仍可在完整备份中取得。`)) return;
+  $('delete-selected').disabled = true;
+  try {
+    let deleted = 0;
+    for (let index = 0; index < ids.length; index += 50) {
+      const result = await cloudApi('problems/batch-delete', { method: 'POST', body: cloudBody({ ids: ids.slice(index, index + 50) }) });
+      deleted += result.deleted;
+    }
+    cloudSelectedIds.clear();
+    await cloudLoadProblems(); await cloudLoadProgress();
+    if (!sample[problem]) { $('problem-select').value = 'sum'; loadProblem('sum'); }
+    $('library-status').textContent = `已删除 ${deleted} 道题目。`;
+  } catch (error) { $('library-status').textContent = `批量删除部分或全部失败：${error.message}。刷新题库可核对。`; await cloudLoadProblems().catch(() => {}); }
+  cloudUpdateBulkControls();
+});
 $('logout').addEventListener('click', async () => {
   try { await cloudApi('auth/logout', { method: 'POST' }); location.reload(); } catch (error) { alert(error.message); }
 });
@@ -463,14 +607,16 @@ $('keep-local').addEventListener('click', async () => {
 $('show-prior-code').addEventListener('click', () => {
   const prior = cloudPriorRound(problem);
   if (!prior) return;
-  $('prior-code-preview').textContent = prior.code;
+  $('prior-code-preview').textContent = `${prior.code}\n\n前轮问答：\n${(prior.ai || []).map(item => `你：${item.question}\n助手：${item.answer}`).join('\n\n') || '无'}`;
   $('prior-code-preview').hidden = false;
 });
 $('restore-prior-code').addEventListener('click', () => {
   const prior = cloudPriorRound(problem);
   if (!prior || !confirm('用上次代码替换当前编辑器代码？当前版本会另存为本机备份。')) return;
-  cloudBackup(problem, cloudCurrent());
+  cloudBackup(problem, { ...cloudCurrent(), ai: cloudAiConversations() });
   $('code').value = prior.code;
+  try { localStorage.setItem(cloudAiKey(), JSON.stringify(prior.ai || [])); } catch { /* code still restored */ }
+  cloudRenderAiHistory();
   saveDraft();
   cloudDraftChanged(problem);
   $('prior-code-preview').hidden = true;

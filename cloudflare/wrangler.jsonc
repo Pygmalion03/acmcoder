@@ -1,12 +1,13 @@
 {
   "name": "acmcoder-web",
-  "pages_build_output_dir": "./public",
+  "pages_build_output_dir": "../dist/site",
   "compatibility_date": "2026-09-29",
   "vars": {
     "PUBLIC_ORIGIN": "https://acmcoder.pygmalion.top",
     "GITHUB_CLIENT_ID": "Ov23liGX53jJgUOITUQq",
     "INVITED_GITHUB_IDS": "116715709"
   },
+  "ai": { "binding": "AI" },
   "d1_databases": [
     {
       "binding": "DB",

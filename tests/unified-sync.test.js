@@ -21,6 +21,28 @@ test('two devices resume code and rewrite with immutable snapshots',async()=>{
  await b.store.startRewrite({...draft,template:''});await b.store.saveDraft({...await b.store.getDraft(draft),code:'重写'});await b.store.finishRewrite(draft);await b.engine.syncNow();await a.engine.syncNow();
  assert.equal((await a.store.getDraft(draft)).code,'重写');assert.equal((await a.store.listAttempts(draft)).items.length,2);
 });
+test('a new local write immediately leaves the synced state until its durable queue is delivered',async()=>{
+ const {device}=setup(),a=device();a.store.subscribe(()=>a.engine.markPending());
+ await a.engine.syncNow();assert.equal(a.engine.getStatus().state,'saved');
+ await a.store.putRecord(problem);assert.equal(a.engine.getStatus().state,'pending');
+ await a.engine.syncNow();assert.equal(a.engine.getStatus().state,'saved');
+ a.engine.pause();await a.store.saveDraft(draft);assert.equal(a.engine.getStatus().state,'paused');
+});
+test('a write during the final pull stays pending and is automatically delivered on the next sync',async()=>{
+ const {device,repo}=setup(),a=device();await a.store.putRecord(problem);await a.store.saveDraft(draft);
+ let pulls=0,jobs=[];
+ const engine=createSyncEngine({store:a.store,accountId:'a',transport:{...a.transport,pull:async cursor=>{
+   const page=await a.transport.pull(cursor);
+   if(++pulls===2)await a.store.saveDraft({...await a.store.getDraft(draft),code:'edited during final pull'});
+   return page;
+ }},setTimeout:(fn,delay)=>{const job={fn,delay};jobs.push(job);return job;},clearTimeout:job=>{jobs=jobs.filter(item=>item!==job);}});
+ a.store.subscribe(()=>engine.markPending());
+ await engine.syncNow();assert.equal(engine.getStatus().state,'pending');assert.equal(jobs.length,1);
+ assert.equal((await repo.get({userId:'a',kind:'draft',id:'sum--python'})).payload.code,'原代码');
+ await jobs.shift().fn();assert.equal(engine.getStatus().state,'saved');assert.equal(await a.store.syncPendingCount(),0);
+ assert.equal((await repo.get({userId:'a',kind:'draft',id:'sum--python'})).payload.code,'edited during final pull');
+ assert.equal(jobs.length,0);
+});
 test('offline conflicts survive reopen, resolving local uses cloud revision',async()=>{
  const {device}=setup(),a=device(),b=device();await a.store.putRecord(problem);await a.store.saveDraft(draft);await a.engine.syncNow();await b.engine.syncNow();
  await a.store.saveDraft({...await a.store.getDraft(draft),code:'A'});await b.store.saveDraft({...await b.store.getDraft(draft),code:'B'});await a.engine.syncNow();await b.engine.syncNow();

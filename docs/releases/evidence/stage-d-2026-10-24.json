@@ -1,0 +1,189 @@
+{
+  "date": "2026-10-24",
+  "status": "local-activated-production-not-deployed",
+  "sourceCommitBase": "10b4f2969b11f43137ed1f7250c15524cb737021",
+  "sourceState": "modified",
+  "channel": "development",
+  "tests": {
+    "fullSuite": 514,
+    "passed": 514,
+    "failures": 0,
+    "environment": "WSL Node 24; full suite before the final Docker source-permission-only fix, which passed subsequent real image smoke"
+  },
+  "builds": {
+    "buildKind": "local-uncommitted-staged",
+    "mainLocalWebUntouched": true,
+    "default": {
+      "directory": "/tmp/acmcoder-stage-d-default.3bn27plc/dist/extension",
+      "cloudOrigin": "https://acmcoder-unified-preview.pages.dev",
+      "websiteOrigins": [
+        "https://acmcoder.pygmalion.top",
+        "https://acmcoder-unified-preview.pages.dev"
+      ],
+      "hostPermissions": [
+        "https://leetcode.cn/*",
+        "https://leetcode.com/*",
+        "http://127.0.0.1:43117/*",
+        "https://acmcoder-unified-preview.pages.dev/*",
+        "https://acmcoder.pygmalion.top/*"
+      ],
+      "classicBridge": true,
+      "bridgeOrigins": [
+        "https://acmcoder.pygmalion.top",
+        "https://acmcoder-unified-preview.pages.dev"
+      ],
+      "authRequestOrigins": [
+        "https://acmcoder-unified-preview.pages.dev"
+      ],
+      "authRequestPaths": [
+        "/api/devices/start",
+        "/api/devices/start",
+        "/api/sync/push"
+      ],
+      "handoffTargetOrigin": "https://acmcoder-unified-preview.pages.dev",
+      "legacyOriginsDenied": false,
+      "bridgeSHA256": "66b7b8f724c752dbc406a00059d6314b6f972bbba83a81e476f7deaec83d37bf"
+    },
+    "selfHosted": {
+      "directory": "/tmp/acmcoder-stage-d-selfhost.tn4fyb3t/dist/extension",
+      "cloudOrigin": "https://practice.example.org",
+      "websiteOrigins": [
+        "https://practice.example.org"
+      ],
+      "hostPermissions": [
+        "https://leetcode.cn/*",
+        "https://leetcode.com/*",
+        "http://127.0.0.1:43117/*",
+        "https://practice.example.org/*"
+      ],
+      "classicBridge": true,
+      "bridgeOrigins": [
+        "https://practice.example.org"
+      ],
+      "authRequestOrigins": [
+        "https://practice.example.org"
+      ],
+      "authRequestPaths": [
+        "/api/devices/start",
+        "/api/devices/start",
+        "/api/sync/push"
+      ],
+      "handoffTargetOrigin": "https://practice.example.org",
+      "legacyOriginsDenied": true,
+      "bridgeSHA256": "c125825e57ec0992306974c701bd07f8b147741f95234b2894c118d5f1bcee74"
+    },
+    "clients": [
+      {
+        "target": "local-web",
+        "directory": "/tmp/acmcoder-stage-d-default.3bn27plc/dist/local-web",
+        "version": "4.1.0",
+        "commit": "10b4f2969b11f43137ed1f7250c15524cb737021",
+        "sourceState": "modified",
+        "channel": "development",
+        "editorSHA256": "3fc9c9e9bf1c5d29471db9c9560d5f1d88f3659255d6f712a082dce2fcbbcbc0",
+        "licenseSHA256": "48592d97388b80078252012f69efdae9d0a21b173123303bb061e4b7f66077d3"
+      },
+      {
+        "target": "extension",
+        "directory": "/tmp/acmcoder-stage-d-default.3bn27plc/dist/extension",
+        "version": "4.1.0",
+        "commit": "10b4f2969b11f43137ed1f7250c15524cb737021",
+        "sourceState": "modified",
+        "channel": "development",
+        "editorSHA256": "3fc9c9e9bf1c5d29471db9c9560d5f1d88f3659255d6f712a082dce2fcbbcbc0",
+        "licenseSHA256": "48592d97388b80078252012f69efdae9d0a21b173123303bb061e4b7f66077d3"
+      },
+      {
+        "target": "site",
+        "directory": "/tmp/acmcoder-stage-d-default.3bn27plc/dist/site",
+        "version": "4.1.0",
+        "commit": "10b4f2969b11f43137ed1f7250c15524cb737021",
+        "sourceState": "modified",
+        "channel": "development",
+        "editorSHA256": "3fc9c9e9bf1c5d29471db9c9560d5f1d88f3659255d6f712a082dce2fcbbcbc0",
+        "licenseSHA256": "48592d97388b80078252012f69efdae9d0a21b173123303bb061e4b7f66077d3"
+      }
+    ],
+    "website": {
+      "version": "4.1.0",
+      "commit": "10b4f2969b11f43137ed1f7250c15524cb737021",
+      "protocolVersion": 1,
+      "tool": {
+        "name": "esbuild",
+        "version": "0.28.1"
+      },
+      "worker": {
+        "bytes": 89340,
+        "gzipBytes": 25213,
+        "sha256": "97630ed60b08790e193ef44aa726426164af582943955f7e51f5f9663a2ae9de"
+      },
+      "assets": {
+        "count": 167,
+        "totalBytes": 81576697,
+        "largest": {
+          "file": "vendor/java/resource-53.gz",
+          "bytes": 21246431
+        }
+      },
+      "routes": {
+        "version": 1,
+        "include": [
+          "/api/*"
+        ],
+        "exclude": []
+      },
+      "cpp": {
+        "version": "clang22-wasi33-acmcoder.1",
+        "totalBytes": 28236559
+      },
+      "java": {
+        "version": "doppio0.5-jcl3.2-acmcoder.1",
+        "totalBytes": 39630976
+      },
+      "deployment": {
+        "status": "not-deployed"
+      }
+    }
+  },
+  "docker": {
+    "date": "2026-10-24",
+    "image": "acmcoder-app:stage-d",
+    "imageId": "sha256:594b1021c16341ff4ebff4b056c1d9171b8040be899e4a8ec0edd8bd52fefab2",
+    "isolated": true,
+    "bind": "http://127.0.0.1:43118",
+    "codeExecution": [
+      "python",
+      "cpp",
+      "java"
+    ],
+    "sourceState": "modified",
+    "channel": "development",
+    "editorBundle": true,
+    "legacyEntry": true,
+    "productionDependenciesEmpty": true,
+    "recreatedContainerPreservedRecords": 2,
+    "directory": "/tmp/acmcoder-stage-d-container-Y0WYe1",
+    "container": "acmcoder-stage-d"
+  },
+  "browser": {
+    "target": "isolated Docker app",
+    "legacyEntry": "Banner and same-install new-tab navigation verified",
+    "workspace": "Development build label and settings verified; no console warnings/errors",
+    "screenshot": "/Users/pygmalion/.agent/diagrams/acmcoder-stage-d-2026-10-24.jpg"
+  },
+  "releaseGate": "Actual staged check-release rejects modified source even with matching commit labels",
+  "activation": {
+    "previousStage": "C confirmed active; served/source artifact hash matched",
+    "service": "acmcoder-v3.service",
+    "script": "/tmp/acmcoder-stage-d-activate.sh",
+    "readyFrontend": "/home/pygmalion/runs/002-acmcoder/v3/dist/local-web-stage-d-ready",
+    "confirmedDate": "2026-10-24",
+    "verification": "Service active; previous stage C frontend retained; served version reports modified/development and all new features; built/source deployment-config.js SHA256 both 2545bf279f89886d729ea78cb4e9793bd529a22c7b3f72b14c10f0c1dd52b1e4"
+  },
+  "boundaries": [
+    "No public deploy, production D1 migration, Git commit/push or extension install",
+    "Self-hosted configuration verified in built artifacts and controlled auth/bridge interfaces, not a new real OAuth deployment",
+    "No private learning data or real credentials used in acceptance",
+    "Docker acceptance is Linux amd64 only"
+  ]
+}

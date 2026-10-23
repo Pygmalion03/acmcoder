@@ -38,8 +38,12 @@ export function createRecordRepository(db, { limits = {}, clock = () => Date.now
     const deleted = m.op === 'delete';
     const payload = deleted ? null : JSON.stringify(m.payload);
     const bytes = deleted ? 128 : recordBytes(m.payload) + 256;
-    // Charge a conservative allowance for the durable mutation and change index too.
+    // Budget estimates, not D1 physical bytes: 384 per mutation + 128 per
+    // change preserve the existing 512 allowance for a direct mutation.
     const delta = bytes - (previous?.bytes || 0) + 512;
+    const cascadeDelta = deleted && m.kind === 'problem'
+      ? 'COALESCE((SELECT SUM(256-bytes) FROM unified_records WHERE user_id=? AND problem_id=? AND deleted=0),0)' : '0';
+    const cascadeBindings = deleted && m.kind === 'problem' ? [userId,m.id] : [];
     const problemDelta = m.kind === 'problem' ? (deleted ? -1 : previous ? 0 : 1) : 0;
     const revision = m.baseRevision + 1;
     const now = clock(), day = new Date(now).toISOString().slice(0,10);
@@ -51,9 +55,12 @@ export function createRecordRepository(db, { limits = {}, clock = () => Date.now
         db.prepare('INSERT INTO record_daily_runs(user_id,day,count) VALUES(?,?,1) ON CONFLICT(user_id,day) DO UPDATE SET count=count+1 WHERE count<?').bind(userId,day,limits.dailyRuns),
         db.prepare('UPDATE record_mutations SET run_quota_ok=changes() WHERE user_id=? AND mutation_id=?').bind(userId,m.mutationId),
       ] : []),
-      db.prepare('UPDATE record_usage SET bytes=bytes+?, problems=problems+? WHERE user_id=? AND bytes+?<=? AND problems+?<=?').bind(delta,problemDelta,userId,delta,limits.userBytes,problemDelta,limits.problems),
+      // Always permit deletion. Tombstones and their protocol logs may consume
+      // a small allowance even when the removed payload was tiny. Other writes
+      // may reduce an already-over-limit budget, but may not grow it further.
+      db.prepare(`UPDATE record_usage SET bytes=bytes+?+${cascadeDelta}, problems=problems+? WHERE user_id=? AND (? OR ?<=0 OR bytes+?<=?) AND (?<=0 OR problems+?<=?)`).bind(delta,...cascadeBindings,problemDelta,userId,deleted?1:0,delta,delta,limits.userBytes,problemDelta,problemDelta,limits.problems),
       db.prepare('UPDATE record_mutations SET capacity_ok=changes() WHERE user_id=? AND mutation_id=?').bind(userId,m.mutationId),
-      db.prepare('UPDATE record_totals SET bytes=bytes+? WHERE id=1 AND bytes+?<=?').bind(delta,delta,limits.globalBytes),
+      db.prepare(`UPDATE record_totals SET bytes=bytes+?+${cascadeDelta} WHERE id=1 AND (? OR ?<=0 OR bytes+?<=?)`).bind(delta,...cascadeBindings,deleted?1:0,delta,delta,limits.globalBytes),
       db.prepare('UPDATE record_mutations SET capacity_ok=changes() WHERE user_id=? AND mutation_id=?').bind(userId,m.mutationId),
       db.prepare(`INSERT INTO unified_records(user_id,kind,id,problem_id,language,revision,updated_at,payload_json,deleted,bytes,legacy_import)
         SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE (?=0 OR EXISTS(SELECT 1 FROM unified_records WHERE user_id=? AND kind=? AND id=? AND revision=? AND deleted=0)) AND (? IS NULL OR EXISTS(SELECT 1 FROM unified_records WHERE user_id=? AND kind='problem' AND id=? AND deleted=0))
@@ -63,9 +70,11 @@ export function createRecordRepository(db, { limits = {}, clock = () => Date.now
       db.prepare(`UPDATE record_mutations SET applied=changes(),result_json=json_set(result_json,'$.cursor',(SELECT COALESCE(MAX(seq),0) FROM record_changes WHERE user_id=?)) WHERE user_id=? AND mutation_id=?`).bind(userId,userId,m.mutationId)
     ];
     if(deleted&&m.kind==='problem'){
-      // Keep child tombstones too; old devices may replay children independently.
+      // Each child retains a 128-byte tombstone and adds one 128-byte change
+      // allowance, accounted above using the same transaction's current rows.
+      // Old devices may replay children independently, so keep their identities.
       statements.push(
-        db.prepare('UPDATE unified_records SET payload_json=NULL,deleted=1,revision=revision+1,updated_at=? WHERE user_id=? AND problem_id=? AND deleted=0').bind(Date.now(),userId,m.id),
+        db.prepare('UPDATE unified_records SET payload_json=NULL,deleted=1,bytes=128,revision=revision+1,updated_at=? WHERE user_id=? AND problem_id=? AND deleted=0').bind(now,userId,m.id),
         db.prepare(`UPDATE record_mutations SET result_json=json_set(result_json,'$.cursor',(SELECT COALESCE(MAX(seq),0) FROM record_changes WHERE user_id=?)) WHERE user_id=? AND mutation_id=?`).bind(userId,userId,m.mutationId)
       );
     }

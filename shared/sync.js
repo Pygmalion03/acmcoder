@@ -44,7 +44,10 @@ export function createSyncEngine({store,transport,accountId,onStatus=()=>{},cloc
         failures=0;status({state:'quota',code:'DAILY_RUN_LIMIT',nextRetryAt:dailyRetryAt,conflicts:conflicts.length});
         retry=schedule(()=>{retry=null;return syncNow();},dailyRetryAt-clock());retry?.unref?.();return;
       }
-      failures=0;status({state:conflicts.length?'conflict':'saved',conflicts:conflicts.length});
+      const pending=await store.syncPendingCount();
+      failures=0;status({state:conflicts.length?'conflict':pending?'pending':'saved',conflicts:conflicts.length});
+      // A local edit can arrive during the final pull, after the push loop.
+      if(pending){retry=schedule(()=>{retry=null;return syncNow();},1500);retry?.unref?.();}
     }catch(error){
       if(paused)return;
       if(['401','account_changed','UPGRADE_REQUIRED'].includes(error.code)){paused=true;status({state:'paused',code:error.code,error:error.message});return;}
@@ -55,5 +58,5 @@ export function createSyncEngine({store,transport,accountId,onStatus=()=>{},cloc
       retry=schedule(()=>{retry=null;return syncNow();},delay);retry?.unref?.();
     }
   }
-  return {syncNow,pause(){paused=true;cancelRetry();status({state:'paused'});},getStatus:()=>({...state})};
+  return {syncNow,markPending(){if(['idle','saved','pending'].includes(state.state))status({state:'pending'});},pause(){paused=true;cancelRetry();status({state:'paused'});},getStatus:()=>({...state})};
 }

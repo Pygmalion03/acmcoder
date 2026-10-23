@@ -12,6 +12,7 @@ export function validateRelease({version,lockVersion,clients,manifest,tag,candid
   if(manifest.version!==expected||manifest.version_name!==version)failures.push('Extension version differs from product version');
   const commits=new Set(clients.map(c=>c.commit));
   if(commits.size!==1||clients.some(c=>!/^[a-f0-9]{40}$/.test(c.commit||'')))failures.push('Clients do not have one known source commit');
+  if(clients.some(c=>c.sourceState!=='clean'||c.channel==='development'))failures.push('Release packaging requires verified clean source; rebuild from the committed source before publishing');
   for(const target of ['site','extension','local-web']){
     const c=clients.find(c=>c.target===target);
     if(!c||c.version!==version||c.protocolVersion!==1||c.minProtocolVersion!==1)failures.push(`Missing or mismatched ${target} metadata`);

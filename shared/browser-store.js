@@ -184,6 +184,13 @@ export function createBrowserStore({namespace,indexedDB = globalThis.indexedDB,s
       const items=all.slice(offset,offset+limit);
       return {items,nextCursor:offset+limit<all.length ? items.at(-1).id : null};
     }),
+    listConversationTurns:({problemId,language,cursor=null,limit=10,legacy=false})=>read(['records'],async s=>{
+      const size=Math.max(1,Math.min(50,Math.floor(limit)||10));
+      const time=row=>legacy?row.updatedAt:row.payload.startedAt;
+      const all=(await requestValue(s('records').getAll())).filter(row=>row.kind==='conversation'&&row.problemId===problemId&&row.language===language&&(legacy?row.payload.format!=='turn-v1':row.payload.format==='turn-v1')&&(!cursor||time(row)<cursor.startedAt||time(row)===cursor.startedAt&&row.id<cursor.id)).sort((a,b)=>time(b)-time(a)||(a.id<b.id?1:a.id>b.id?-1:0));
+      const items=all.slice(0,size),last=items.at(-1);
+      return {items,nextCursor:all.length>size?{startedAt:time(last),id:last.id}:null};
+    }),
     getRecord:({kind,id})=>read(['records'],async s=>(await requestValue(s('records').get([kind,id]))) || null),
     listRecords:({kind}={})=>read(['records'],async s=>(await requestValue(s('records').getAll())).filter(row=>!kind || row.kind===kind)),
     putRecord:record=>enqueue(async()=>{const validated=validateRecord(record);await transaction(['records'],'readwrite',async s=>{s('records').put(validated);});return validated;}),

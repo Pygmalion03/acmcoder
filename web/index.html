@@ -4,11 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#cbd9d4" />
-    <title>ACMCoder</title>
+    <title>ACMCoder · 旧版本地界面</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2317231f'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='32' font-family='Arial' font-weight='700' fill='white'%3EA%3C/text%3E%3C/svg%3E" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/shared/ui/legacy.css" />
   </head>
   <body data-active-view="today">
+    <aside id="legacy-notice" class="legacy-notice" aria-labelledby="legacy-notice-title">
+      <div><strong id="legacy-notice-title">旧版兼容入口</strong><p>这里保留旧题库导出、推荐目录管理和运行环境配置。新练习请使用统一工作区；新旧界面的修改不会实时互通，请核对需要保留的草稿与记录。</p></div>
+      <a href="/workspace.html" target="_blank" rel="noopener noreferrer">在新标签打开统一工作区 ↗</a>
+    </aside>
     <main class="app-shell">
       <aside id="app-navigation" class="app-nav" aria-label="主要功能">
         <button class="brand" type="button" data-view-target="today" aria-label="返回今日计划">

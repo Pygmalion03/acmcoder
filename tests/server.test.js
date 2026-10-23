@@ -731,6 +731,55 @@ test("passes runner mode from run API into the runner layer", async () => {
   }
 });
 
+test("run API rejects invalid time limits before invoking a runner", async () => {
+  const calls = [];
+  const server = createAcmcoderServer({ runSubmission: async options => {
+    calls.push(options);
+    return { status: "UNKNOWN", stdout: "", stderr: "" };
+  } });
+  const port = await listen(server);
+  try {
+    for (const timeoutMs of [null, 0, -1, 1.5, "5000", 30001, Number.MAX_SAFE_INTEGER]) {
+      const response = await postRun(port, { language: "python", code: "print(1)", timeoutMs });
+      assert.equal(response.status, 400);
+      assert.match((await response.json()).error, /运行时限/);
+    }
+    assert.equal(calls.length, 0);
+    for (const timeoutMs of [undefined, 1, 5000, 30000]) {
+      const response = await postRun(port, { language: "python", code: "print(1)", timeoutMs });
+      assert.equal(response.status, 200);
+      assert.equal(calls.at(-1).timeoutMs, timeoutMs);
+    }
+  } finally { server.close(); }
+});
+
+test("cancelling one active run aborts its signal and permits the next run", async () => {
+  let started;
+  const ready = new Promise(resolve => { started = resolve; });
+  let calls = 0;
+  const server = createAcmcoderServer({ runSubmission: async ({signal}) => {
+    if (++calls > 1) return { status: "UNKNOWN", stdout: "42\n", stderr: "" };
+    return new Promise(resolve => {
+      signal.addEventListener("abort", () => resolve({ status: "CANCELLED", stdout: "", stderr: "" }), { once: true });
+      started();
+    });
+  } });
+  const port = await listen(server);
+  try {
+    const pending = postRun(port, { id: "cancel-test", language: "python", code: "while True: pass" });
+    await ready;
+    const token = await getSessionToken(port);
+    const response = await fetch(`http://127.0.0.1:${port}/api/run/cancel`, {
+      method: "POST", headers: { "content-type": "application/json", "x-acmcoder-token": token },
+      body: JSON.stringify({ id: "cancel-test" }),
+    });
+    assert.equal(response.status, 200);
+    assert.equal((await (await pending).json()).result.status, "CANCELLED");
+    const next = await postRun(port, { id: "cancel-test", language: "python", code: "print(42)" });
+    assert.equal((await next.json()).result.stdout, "42\n");
+  } finally { server.close(); }
+});
+
 test("stores assist settings and serves model advice through the local API", async () => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "acmcoder-assist-server-"));
   const assistSettingsFile = path.join(tempDir, "settings.json");

@@ -60,7 +60,7 @@ jobs:
         run: node -e 'process.stdout.write("version=" + require("./package.json").version + "\n")' >> "$GITHUB_OUTPUT"
 
       - name: Build app image for smoke test
-        run: docker build --build-arg "ACMCODER_BUILD_COMMIT=$ACMCODER_BUILD_COMMIT" --file Dockerfile.app --tag acmcoder-app:verify .
+        run: docker build --build-arg "ACMCODER_BUILD_COMMIT=$ACMCODER_BUILD_COMMIT" --build-arg ACMCODER_BUILD_SOURCE_STATE=clean --file Dockerfile.app --tag acmcoder-app:verify .
 
       - name: Start hardened app container
         run: |
@@ -139,7 +139,9 @@ jobs:
           file: ./${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
-          build-args: ACMCODER_BUILD_COMMIT=${{ github.sha }}
+          build-args: |
+            ACMCODER_BUILD_COMMIT=${{ github.sha }}
+            ACMCODER_BUILD_SOURCE_STATE=clean
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}

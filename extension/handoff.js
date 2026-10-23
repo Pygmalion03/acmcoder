@@ -1,5 +1,6 @@
 import {createHandoffVault,HANDOFF_ORIGINS,validateHandoff} from '../shared/handoff.js';
-export const SITE_ORIGIN='https://acmcoder-unified-preview.pages.dev';
+import {CLOUD_ORIGIN} from '../shared/deployment.js';
+export const SITE_ORIGIN=CLOUD_ORIGIN;
 export function installHandoff(){
   const storage=chrome.storage.session;
   storage.setAccessLevel?.({accessLevel:'TRUSTED_CONTEXTS'});

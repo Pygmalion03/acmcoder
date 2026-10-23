@@ -109,10 +109,91 @@ test("auto-builds missing Docker runner image before execution", async () => {
   assert.equal(result.stdout, "ok");
   assert.deepEqual(
     calls.map((call) => call.args[0]),
-    ["image", "build", "run"],
+    ["image", "build", "create", "start", "rm"],
   );
   assert.deepEqual(calls[1].args, ["build", "-t", "acmcoder-runner:test-autobuild", "."]);
   assert.equal(calls[1].options.cwd, projectRoot);
+});
+
+for (const reason of ["cancelled", "timedOut", "outputLimitExceeded"]) {
+  test(`Docker ${reason} removes only its container and forwards execution limits`, async () => {
+    const calls = [], controller = new AbortController();
+    const result = await dockerRunner.execute({ command: "python", args: ["/workspace/main.py"] }, {
+      hostWorkdir: "/tmp/acmcoder-test", signal: controller.signal, timeoutMs: 3000, maxOutputBytes: 32768,
+      runProcess: async (command, args, options) => {
+        calls.push({ command, args, options });
+        return args[0] === "start"
+          ? { code: null, stdout: "partial", stderr: "", [reason]: true }
+          : { code: 0, stdout: "", stderr: "" };
+      },
+    });
+    assert.equal(result[reason], true);
+    assert.equal(result.stdout, "partial");
+    assert.deepEqual(calls.map(c => c.args[0]), ["image", "create", "start", "rm"]);
+    const create = calls[1], start = calls[2], cleanup = calls[3];
+    const name = create.args[create.args.indexOf("--name") + 1];
+    assert.match(name, /^acmcoder-run-[a-f0-9-]+$/);
+    assert.equal(create.args.includes("--rm"), false);
+    assert.equal(start.args.at(-1), name);
+    assert.equal(start.options.signal, controller.signal);
+    assert.equal(start.options.maxOutputBytes, 32768);
+    assert.equal(start.options.timeoutMs, 3000);
+    assert.deepEqual(cleanup.args, ["rm", "--force", name]);
+    assert.equal(cleanup.options.signal, undefined);
+  });
+}
+
+test("cancelling during container creation waits for its identity then cleans without starting", async () => {
+  const calls = [], controller = new AbortController();
+  const result = await dockerRunner.execute({ command: "python", args: [] }, {
+    hostWorkdir: "/tmp/acmcoder-test", signal: controller.signal,
+    runProcess: async (_command, args, options) => {
+      calls.push(args[0]);
+      if (args[0] === "create") {
+        assert.equal(options.signal, undefined);
+        controller.abort();
+      }
+      return { code: 0, stdout: "", stderr: "" };
+    },
+  });
+  assert.equal(result.cancelled, true);
+  assert.deepEqual(calls, ["image", "create", "rm"]);
+});
+
+test("cancelling Docker image preparation does not launch a build or a container", async () => {
+  const controller = new AbortController(), calls = [];
+  const result = await dockerRunner.execute({ command: "python", args: [] }, {
+    hostWorkdir: "/tmp/acmcoder-test", signal: controller.signal,
+    runProcess: async (_command, args, options) => {
+      calls.push(args[0]);
+      assert.equal(options.signal, controller.signal);
+      return { code: null, stdout: "", stderr: "", cancelled: true };
+    },
+  });
+  assert.equal(result.cancelled, true);
+  assert.deepEqual(calls, ["image"]);
+});
+
+test("Docker cleanup failure remains visible instead of claiming a clean stop", async () => {
+  await assert.rejects(dockerRunner.execute({ command: "python", args: [] }, {
+    hostWorkdir: "/tmp/acmcoder-test",
+    runProcess: async (_command, args) => args[0] === "rm"
+      ? { code: 1, stdout: "", stderr: "Docker daemon disconnected" }
+      : { code: args[0] === "start" ? null : 0, stdout: "", stderr: "", ...(args[0] === "start" ? { timedOut: true } : {}) },
+  }), /container cleanup failed/);
+});
+
+test("a rejected Docker start still cleans the created container", async () => {
+  const calls = [];
+  await assert.rejects(dockerRunner.execute({ command: "python", args: [] }, {
+    hostWorkdir: "/tmp/acmcoder-test",
+    runProcess: async (_command, args) => {
+      calls.push(args[0]);
+      if (args[0] === "start") throw new Error("failed to attach");
+      return { code: 0, stdout: "", stderr: "" };
+    },
+  }), /failed to attach/);
+  assert.deepEqual(calls, ["image", "create", "start", "rm"]);
 });
 
 test("reports Docker image build failures as unavailable runner", async () => {

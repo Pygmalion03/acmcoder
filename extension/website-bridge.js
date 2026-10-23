@@ -1,6 +1,7 @@
+import {WEBSITE_ORIGINS} from '../shared/deployment.js';
 (() => {
   const channel='acmcoder-handoff-v1';
-  const allowed=['https://acmcoder.pygmalion.top','https://acmcoder-unified-preview.pages.dev'];
+  const allowed=WEBSITE_ORIGINS;
   if(!allowed.includes(location.origin))return;
   window.addEventListener('message',async event=>{
     const data=event.data;

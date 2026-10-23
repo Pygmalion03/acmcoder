@@ -1,5 +1,6 @@
 import { runProcess } from "./process.js";
 import { projectRoot } from "../core/problems.js";
+import { randomUUID } from "node:crypto";
 
 export const DOCKER_IMAGE = "acmcoder-runner:local";
 export const DOCKER_WORKDIR = "/workspace";
@@ -33,10 +34,11 @@ export function buildShellCommand(commandSpec) {
   return [commandSpec.command, ...commandSpec.args].map(normalizeContainerPath).map(shellQuote).join(" ");
 }
 
-export function buildDockerArgs({ hostWorkdir, commandSpec, image = getDockerImage() }) {
+export function buildDockerArgs({ hostWorkdir, commandSpec, image = getDockerImage(), containerName }) {
   return [
     "run",
     "--rm",
+    ...(containerName ? ["--name", containerName] : []),
     "-i",
     "--network",
     "none",
@@ -153,7 +155,9 @@ export async function ensureDockerImage(options = {}) {
   const runProcessFn = options.runProcess || runProcess;
   const imageResult = await runProcessFn("docker", ["image", "inspect", image], {
     timeoutMs: options.imageCheckTimeoutMs ?? 5000,
+    signal: options.signal,
   });
+  if (imageResult.cancelled) return { ready: false, image, result: imageResult };
   const imageUnavailable = classifyDockerUnavailable(imageResult, image);
 
   if (!imageUnavailable && imageResult.code === 0) {
@@ -185,7 +189,9 @@ export async function ensureDockerImage(options = {}) {
   const buildResult = await runProcessFn("docker", buildDockerImageArgs(image), {
     cwd: options.cwd || projectRoot,
     timeoutMs: options.buildTimeoutMs ?? 120000,
+    signal: options.signal,
   });
+  if (buildResult.cancelled) return { ready: false, image, result: buildResult };
   const buildUnavailable = classifyDockerUnavailable(buildResult, image);
 
   if (buildUnavailable) {
@@ -246,21 +252,48 @@ export const dockerRunner = {
       imageCheckTimeoutMs: options.imageCheckTimeoutMs,
       buildTimeoutMs: options.buildTimeoutMs,
       cwd: options.cwd,
+      signal: options.signal,
     });
 
     if (!imageReady.ready) {
       return imageReady.result;
     }
 
+    if (options.signal?.aborted) return { code: null, stdout: "", stderr: "", cancelled: true };
+    const containerName = `acmcoder-run-${randomUUID()}`;
     const dockerArgs = buildDockerArgs({
       hostWorkdir: options.hostWorkdir,
       commandSpec,
       image,
+      containerName,
     });
-    const result = await runProcessFn("docker", dockerArgs, {
-      stdin: options.stdin,
-      timeoutMs: options.timeoutMs,
-    });
+    // Finish the bounded creation request before honoring cancellation. Killing
+    // `docker run` during creation can otherwise leave a container appearing
+    // after the cleanup request has already reported "No such container".
+    dockerArgs[0] = "create";
+    dockerArgs.splice(dockerArgs.indexOf("--rm"), 1);
+    const created = await runProcessFn("docker", dockerArgs, { timeoutMs: 5000 });
+    let result = created;
+    try {
+      if (created.code === 0) {
+        result = options.signal?.aborted
+          ? { code: null, stdout: "", stderr: "", cancelled: true }
+          : await runProcessFn("docker", ["start", "--attach", "--interactive", containerName], {
+            stdin: options.stdin,
+            timeoutMs: options.timeoutMs,
+            maxOutputBytes: options.maxOutputBytes,
+            signal: options.signal,
+          });
+      }
+    } finally {
+      if (created.code === 0 || result.cancelled || result.timedOut || result.outputLimitExceeded) {
+        const cleanup = await runProcessFn("docker", ["rm", "--force", containerName], { timeoutMs: 5000 });
+        if (cleanup.code !== 0 && !/No such container/i.test(cleanup.stderr || "")) {
+          throw new Error("The run stopped, but Docker container cleanup failed. Check Docker before running again.");
+        }
+      }
+    }
+    if (result.cancelled || result.timedOut || result.outputLimitExceeded) return result;
     const unavailable = classifyDockerUnavailable(result, image);
 
     return unavailable ? dockerUnavailableResult(unavailable, result) : result;

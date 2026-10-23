@@ -31,8 +31,9 @@ export function createFileDatabaseFactory({dataDir,beforeCommit=async()=>{}}){
         get version(){return state.version;},get objectStoreNames(){return {contains:name=>Object.hasOwn(state.stores,name)};},
         createObjectStore(name,{keyPath}={}){state.stores[name]={keyPath,rows:{}};},close(){},
         transaction(names,mode){
-          const next=structuredClone(state),tx={error:null};let finished=false;
           const writable=mode==='readwrite';
+          // Writers replace state at commit, so readers can retain its snapshot.
+          const next=writable?structuredClone(state):state,tx={error:null};let finished=false;
           tx.abort=()=>{if(finished)return;finished=true;queueMicrotask(()=>tx.onabort?.());};
           tx.objectStore=name=>{
             if(!names.includes(name)||!next.stores[name])throw new Error('UNKNOWN_LOCAL_TABLE');

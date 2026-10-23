@@ -29,7 +29,7 @@ async function main(){
   const cppFrame=document.createElement('iframe');cppFrame.hidden=true;cppFrame.setAttribute('sandbox','allow-scripts');cppFrame.title='隔离 C++ 运行环境';document.body.append(cppFrame);
   const runner=createMultiRunner({python:createPythonRunner({frame}),cpp:createCppRunner({frame:cppFrame,loadBridgeDocument:async({signal})=>{const response=await fetch('/shared/runners/cpp-bridge.html',{credentials:'omit',signal});if(!response.ok)throw new Error('C++ 启动资源未完整部署。');return response.text();}}),java:createJavaRunner()});
   let engine,workspace,timer;
-  const statusText=()=>!navigator.onLine?'离线练习中；内容保存在本机，联网后恢复同步':({quota:'今日云端自测额度已用完，运行结果保留本机；其他内容继续同步',saved:'已同步到云端',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'同步已暂停，请重新连接账号',retrying:'网络暂不可用，稍后自动重试；内容已保留',error:'同步暂未完成；本机内容已保留',idle:'已保存到此设备'}[engine?.getStatus().state]||'已保存到此设备');
+  const statusText=()=>!navigator.onLine?'离线练习中；内容保存在本机，联网后恢复同步':({quota:'今日云端自测额度已用完，运行结果保留本机；其他内容继续同步',saved:'已同步到云端',pending:'已保存到此设备，等待同步',syncing:'正在同步…',conflict:'发现修改冲突，双方内容已保留',paused:'同步已暂停，请重新连接账号',retrying:'网络暂不可用，稍后自动重试；内容已保留',error:'同步暂未完成；本机内容已保留',idle:'已保存到此设备'}[engine?.getStatus().state]||'已保存到此设备');
   async function deviceCall(path,data){const response=await fetch(`/api/devices${path}`,{method:data?'POST':'GET',headers:data?{'content-type':'application/json'}:{},...(data?{body:JSON.stringify(data)}:{})});const result=await response.json();if(!response.ok)throw new Error(result.error||'设备管理暂不可用。');return result;}
   const account={async usage(){const response=await fetch('/api/account/usage',{headers:{'x-acm-expected-user':user.id}});const result=await response.json();if(!response.ok)throw new Error(result.error||'云端容量暂不可用。');return result;},async deleteCloud(){const response=await fetch('/api/account',{method:'DELETE',headers:{'content-type':'application/json','x-acm-expected-user':user.id},body:JSON.stringify({confirmation:'DELETE'})});if(!response.ok)throw new Error((await response.json()).error||'删除未完成。');clearTimeout(timer);engine.pause();location.reload();},devices:async()=>(await deviceCall('')).devices,revoke:deviceId=>deviceCall('/revoke',{deviceId}),user,loginAvailable:!!session?.loginAvailable,statusText,async sync(){await engine.syncNow();},async mergeGuest(){
     const guest=createBrowserStore({namespace:'guest'});const result=await store.restoreBackup(await guest.exportBackup());
@@ -40,13 +40,14 @@ async function main(){
     const response=await fetch('/api/auth/logout',{method:'POST'});if(!response.ok)throw new Error('退出未完成，请重试。');forgetWebsiteAccount();location.reload();
   }};
   if(user){
-    engine=createSyncEngine({store,accountId:user.id,transport:createSyncTransport({accountId:user.id}),onStatus(){const el=document.getElementById('sync-status');if(el)el.textContent=statusText();}});
+    engine=createSyncEngine({store,accountId:user.id,transport:createSyncTransport({accountId:user.id}),onStatus(){workspace?.refreshStatus();}});
     await engine.syncNow();
-    store.subscribe(()=>{clearTimeout(timer);timer=setTimeout(()=>engine.syncNow({automatic:true}),1500);});
-    window.addEventListener('online',()=>engine.syncNow());
+    store.subscribe(()=>{engine.markPending();workspace?.refreshStatus();clearTimeout(timer);timer=setTimeout(()=>engine.syncNow({automatic:true}),1500);});
     // Refresh between visits, not while the user is entering code.
     window.addEventListener('focus',async()=>{await engine.syncNow({automatic:true});if(!['code','stdin','expected'].includes(document.activeElement?.id))await workspace?.refreshFromCloud();});
   }
+  window.addEventListener('online',()=>{workspace?.refreshStatus();engine?.syncNow();});
+  window.addEventListener('offline',()=>workspace?.refreshStatus());
   const ai={description:'网站通过登录后的短时转发请求；支持 OpenAI、DeepSeek、SiliconFlow 和阿里云兼容地址（含北京工作空间）。',async transport(input){if(!user)throw new Error('网站转发需要先连接 GitHub 账号。');const response=await fetch('/api/ai/chat',{method:'POST',headers:{'content-type':'application/json','x-acm-expected-user':user.id},body:JSON.stringify({provider:input.provider,key:input.key,messages:input.messages}),signal:input.signal});const result=await response.json();if(!response.ok)throw new Error(result.error||'模型连接失败。');return result;}};
   const catalog=await fetch('/shared/catalog.json').then(r=>r.ok?r.json():{entries:[]}).catch(()=>({entries:[]}));
   const handoff=createWebsiteHandoff();

@@ -1,0 +1,145 @@
+{
+  "date": "2026-10-24",
+  "status": "local-activated-production-not-deployed",
+  "buildKind": "local-uncommitted-staged",
+  "tests": {
+    "uniquePassed": 99,
+    "scope": "AI, conversation paging and recovery, local storage/API, records, capacity, backup/data lifecycle, sync, cloud API"
+  },
+  "realAcceptance": {
+    "localHTTP": "More than 2 MiB of linked learning records persisted, service restarted, restored to a fresh directory, compared in full; provider response was synthetic",
+    "browser": "Strict CSP; latest/older/newer pages, arbitrary-ID legacy history, return to latest; no console errors",
+    "cloudD1": {
+      "checkedAt": "2026-10-23T16:18:45.040Z",
+      "environment": "WSL2 Wrangler 4.143.0 local D1 (workerd/Miniflare), remoteBindings:false",
+      "migrations": [
+        "0001_initial.sql",
+        "0002_restore_entries.sql",
+        "0003_unified_records.sql",
+        "0004_device_auth.sql",
+        "0005_daily_run_quota.sql",
+        "0006_legacy_run_quota_guard.sql",
+        "0007_record_capacity_repair.sql"
+      ],
+      "checks": {
+        "payloadRevisionCursorMutationPreserved": true,
+        "oldCountersRepaired": true,
+        "idempotentRetryPreserved": true,
+        "deletionAllowedAboveBudget": true,
+        "cascadePayloadBudgetReclaimed": true,
+        "childTombstonesPulled": true,
+        "duplicateDeletionNotChargedTwice": true,
+        "growthStillBlocked": true
+      },
+      "budgets": {
+        "before": 68372,
+        "repaired": 36183,
+        "afterDeletion": 4386
+      },
+      "sourceSha256": {
+        "cloudflare/lib/records.js": "73e3e5e1323bee7eb341e6e2165a722eac85b2eb85a68eeb0b25f3d03997e986",
+        "cloudflare/migrations/0007_record_capacity_repair.sql": "f4a293ceb284be63ad78846c2701c6de65f93ac37b2f4d91f0f92396e04f7565"
+      },
+      "receiptPath": "/tmp/acmcoder-capacity-d1-R2TqLv/receipt.json"
+    }
+  },
+  "performance": {
+    "environment": "WSL file store, 10000 synthetic account records, median ms",
+    "singleRecordBefore": 52.93,
+    "singleRecordAfter": 0.02,
+    "historyPageBefore": 59.46,
+    "historyPageAfter": 6.72,
+    "sqliteIntroduced": false
+  },
+  "build": {
+    "buildKind": "local-uncommitted-staged",
+    "sourceCommit": "10b4f2969b11f43137ed1f7250c15524cb737021",
+    "mainLocalWebUntouched": true,
+    "clients": [
+      {
+        "target": "local-web",
+        "directory": "/tmp/acmcoder-stage-c-build-source.d6p5eb0h/dist/local-web",
+        "version": "4.1.0",
+        "commit": "10b4f2969b11f43137ed1f7250c15524cb737021",
+        "editorBytes": 547049,
+        "editorSHA256": "3fc9c9e9bf1c5d29471db9c9560d5f1d88f3659255d6f712a082dce2fcbbcbc0",
+        "licenseBytes": 22855,
+        "licenseSHA256": "48592d97388b80078252012f69efdae9d0a21b173123303bb061e4b7f66077d3"
+      },
+      {
+        "target": "extension",
+        "directory": "/tmp/acmcoder-stage-c-build-source.d6p5eb0h/dist/extension",
+        "version": "4.1.0",
+        "commit": "10b4f2969b11f43137ed1f7250c15524cb737021",
+        "editorBytes": 547049,
+        "editorSHA256": "3fc9c9e9bf1c5d29471db9c9560d5f1d88f3659255d6f712a082dce2fcbbcbc0",
+        "licenseBytes": 22855,
+        "licenseSHA256": "48592d97388b80078252012f69efdae9d0a21b173123303bb061e4b7f66077d3"
+      },
+      {
+        "target": "site",
+        "directory": "/tmp/acmcoder-stage-c-build-source.d6p5eb0h/dist/site",
+        "version": "4.1.0",
+        "commit": "10b4f2969b11f43137ed1f7250c15524cb737021",
+        "editorBytes": 547049,
+        "editorSHA256": "3fc9c9e9bf1c5d29471db9c9560d5f1d88f3659255d6f712a082dce2fcbbcbc0",
+        "licenseBytes": 22855,
+        "licenseSHA256": "48592d97388b80078252012f69efdae9d0a21b173123303bb061e4b7f66077d3"
+      }
+    ],
+    "website": {
+      "version": "4.1.0",
+      "commit": "10b4f2969b11f43137ed1f7250c15524cb737021",
+      "protocolVersion": 1,
+      "tool": {
+        "name": "esbuild",
+        "version": "0.28.1"
+      },
+      "worker": {
+        "bytes": 89340,
+        "gzipBytes": 25213,
+        "sha256": "97630ed60b08790e193ef44aa726426164af582943955f7e51f5f9663a2ae9de"
+      },
+      "assets": {
+        "count": 164,
+        "totalBytes": 81572564,
+        "largest": {
+          "file": "vendor/java/resource-53.gz",
+          "bytes": 21246431
+        }
+      },
+      "routes": {
+        "version": 1,
+        "include": [
+          "/api/*"
+        ],
+        "exclude": []
+      },
+      "cpp": {
+        "version": "clang22-wasi33-acmcoder.1",
+        "totalBytes": 28236559
+      },
+      "java": {
+        "version": "doppio0.5-jcl3.2-acmcoder.1",
+        "totalBytes": 39630976
+      },
+      "deployment": {
+        "status": "not-deployed"
+      }
+    }
+  },
+  "activation": {
+    "service": "acmcoder-v3.service",
+    "script": "/tmp/acmcoder-stage-c-activate.sh",
+    "readyFrontend": "/home/pygmalion/runs/002-acmcoder/v3/dist/local-web-stage-c-ready",
+    "activeFrontendChanged": true,
+    "confirmedDate": "2026-10-24",
+    "verification": "Service active; served, built and source conversations.js SHA256 match 337f456f570e9a7d158ef4b6ba711992c0db6c00abacfe560f09c203279b3e7c; previous frontend retained"
+  },
+  "boundaries": [
+    "Production D1 migration 0007 has not run",
+    "Public website and installed extension unchanged",
+    "Protocol logs and deletion tombstones retained; no log compaction or checkpoint protocol added",
+    "No paid model request or real learning data mutation used in acceptance"
+  ]
+}
